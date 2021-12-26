@@ -54,3 +54,6 @@ curl https://get.starport.network/ChihuahuaChain/chihuahua@latest! | sudo bash
 - [Cosmos SDK documentation](https://docs.cosmos.network)
 - [Cosmos SDK Tutorials](https://tutorials.cosmos.network)
 - [Discord](https://discord.gg/cosmosnetwork)
+
+
+# hi this file is cursed so I am modifying it. 

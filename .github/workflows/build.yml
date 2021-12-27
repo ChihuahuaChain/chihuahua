@@ -1,6 +1,6 @@
 # This is a basic workflow that is manually triggered
 
-name: compile craft
+name: compile puppy!
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
@@ -29,12 +29,10 @@ jobs:
           GOARCH: ${{ matrix.arch }}
 
 # we build and install in case we want to run it or capture an artifact as we do in the step below. 
-      - name: Compile craft
+      - name: Compile chihuahuad
         run: |
-          go mod download
-          cd cmd/chiahuahuad
-          go build .
-          go install .
+          go build ./...
+          go install ./...
         
           
           

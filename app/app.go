@@ -85,7 +85,6 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/tendermint/spm/cosmoscmd"
 	"github.com/tendermint/spm/openapiconsole"
 
@@ -97,6 +96,7 @@ const (
 	AccountAddressPrefix = "chihuahua"
 	Name                 = "chihuahua"
 	upgradeName          = ""
+	minComRate           = 5
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -603,15 +603,15 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		// hard code this because we don't want
 		// a) a fork or
 		// b) immediate reaction with additional gov props
-		minCommissionRate := sdk.NewDecWithPrec(5, 2)
+		minCommissionRate := sdk.NewDecWithPrec(minComRate, 2)
 		for _, v := range validators {
 			if v.Commission.Rate.LT(minCommissionRate) {
-				comm, err := app.StakingKeeper.UpdateValidatorCommission(
-					ctx, v, minCommissionRate)
-				if err != nil {
-					panic(err)
+				if v.Commission.MaxRate.LT(minCommissionRate) {
+					v.Commission.MaxRate = minCommissionRate
 				}
-				v.Commission = comm
+
+				v.Commission.Rate = minCommissionRate
+				v.Commission.UpdateTime = ctx.BlockHeader().Time
 
 				// call the before-modification hook since we're about to update the commission
 				app.StakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())

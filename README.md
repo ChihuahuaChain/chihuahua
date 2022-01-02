@@ -1,2 +1,0 @@
-# chihuahua
-Chihuahua Chain mainnet

@@ -41,7 +41,8 @@ After a draft release is created, make your final changes from the release page 
 
 ### Install
 To install the latest version of your blockchain node's binary, execute the following command on your machine:
-# MAINNET: CHIHUAHUA-1
+# MAINNET: CHIHUAHUA-1make install
+
 
 ## Installation Steps
 

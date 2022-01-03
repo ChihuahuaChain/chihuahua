@@ -40,9 +40,10 @@ Output should be: `go version go1.17.5 linux/amd64`
 ```bash:
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
+git checkout main
 make install
 ```
-Note: there is no tag to build off of, just use master for now
+Note: there is no tag to build off of, just use main for now
 
 ### Init chain
 ```bash:
@@ -51,7 +52,7 @@ chihuahuad init $MONIKER_NAME --chain-id chihuahua-1
 
 ### Download Genesis
 ```bash:
-wget -O ~/.chihuahua/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/mainnet/main/genesis.json
+cp mainnet/genesis.json ~/.chihuahua/config/genesis.json
 ```
 
 ### Add/recover keys

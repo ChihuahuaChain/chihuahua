@@ -70,7 +70,7 @@ chihuahuad keys add <key-name> --recover
 ### Create the validator
 
 Note that proposal #1 agrees that all validators set commission to at
-least 5%!
+least 5% (this rule is now automatically enforced)
 
 ```bash:
 chihuahuad tx staking create-validator \

@@ -95,7 +95,7 @@ import (
 const (
 	AccountAddressPrefix = "chihuahua"
 	Name                 = "chihuahua"
-	upgradeName          = ""
+	upgradeName          = "angryandy"
 	minComRate           = 5
 )
 

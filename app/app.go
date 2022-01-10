@@ -612,8 +612,6 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v1UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
-		fmt.Println("\nvm:\n", vm)
-
 		// Set MinCommissionRate to 0.05
 		params := stakingtypes.NewParams(
 			app.StakingKeeper.UnbondingTime(ctx),

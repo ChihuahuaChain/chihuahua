@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -87,13 +88,13 @@ import (
 	"github.com/tendermint/spm/openapiconsole"
 
 	"github.com/ChihuahuaChain/chihuahua/docs"
-
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
 const (
 	AccountAddressPrefix = "chihuahua"
 	Name                 = "chihuahua"
+	v1UpgradeName        = "angryandy"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -177,6 +178,8 @@ type App struct {
 	cdc               *codec.LegacyAmino
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
+
+	configurator module.Configurator
 
 	invCheckPeriod uint
 
@@ -413,7 +416,11 @@ func New(
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
-	app.mm.RegisterServices(module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter()))
+	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
+	app.mm.RegisterServices(app.configurator)
+
+	// upgrade handlers
+	app.RegisterUpgradeHandlers(app.configurator)
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -598,4 +605,45 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
+}
+
+// RegisterUpgradeHandlers returns upgrade handlers
+func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
+	app.UpgradeKeeper.SetUpgradeHandler(v1UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		minCommissionRate := sdk.NewDecWithPrec(5, 2)
+
+		fmt.Println("\nvm:\n", vm)
+
+		// Set MinCommissionRate to 0.05
+		params := stakingtypes.NewParams(
+			app.StakingKeeper.UnbondingTime(ctx),
+			app.StakingKeeper.MaxValidators(ctx),
+			app.StakingKeeper.MaxEntries(ctx),
+			app.StakingKeeper.HistoricalEntries(ctx),
+			app.StakingKeeper.BondDenom(ctx),
+			minCommissionRate,
+		)
+
+		app.StakingKeeper.SetParams(ctx, params)
+
+		// force an update of validator min commission
+		validators := app.StakingKeeper.GetAllValidators(ctx)
+
+		for _, v := range validators {
+			if v.Commission.Rate.LT(minCommissionRate) {
+				if v.Commission.MaxRate.LT(minCommissionRate) {
+					v.Commission.MaxRate = minCommissionRate
+				}
+
+				v.Commission.Rate = minCommissionRate
+				v.Commission.UpdateTime = ctx.BlockHeader().Time
+
+				// call the before-modification hook since we're about to update the commission
+				app.StakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
+
+				app.StakingKeeper.SetValidator(ctx, v)
+			}
+		}
+		return app.mm.RunMigrations(ctx, cfg, vm)
+	})
 }

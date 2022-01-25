@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/cosmos/cosmos-sdk v0.44.5
-	github.com/cosmos/ibc-go v1.2.4
+	github.com/cosmos/ibc-go v1.2.5
 	github.com/spf13/cast v1.4.1
 	github.com/tendermint/spm v0.1.9
 	github.com/tendermint/tendermint v0.34.15
@@ -123,5 +123,6 @@ replace (
 	github.com/cosmos/cosmos-sdk v0.44.5 => github.com/pomifer/cosmos-sdk v0.44.6-chihuahua
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
+	github.com/tecbot/gorocksdb => github.com/cosmos/gorocksdb v1.2.0
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )

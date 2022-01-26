@@ -42,8 +42,6 @@ install_go() {
     echo "> installing go..."
     sudo rm -rf /usr/local/go && sudo rm -rf $HOME/.go
     wget -q -O - $GOLINK | bash
-    source $HOME/.profile
-    source $HOME/.bashrc
 }
 
     #fetch chain-registry

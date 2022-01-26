@@ -225,9 +225,7 @@ config() {
     sed -i 's/trust_height.*/trust_height = '$CHECKHEIGHT'/g' $NODE_HOME_DIR/config/config.toml
     sed -i 's/trust_hash.*/trust_hash = "'$TRUSTHASH'"/g' $NODE_HOME_DIR/config/config.toml
     sed -i 's/trust_period.*/trust_period = "'$TRUST_PERIOD'"/g' $NODE_HOME_DIR/config/config.toml
-    if [ ! -z "$FIX_PEERS" ] ; then
-        sed -i 's/persistent_peers = .*/persistent_peers = "'$PEERLIST'"/g' $NODE_HOME_DIR/config/config.toml
-    fi 
+    sed -i 's/persistent_peers = .*/persistent_peers = "'$PEERLIST'"/g' $NODE_HOME_DIR/config/config.toml
 }
 
     #spin up node

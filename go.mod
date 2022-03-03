@@ -8,6 +8,7 @@ require (
 	github.com/cosmos/ibc-go/v2 v2.0.2
 	github.com/prometheus/client_golang v1.12.0
 	github.com/spf13/cast v1.4.1
+	github.com/spf13/cobra v1.2.1
 	github.com/tendermint/spm v0.1.9
 	github.com/tendermint/tendermint v0.34.15
 	github.com/tendermint/tm-db v0.6.6
@@ -95,7 +96,6 @@ require (
 	github.com/rs/zerolog v1.26.0 // indirect
 	github.com/sasha-s/go-deadlock v0.2.1-0.20190427202633-1595213edefa // indirect
 	github.com/spf13/afero v1.6.0 // indirect
-	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.10.1 // indirect

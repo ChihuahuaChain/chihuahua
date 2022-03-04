@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Features
 - [#1](https://github.com/ChihuahuaChain/chihuahua/pull/2) Version bumps, add mainnet files, many improvements and fixes
 - [#2](https://github.com/pomifer/chihuahua/pull/1) Add a minimum validator commission of 5% based on proposal [#1](https://omniflix.chihuahua.wtf/proposals)
+- [#16] Add [Authz module](https://github.com/cosmos/cosmos-sdk/tree/master/x/authz/spec)
 
 ## [v1.0.0](https://github.com/ChihuahuaChain/chihuahua/releases/tag/v1.0.0) - 2021-12-18
 

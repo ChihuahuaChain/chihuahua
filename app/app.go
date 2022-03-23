@@ -91,8 +91,8 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/tendermint/spm/cosmoscmd"
-	"github.com/tendermint/spm/openapiconsole"
+	"github.com/tendermint/starport/starport/pkg/cosmoscmd"
+	"github.com/tendermint/starport/starport/pkg/openapiconsole"
 
 	"github.com/ChihuahuaChain/chihuahua/docs"
 	// this line is used by starport scaffolding # stargate/app/moduleImport

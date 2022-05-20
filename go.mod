@@ -3,7 +3,7 @@ module github.com/ChihuahuaChain/chihuahua
 go 1.17
 
 require (
-	github.com/CosmWasm/wasmd v0.27.0-junity.0
+	github.com/CosmWasm/wasmd v0.27.0
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/cosmos/ibc-go/v2 v2.2.0
 	github.com/prometheus/client_golang v1.12.1

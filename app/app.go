@@ -107,6 +107,10 @@ const (
 	Name                 = "chihuahua"
 	v1UpgradeName        = "angryandy"
 	v2UpgradeName        = "chiwawasm"
+	// BondDenom defines the native staking token denomination.
+	BondDenom = "huahua"
+	// DisplayDenom defines the name, symbol, and display value of the huahua token.
+	DisplayDenom = "HUA"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals

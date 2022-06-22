@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/ChihuahuaChain/chihuahua/testutil/network/routeguide"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -64,12 +63,11 @@ func New(t *testing.T, config network.Config, genAccNames ...string) *network.Ne
 	return net
 }
 
-func GRPCConn(net *network.Network) error {
+func GRPCConn(net *network.Network) (*grpc.ClientConn, error) {
 	nodeGRPCAddr := strings.Replace(net.Validators[0].AppConfig.GRPC.Address, "0.0.0.0", "localhost", 1)
 	conn, err := grpc.Dial(nodeGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//net.Validators[0].ClientCtx.GRPCClient = conn
-	pb.NewRouteGuideClient(conn)
-	return err
+	return conn, err
 }
 
 // DefaultConfig will initialize config for the network with custom application,

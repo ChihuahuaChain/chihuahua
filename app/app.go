@@ -107,6 +107,7 @@ const (
 	Name                 = "chihuahua"
 	v1UpgradeName        = "angryandy"
 	v2UpgradeName        = "chiwawasm"
+	authzUpgradeName     = "authz"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -609,9 +610,9 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v2UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == authzUpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{wasm.ModuleName},
+			Added: []string{authz.ModuleName},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades

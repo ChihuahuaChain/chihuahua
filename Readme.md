@@ -17,23 +17,19 @@ Follow the instructions [here](https://golang.org/doc/install) to install Go.
 
 Alternatively, for Ubuntu LTS, you can do:
 ```bash:
-wget https://golang.org/dl/go1.17.5.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.17.5.linux-amd64.tar.gz
+wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz && sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.3.linux-amd64.tar.gz && sudo rm -rf go1.18.3.linux-amd64.tar.gz
 ```
 
 Unless you want to configure in a non standard way, then set these in the `.profile` in the user's home (i.e. `~/`) folder.
 
 ```bash:
-cat <<EOF >> ~/.profile
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export GO111MODULE=on
-export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-EOF
-source ~/.profile
+echo 'export GOROOT=/usr/local/go' >> $HOME/.bash_profile
+echo 'export GOPATH=$HOME/go' >> $HOME/.bash_profile
+echo 'export GO111MODULE=on' >> $HOME/.bash_profile
+echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> $HOME/.bash_profile && . $HOME/.bash_profile
 go version
 ```
-Output should be: `go version go1.17.5 linux/amd64`
+Output should be: `go version go1.18.3 linux/amd64`
 
 ### 3. Install Chihuahua from source
 
@@ -93,56 +89,3 @@ chihuahuad tx staking create-validator \
 ```bash:
 priv_validator_key.json
 ```
-
-## Instructions for Genesis Validators
-
-### GenTx Creation
-
-### Create Gentx
-
-#### Add genesis account:
-```
-chihuahuad add-genesis-account <key-name> 5000001000000uhuahua
-```
-Note: if you receive message: `failed to get address from Keybase:`, add `--keyring-backend os`
-
-#### Create Gentx
-```
-chihuahuad gentx <key-name> 5000000000000uhuahua \
---chain-id chihuahua-1 \
---moniker="<moniker>" \
---commission-max-change-rate=0.01 \
---commission-max-rate=0.20 \
---commission-rate=0.05 \
---details="XXXXXXXX" \
---security-contact="XXXXXXXX" \
---website="XXXXXXXX"
-```
-
-### Submit PR with Gentx and peer id
-1. Copy the contents of ${HOME}/.chihuahua/config/gentx/gentx-XXXXXXXX.json.
-2. Fork the repository
-3. Create a file gentx-{{VALIDATOR_NAME}}.json under the /gentxs folder in the forked repo, paste the copied text into the file.
-4. Create a Pull Request to the main branch of the repository
-
-
-### Backup critical files
-```bash:
-priv_validator_key.json
-```
-
-```
-curl https://get.starport.network/ChihuahuaChain/chihuahua@latest! | sudo bash
-```
-`ChihuahuaChain/chihuahua` should match the `username` and `repo_name` of the Github repository to which the source code was pushed. Learn more about [the install process](https://github.com/allinbits/starport-installer).
-
-## Learn more
-
-- [Starport](https://github.com/tendermint/starport)
-- [Starport Docs](https://docs.starport.network)
-- [Cosmos SDK documentation](https://docs.cosmos.network)
-- [Cosmos SDK Tutorials](https://tutorials.cosmos.network)
-- [Discord](https://discord.gg/cosmosnetwork)
-
-
-

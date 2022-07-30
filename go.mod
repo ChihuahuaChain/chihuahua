@@ -4,12 +4,12 @@ go 1.18
 
 require (
 	github.com/CosmWasm/wasmd v0.27.0
-	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/cosmos/ibc-go/v3 v3.0.0
+	github.com/cosmos/cosmos-sdk v0.46.0
+	github.com/cosmos/ibc-go/v3 v3.1.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/spf13/cast v1.4.1
 	github.com/spf13/cobra v1.4.0
-	github.com/tendermint/starport v0.19.4
+	github.com/tendermint/starport v0.19.5
 	github.com/tendermint/tendermint v0.34.19
 	github.com/tendermint/tm-db v0.6.7
 )
@@ -124,8 +124,8 @@ require (
 )
 
 replace (
-	github.com/cosmos/cosmos-sdk => github.com/pomifer/cosmos-sdk v0.45.5-chihuahua
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+	github.com/cosmos/ibc-go/v3 => github.com/pomifer/ibc-go/v3 v3.1.1
 )

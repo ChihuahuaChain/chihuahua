@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/CosmWasm/wasmd v0.27.0
 	github.com/cosmos/cosmos-sdk v0.46.0
-	github.com/cosmos/ibc-go/v3 v3.1.0
+	github.com/cosmos/ibc-go/v5 v5.0.0-beta1
 	github.com/prometheus/client_golang v1.12.1
 	github.com/spf13/cast v1.4.1
 	github.com/spf13/cobra v1.4.0
@@ -127,5 +127,5 @@ replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
-	github.com/cosmos/ibc-go/v3 => github.com/pomifer/ibc-go/v3 v3.1.1
+	//github.com/cosmos/ibc-go/v3 => github.com/pomifer/ibc-go/v3 v3.1.1
 )

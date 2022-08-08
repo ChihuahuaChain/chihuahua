@@ -104,7 +104,7 @@ const (
 	Name                 = "chihuahua"
 	v1UpgradeName        = "angryandy"
 	v2UpgradeName        = "chiwawasm"
-	v202UpgradeName      = "minpropdesposit"
+	v202UpgradeName      = "minpropdeposit"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals

@@ -6,9 +6,7 @@ import (
 	"github.com/ChihuahuaChain/chihuahua/x/treasury/types"
 )
 
-var (
-	NewQueryClient = types.NewQueryClient
-)
+var NewQueryClient = types.NewQueryClient
 
 type (
 	QueryTaxRateRequest = types.QueryTaxRateRequest

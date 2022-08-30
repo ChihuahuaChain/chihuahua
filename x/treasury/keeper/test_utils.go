@@ -17,7 +17,6 @@ import (
 	custombank "github.com/cosmos/cosmos-sdk/x/bank"
 	customdistr "github.com/cosmos/cosmos-sdk/x/distribution"
 	customparams "github.com/cosmos/cosmos-sdk/x/params"
-	customstaking "github.com/cosmos/cosmos-sdk/x/staking"
 
 	// "github.com/ChihuahuaChain/chihuahua/x/market"
 	// marketkeeper "github.com/ChihuahuaChain/chihuahua/x/market/keeper"
@@ -62,7 +61,7 @@ var ModuleBasics = module.NewBasicManager(
 	customauth.AppModuleBasic{},
 	custombank.AppModuleBasic{},
 	customdistr.AppModuleBasic{},
-	customstaking.AppModuleBasic{},
+	staking.AppModuleBasic{},
 	customparams.AppModuleBasic{},
 	// oracle.AppModuleBasic{},
 	// market.AppModuleBasic{},

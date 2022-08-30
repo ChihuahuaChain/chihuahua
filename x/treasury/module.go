@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/ChihuahuaChain/chihuahua/x/treasury/keeper"
 	"github.com/ChihuahuaChain/chihuahua/x/treasury/simulation"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"

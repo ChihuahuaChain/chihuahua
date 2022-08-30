@@ -155,7 +155,7 @@ type EpochState struct {
 	Epoch             uint64                                 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	TaxReward         github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,2,opt,name=tax_reward,json=taxReward,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"tax_reward"`
 	SeigniorageReward github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,3,opt,name=seigniorage_reward,json=seigniorageReward,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"seigniorage_reward"`
-	TotalStakedHuahua   github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=total_staked_luna,json=totalStakedHuahua,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"total_staked_luna"`
+	TotalStakedHuahua github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,4,opt,name=total_staked_luna,json=totalStakedHuahua,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"total_staked_luna"`
 }
 
 func (m *EpochState) Reset()         { *m = EpochState{} }

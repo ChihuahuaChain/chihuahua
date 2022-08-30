@@ -3,8 +3,8 @@ package keeper
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/ChihuahuaChain/chihuahua/x/treasury/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBurnCoinsFromBurnAccount(t *testing.T) {

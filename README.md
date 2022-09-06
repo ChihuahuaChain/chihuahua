@@ -27,7 +27,7 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
 
 # remove old version (if any)
-sudo rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
 
 # install the new version
 sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz

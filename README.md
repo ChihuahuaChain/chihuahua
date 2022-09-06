@@ -217,8 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 # Chain Upgrades
 
 - **minpropdeposit** _(v2.0.2)_ - Block 3654321 - (2022-08-25 13:00:26)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/mainnet/blob/main/UPGRADES/minpropdeposit/upgrade.md)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/UPGRADES/minpropdeposit)
 - **Chiwawasm** _(v2.0.1)_ - Block 3000800 - (2022-07-11 17:02:14)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/mainnet/blob/main/UPGRADES/chiwawasm/upgrade.md)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/UPGRADES/chiwawasm)
 - **angryandy** _(v1.1.1)_ - Block 535000 - (2022-01-19 17:20:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/mainnet/tree/main/UPGRADES/angryandy)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/tree/main/UPGRADES/angryandy)

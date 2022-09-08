@@ -69,7 +69,7 @@ Replace `$MONIKERNAME` with your choosen node name
 - #### Download the Genesis
 
 ```bash
-wget -O ~/.chihuahua/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/mainnet/main/genesis.json
+wget -O ~/.chihuahua/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/chihuahua/main/mainnet/genesis.json
 ```
 
 - #### Add Seeds & Persistent Peers

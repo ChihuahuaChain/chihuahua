@@ -33,14 +33,24 @@ const (
 
 func prune() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "prune ",
-		Short: "Example: chihuahuad prune -f 188000 -m 1000, keeps blockchain and state data of last 188000 blocks (approximately 2 weeks) and ABCI responses of last 1000 blocks.",
-		Long:  "Prunes and compacts blockstore.db and state.db. !!! SHUTDOWN THE NODE BEFORE RUNNING prune!!!\nEverything beyond specified heights in blockstore and state.db is pruned. ABCI Responses are stored in index db and so redundant especially if one is running pruned nodes. As a result we are removing ABCI data from state.db aggressively by default. One can override height for blockstore.db and state.db by using -f option and for abci response by using -m option. Example chihuahuad prune -f 188000 -m 1000.",
+		Use:   "prune",
+		Short: "Example: chihuahuad prune start -f 188000 -m 1000, keeps blockchain and state data of last 188000 blocks (approximately 2 weeks) and ABCI responses of last 1000 blocks.",
+		Long:  "Prunes and compacts blockstore.db and state.db. Everything beyond specified heights in blockstore and state.db is pruned. ABCI Responses are stored in index db and so redundant especially if one is running pruned nodes. As a result we are removing ABCI data from state.db aggressively by default. One can override height for blockstore.db and state.db by using -f option and for abci response by using -m option. Example chihuahuad prune start -f 188000 -m 1000.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fullHeightFlag, err := cmd.Flags().GetString(fullHeight)
 			if err != nil {
 				return err
 			}
+
+            if len(args) < 1 {
+                fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune -h' for the help. Make sure your node is down")
+                return err
+            }
+
+            if args[0] != "start" {
+                fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune -h' for the help. Make sure your node is down")
+                return err
+            }
 
 			minHeightFlag, err := cmd.Flags().GetString(minHeight)
 			if err != nil {
@@ -88,10 +98,8 @@ func prune() *cobra.Command {
 			return nil
 		},
 	}
-
 	cmd.Flags().StringP(fullHeight, "f", defaultFullHeight, "Full height to chop to")
 	cmd.Flags().StringP(minHeight, "m", defaultMinHeight, "Min height for ABCI to chop to")
-
 	return cmd
 }
 
@@ -204,7 +212,7 @@ func pruneStateStore(dbPath string, startHeight, currentHeight, minHeight, fullH
 		batch.Reset()
 	}
 
-	fmt.Println("Compacting State Store ...")
+	fmt.Println("[!] Compacting State Store ...")
 	if err = db.CompactRange(*util.BytesPrefix([]byte{})); err != nil {
 		return err
 	}

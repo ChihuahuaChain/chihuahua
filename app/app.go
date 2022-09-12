@@ -611,7 +611,7 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == authzUpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v202UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
 			Added: []string{authz.ModuleName},
 		}

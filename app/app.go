@@ -640,9 +640,7 @@ func New(
 
 	if upgradeInfo.Name == v3UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authz.ModuleName},
-		
-			Added: []string{treasurytypes.ModuleName},
+			Added: []string{authz.ModuleName, treasurytypes.ModuleName},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades

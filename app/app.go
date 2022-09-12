@@ -107,7 +107,7 @@ const (
 	Name                 = "chihuahua"
 	v1UpgradeName        = "angryandy"
 	v2UpgradeName        = "chiwawasm"
-	authzUpgradeName     = "authz"
+	v202UpgradeName      = "minpropdeposit"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -459,7 +459,7 @@ func New(
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
+	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -784,7 +784,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(authzUpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(v202UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
 		// Set MinCommissionRate to 0.05

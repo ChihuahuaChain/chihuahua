@@ -99,6 +99,10 @@ import (
 	treasurykeeper "github.com/ChihuahuaChain/chihuahua/x/treasury/keeper"
 	treasurytypes "github.com/ChihuahuaChain/chihuahua/x/treasury/types"
 
+	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
+
+	customante "github.com/ChihuahuaChain/chihuahua/custom/auth/ante"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -106,14 +110,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 )
 
-const (
-	AccountAddressPrefix = "chihuahua"
-	Name                 = "chihuahua"
-	v1UpgradeName        = "angryandy"
-	v2UpgradeName        = "chiwawasm"
-	v202UpgradeName      = "minpropdeposit"
-	v3UpgradeName        = "burnmech"
-)
+// constants moved to github.com/ChihuahuaChain/chihuahua/app/const.go
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
 var (
@@ -300,10 +297,10 @@ func New(
 	skipUpgradeHeights map[int64]bool,
 	homePath string,
 	invCheckPeriod uint,
-	encodingConfig cosmoscmd.EncodingConfig,
+	encodingConfig appparams.EncodingConfig,
 	appOpts servertypes.AppOptions,
 	baseAppOptions ...func(*baseapp.BaseApp),
-) cosmoscmd.App {
+) *App {
 	appCodec := encodingConfig.Marshaler
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
@@ -450,7 +447,6 @@ func New(
 		&app.IBCKeeper.PortKeeper,
 		scopedWasmKeeper,
 		app.TransferKeeper,
-		app.TreasuryKeeper,
 		app.MsgServiceRouter(),
 		app.GRPCQueryRouter(),
 		wasmDir,
@@ -610,21 +606,21 @@ func New(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
-	anteHandler, err := NewAnteHandler(
-		HandlerOptions{
-			HandlerOptions: ante.HandlerOptions{
-				AccountKeeper:   app.AccountKeeper,
-				BankKeeper:      app.BankKeeper,
-				SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
-				FeegrantKeeper:  app.FeeGrantKeeper,
-				TreasuryKeeper:  app.TreasuryKeeper,
-				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
-			},
-			IBCChannelkeeper:  app.IBCKeeper,
+	anteHandler, err := customante.NewAnteHandler(
+		/*HandlerOptions{
+		HandlerOptions: */customante.HandlerOptions{
+			AccountKeeper:   app.AccountKeeper,
+			BankKeeper:      app.BankKeeper,
+			FeegrantKeeper:  app.FeeGrantKeeper,
+			TreasuryKeeper:  app.TreasuryKeeper,
+			SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
+			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+		},
+		/*IBCChannelkeeper:  app.IBCKeeper,
 			TxCounterStoreKey: keys[wasm.StoreKey],
 			WasmConfig:        wasmConfig,
 			Cdc:               appCodec,
-		},
+		},*/
 	)
 	if err != nil {
 		panic(err)
@@ -697,6 +693,16 @@ func (app *App) ModuleAccountAddrs() map[string]bool {
 	}
 
 	return modAccAddrs
+}
+
+// BlacklistedAccAddrs returns all the app's module account addresses black listed for receiving tokens.
+func (app *App) BlacklistedAccAddrs() map[string]bool {
+	blacklistedAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		blacklistedAddrs[authtypes.NewModuleAddress(acc).String()] = !allowedReceivingModAcc[acc]
+	}
+
+	return blacklistedAddrs
 }
 
 // LegacyAmino returns SimApp's amino codec.

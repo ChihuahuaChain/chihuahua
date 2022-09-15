@@ -14,6 +14,11 @@ import (
 	"github.com/ChihuahuaChain/chihuahua/x/treasury/types"
 )
 
+// TaxPowerUpgradeHeight is when taxes are allowed to go into effect
+// This will still need a parameter change proposal, but can be activated
+// anytime after this height
+const TaxPowerUpgradeHeight = 9346889
+
 // Keeper of the treasury store
 type Keeper struct {
 	storeKey   sdk.StoreKey
@@ -22,10 +27,10 @@ type Keeper struct {
 
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-	// marketKeeper  types.MarketKeeper
+	//marketKeeper  types.MarketKeeper
 	stakingKeeper types.StakingKeeper
 	distrKeeper   types.DistributionKeeper
-	// oracleKeeper  types.OracleKeeper
+	//oracleKeeper  types.OracleKeeper
 
 	distributionModuleName string
 }
@@ -35,12 +40,12 @@ func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey,
 	paramSpace paramstypes.Subspace,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	// marketKeeper types.MarketKeeper,
-	// oracleKeeper types.OracleKeeper,
+	//marketKeeper types.MarketKeeper,
+	//oracleKeeper types.OracleKeeper,
 	stakingKeeper types.StakingKeeper,
 	distrKeeper types.DistributionKeeper,
-	distributionModuleName string,
-) Keeper {
+	distributionModuleName string) Keeper {
+
 	// ensure treasury module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
@@ -57,13 +62,13 @@ func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey,
 	}
 
 	return Keeper{
-		cdc:           cdc,
-		storeKey:      storeKey,
-		paramSpace:    paramSpace,
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
-		// marketKeeper:           marketKeeper,
-		// oracleKeeper:           oracleKeeper,
+		cdc:                    cdc,
+		storeKey:               storeKey,
+		paramSpace:             paramSpace,
+		accountKeeper:          accountKeeper,
+		bankKeeper:             bankKeeper,
+		//marketKeeper:           marketKeeper,
+		//oracleKeeper:           oracleKeeper,
 		stakingKeeper:          stakingKeeper,
 		distrKeeper:            distrKeeper,
 		distributionModuleName: distributionModuleName,
@@ -124,8 +129,9 @@ func (k Keeper) SetTaxCap(ctx sdk.Context, denom string, cap sdk.Int) {
 
 // GetTaxCap gets the tax cap denominated in integer units of the reference {denom}
 func (k Keeper) GetTaxCap(ctx sdk.Context, denom string) sdk.Int {
-	// return zero tax cap for `uluna`
-	if denom == core.MicroHuahuaDenom {
+	currHeight := ctx.BlockHeight()
+	// Allow tax cap for uhuahua
+	if denom == core.MicroHuahuaDenom && currHeight < TaxPowerUpgradeHeight {
 		return sdk.ZeroInt()
 	}
 
@@ -196,14 +202,14 @@ func (k Keeper) PeekEpochTaxProceeds(ctx sdk.Context) sdk.Coins {
 
 // RecordEpochInitialIssuance updates epoch initial issuance from supply keeper
 // func (k Keeper) RecordEpochInitialIssuance(ctx sdk.Context) {
-// 	// whitelist := k.oracleKeeper.Whitelist(ctx)
+// 	whitelist := k.oracleKeeper.Whitelist(ctx)
 
-// 	// totalSupply := make(sdk.Coins, len(whitelist)+1)
-// 	// totalSupply[0] = k.bankKeeper.GetSupply(ctx, core.MicroHuahuaDenom)
+// 	totalSupply := make(sdk.Coins, len(whitelist)+1)
+// 	totalSupply[0] = k.bankKeeper.GetSupply(ctx, core.MicroHuahuaDenom)
 
-// 	// for i, denom := range whitelist {
-// 	// 	totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Name)
-// 	// }
+// 	for i, denom := range whitelist {
+// 		totalSupply[i+1] = k.bankKeeper.GetSupply(ctx, denom.Name)
+// 	}
 
 // 	k.SetEpochInitialIssuance(ctx, totalSupply.Sort())
 // }
@@ -312,7 +318,7 @@ func (k Keeper) ClearSRs(ctx sdk.Context) {
 	}
 }
 
-// GetTSL returns the total staked luna for the epoch
+// GetTSL returns the total staked huahua for the epoch
 func (k Keeper) GetTSL(ctx sdk.Context, epoch int64) sdk.Int {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetTSLKey(epoch))
@@ -327,7 +333,7 @@ func (k Keeper) GetTSL(ctx sdk.Context, epoch int64) sdk.Int {
 	return ip.Int
 }
 
-// SetTSL stores the total staked luna for the epoch
+// SetTSL stores the total staked huahua for the epoch
 func (k Keeper) SetTSL(ctx sdk.Context, epoch int64, TSL sdk.Int) {
 	store := ctx.KVStore(k.storeKey)
 
@@ -335,7 +341,7 @@ func (k Keeper) SetTSL(ctx sdk.Context, epoch int64, TSL sdk.Int) {
 	store.Set(types.GetTSLKey(epoch), bz)
 }
 
-// ClearTSLs delete all the total staked luna from the store
+// ClearTSLs delete all the total staked huahua from the store
 func (k Keeper) ClearTSLs(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 

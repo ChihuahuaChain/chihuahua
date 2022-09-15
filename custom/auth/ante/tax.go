@@ -9,6 +9,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	core "github.com/ChihuahuaChain/chihuahua/types"
+	// marketexported "github.com/ChihuahuaChain/chihuahua/x/market/exported"
+	// oracleexported "github.com/ChihuahuaChain/chihuahua/x/oracle/exported"
+	// wasmexported "github.com/ChihuahuaChain/chihuahua/x/wasm/exported"
 )
 
 // MaxOracleMsgGasUsage is constant expected oracle msg gas cost
@@ -49,7 +52,7 @@ func (tfd TaxFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool,
 
 		// Mempool fee validation
 		// No fee validation for oracle txs
-		if ctx.IsCheckTx() /* && !(isOracleTx(ctx, msgs) && gas <= uint64(len(msgs))*MaxOracleMsgGasUsage)*/ {
+		if ctx.IsCheckTx() /*&&!(isOracleTx(ctx, msgs) && gas <= uint64(len(msgs))*MaxOracleMsgGasUsage)*/ {
 			if err := EnsureSufficientMempoolFees(ctx, gas, feeCoins, taxes); err != nil {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, err.Error())
 			}
@@ -115,16 +118,16 @@ func FilterMsgAndComputeTax(ctx sdk.Context, tk TreasuryKeeper, msgs ...sdk.Msg)
 			for _, input := range msg.Inputs {
 				taxes = taxes.Add(computeTax(ctx, tk, input.Coins)...)
 			}
-/*
-		case *marketexported.MsgSwapSend:
-			taxes = taxes.Add(computeTax(ctx, tk, sdk.NewCoins(msg.OfferCoin))...)
 
-		case *wasmexported.MsgInstantiateContract:
-			taxes = taxes.Add(computeTax(ctx, tk, msg.InitCoins)...)
+		// case *marketexported.MsgSwapSend:
+		// 	taxes = taxes.Add(computeTax(ctx, tk, sdk.NewCoins(msg.OfferCoin))...)
 
-		case *wasmexported.MsgExecuteContract:
-			taxes = taxes.Add(computeTax(ctx, tk, msg.Coins)...)
-*/
+		// case *wasmexported.MsgInstantiateContract:
+		// 	taxes = taxes.Add(computeTax(ctx, tk, msg.InitCoins)...)
+
+		// case *wasmexported.MsgExecuteContract:
+		// 	taxes = taxes.Add(computeTax(ctx, tk, msg.Coins)...)
+
 		case *authz.MsgExec:
 			messages, err := msg.GetMessages()
 			if err != nil {
@@ -140,6 +143,7 @@ func FilterMsgAndComputeTax(ctx sdk.Context, tk TreasuryKeeper, msgs ...sdk.Msg)
 
 // computes the stability tax according to tax-rate and tax-cap
 func computeTax(ctx sdk.Context, tk TreasuryKeeper, principal sdk.Coins) sdk.Coins {
+	currHeight := ctx.BlockHeight()
 	taxRate := tk.GetTaxRate(ctx)
 	if taxRate.Equal(sdk.ZeroDec()) {
 		return sdk.Coins{}
@@ -147,7 +151,11 @@ func computeTax(ctx sdk.Context, tk TreasuryKeeper, principal sdk.Coins) sdk.Coi
 
 	taxes := sdk.Coins{}
 	for _, coin := range principal {
-		if coin.Denom == core.MicroHuahuaDenom || coin.Denom == sdk.DefaultBondDenom {
+		// Originally only a stability tax on UST.  Changed to tax Luna as well after TaxPowerUpgradeHeight
+		if (coin.Denom == core.MicroHuahuaDenom || coin.Denom == sdk.DefaultBondDenom) && currHeight < TaxPowerUpgradeHeight {
+			continue
+		}
+		if coin.Denom == sdk.DefaultBondDenom {
 			continue
 		}
 

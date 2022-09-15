@@ -7,11 +7,11 @@ const (
 	// AppName is the application name
 	AppName = "chihuahua"
 
-	// CoinType is the LUNA coin type as defined in SLIP44 (https://github.com/satoshilabs/slips/blob/master/slip-0044.md)
+	// CoinType is the HUAHUA coin type as defined in SLIP44 (https://github.com/satoshilabs/slips/blob/master/slip-0044.md)
 	CoinType = 118
 
 	// BondDenom staking denom
-	BondDenom = "uluna"
+	BondDenom = "uhuahua"
 
 	authzMsgExec                        = "/cosmos.authz.v1beta1.MsgExec"
 	authzMsgGrant                       = "/cosmos.authz.v1beta1.MsgGrant"

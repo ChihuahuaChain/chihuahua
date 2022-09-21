@@ -17,6 +17,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/tendermint/tendermint/config"
 )
 
@@ -31,26 +32,48 @@ const (
 	defaultMinHeight  = "1000"
 )
 
-func prune() *cobra.Command {
+// Cmd creates a main CLI command
+func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "prune",
-		Short: "Example: chihuahuad prune start -f 188000 -m 1000, keeps blockchain and state data of last 188000 blocks (approximately 2 weeks) and ABCI responses of last 1000 blocks.",
-		Long:  "Prunes and compacts blockstore.db and state.db. Everything beyond specified heights in blockstore and state.db is pruned. ABCI Responses are stored in index db and so redundant especially if one is running pruned nodes. As a result we are removing ABCI data from state.db aggressively by default. One can override height for blockstore.db and state.db by using -f option and for abci response by using -m option. Example chihuahuad prune start -f 188000 -m 1000.",
+		Use:                        "prune",
+		Short:                      "Prunes and compacts blockstore.db and state.db",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
+	}
+
+	cmd.AddCommand(NewStartPruneCmd())
+	return cmd
+}
+
+func NewStartPruneCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "start",
+		Short: "Starts pruning and compacts blockstore.db and state.db (Make sure your node is down!)",
+		Long: fmt.Sprintf(`Prunes and compacts blockstore.db and state.db (Make sure your node is down!)
+
+Everything beyond specified heights in blockstore and state.db is pruned. ABCI Responses are stored in index db and so are redundant, especially if one is running pruned nodes. As a result we are removing ABCI data from state.db aggressively by default. One can override height for blockstore.db and state.db by using -f option and for abci response by using -m option.
+		
+Example:
+$ %s prune start -f 188000 -m 1000
+
+This example keeps blockchain and state data of last 188000 blocks (approximately 2 weeks) and ABCI responses of last 1000 blocks.
+					`, version.AppName),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fullHeightFlag, err := cmd.Flags().GetString(fullHeight)
 			if err != nil {
 				return err
 			}
 
-            if len(args) < 1 {
-                fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune -h' for the help. Make sure your node is down")
-                return err
-            }
+			if len(args) < 1 {
+				fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune start -h' for help. Make sure your node is down.")
+				return err
+			}
 
-            if args[0] != "start" {
-                fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune -h' for the help. Make sure your node is down")
-                return err
-            }
+			if args[0] != "start" {
+				fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune start -h' for help. Make sure your node is down.")
+				return err
+			}
 
 			minHeightFlag, err := cmd.Flags().GetString(minHeight)
 			if err != nil {

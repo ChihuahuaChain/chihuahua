@@ -106,6 +106,8 @@ github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d h1:nalkkPQcITbvhmL4+C4cKA87NW0tfm3Kl9VXRoPywFg=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:URdX5+vg25ts3aCh8H5IFZybJYKWhJHYMTnf+ULtoC4=
+github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua h1:KW3brGxPyvyYkQ4Ot5dd1S/hSK2G2MOydNKRU/6J2l0=
+github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua/go.mod h1:l8DURPoMMkIEe/Gw59g9KIMDjlYyTsKOWdc3iSSBXvw=
 github.com/CosmWasm/wasmd v0.28.1-0.20220825115153-261812986e9a h1:xsPTMTJmikTr5OpaSEkODXtJoXaB+bLiaNzIEvNdhIU=
 github.com/CosmWasm/wasmd v0.28.1-0.20220825115153-261812986e9a/go.mod h1:K7wIm9vODhoYM8QxtdbTSAJi0YbhqbV74j1Nwna3x+Q=
 github.com/CosmWasm/wasmvm v1.0.0 h1:NRmnHe3xXsKn2uEcB1F5Ha323JVAhON+BI6L177dlKc=
@@ -1384,8 +1386,6 @@ github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0/go.mod h1:iKH77
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/polyfloyd/go-errorlint v1.0.0/go.mod h1:KZy4xxPJyy88/gldCe5OdW6OQRtNO3EZE7hXzmnebgA=
-github.com/pomifer/cosmos-sdk v0.45.7-chihuahua h1:q/hBrrQJHRITA6+EKG+cfSvUSwjfba1w1ZgVpKuQrHY=
-github.com/pomifer/cosmos-sdk v0.45.7-chihuahua/go.mod h1:l8DURPoMMkIEe/Gw59g9KIMDjlYyTsKOWdc3iSSBXvw=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=

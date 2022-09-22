@@ -58,72 +58,65 @@ Example:
 $ %s prune start -f 188000 -m 1000
 
 This example keeps blockchain and state data of last 188000 blocks (approximately 2 weeks) and ABCI responses of last 1000 blocks.
-					`, version.AppName),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fullHeightFlag, err := cmd.Flags().GetString(fullHeight)
-			if err != nil {
-				return err
-			}
-
-			if len(args) < 1 {
-				fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune start -h' for help. Make sure your node is down.")
-				return err
-			}
-
-			if args[0] != "start" {
-				fmt.Println("Error: Use 'chihuahuad prune start' to start pruning or 'chihuahuad prune start -h' for help. Make sure your node is down.")
-				return err
-			}
-
-			minHeightFlag, err := cmd.Flags().GetString(minHeight)
-			if err != nil {
-				return err
-			}
-
-			clientCtx := client.GetClientContextFromCmd(cmd)
-			conf := config.DefaultConfig()
-			dbPath := clientCtx.HomeDir + "/" + conf.DBPath
-
-			cmdr := exec.Command("chihuahuad", "status")
-			err = cmdr.Run()
-
-			if err == nil {
-				// continue only if throws error
-				return nil
-			}
-
-			fullHeight, err := strconv.ParseInt(fullHeightFlag, 10, 64)
-			if err != nil {
-				return err
-			}
-
-			minHeight, err := strconv.ParseInt(minHeightFlag, 10, 64)
-			if err != nil {
-				return err
-			}
-
-			startHeight, currentHeight, err := pruneBlockStoreAndGetHeights(dbPath, fullHeight)
-			if err != nil {
-				return err
-			}
-
-			err = compactBlockStore(dbPath)
-			if err != nil {
-				return err
-			}
-
-			err = pruneStateStore(dbPath, startHeight, currentHeight, minHeight, fullHeight)
-			if err != nil {
-				return err
-			}
-			fmt.Println("[*] Done!")
-
-			return nil
-		},
+			`, version.AppName),
+		RunE: runStartPruneCmd,
 	}
+
 	cmd.Flags().StringP(fullHeight, "f", defaultFullHeight, "Full height to chop to")
 	cmd.Flags().StringP(minHeight, "m", defaultMinHeight, "Min height for ABCI to chop to")
 	return cmd
+}
+
+func runStartPruneCmd(cmd *cobra.Command, _ []string) error {
+	fullHeightFlag, err := cmd.Flags().GetString(fullHeight)
+	if err != nil {
+		return err
+	}
+
+	minHeightFlag, err := cmd.Flags().GetString(minHeight)
+	if err != nil {
+		return err
+	}
+
+	clientCtx := client.GetClientContextFromCmd(cmd)
+	conf := config.DefaultConfig()
+	dbPath := clientCtx.HomeDir + "/" + conf.DBPath
+
+	cmdr := exec.Command("chihuahuad", "status")
+	err = cmdr.Run()
+
+	if err == nil {
+		// continue only if throws error
+		return nil
+	}
+
+	fullHeight, err := strconv.ParseInt(fullHeightFlag, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	minHeight, err := strconv.ParseInt(minHeightFlag, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	startHeight, currentHeight, err := pruneBlockStoreAndGetHeights(dbPath, fullHeight)
+	if err != nil {
+		return err
+	}
+
+	err = compactBlockStore(dbPath)
+	if err != nil {
+		return err
+	}
+
+	err = pruneStateStore(dbPath, startHeight, currentHeight, minHeight, fullHeight)
+	if err != nil {
+		return err
+	}
+	fmt.Println("[*] Done!")
+
+	return nil
 }
 
 // pruneBlockStoreAndGetHeights prunes blockstore and returns the startHeight and currentHeight.

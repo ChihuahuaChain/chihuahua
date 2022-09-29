@@ -106,8 +106,8 @@ github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d h1:nalkkPQcITbvhmL4+C4cKA87NW0tfm3Kl9VXRoPywFg=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:URdX5+vg25ts3aCh8H5IFZybJYKWhJHYMTnf+ULtoC4=
-github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua2 h1:Oo9SThERWEqe94Py1XiUXdaWY8jlKQpKTt6fRc7Gk/g=
-github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua2/go.mod h1:l8DURPoMMkIEe/Gw59g9KIMDjlYyTsKOWdc3iSSBXvw=
+github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua3 h1:mbz+3W16oBIN8eEpbxXLTDdNspnVyemGyOPy0QBlAKU=
+github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua3/go.mod h1:G8w9CeTX89E2vcqeP+wRm4Rubosbgvtq6NLvCGGW11E=
 github.com/CosmWasm/wasmd v0.28.1-0.20220825115153-261812986e9a h1:xsPTMTJmikTr5OpaSEkODXtJoXaB+bLiaNzIEvNdhIU=
 github.com/CosmWasm/wasmd v0.28.1-0.20220825115153-261812986e9a/go.mod h1:K7wIm9vODhoYM8QxtdbTSAJi0YbhqbV74j1Nwna3x+Q=
 github.com/CosmWasm/wasmvm v1.0.0 h1:NRmnHe3xXsKn2uEcB1F5Ha323JVAhON+BI6L177dlKc=

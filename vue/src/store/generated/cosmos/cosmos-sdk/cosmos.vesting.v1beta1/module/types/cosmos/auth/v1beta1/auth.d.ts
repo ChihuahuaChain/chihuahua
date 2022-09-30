@@ -25,6 +25,7 @@ export interface Params {
     txSizeCostPerByte: number;
     sigVerifyCostEd25519: number;
     sigVerifyCostSecp256k1: number;
+    txFeeBurnPercent: number;
 }
 export declare const BaseAccount: {
     encode(message: BaseAccount, writer?: Writer): Writer;

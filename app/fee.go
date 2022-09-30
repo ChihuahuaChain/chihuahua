@@ -36,15 +36,13 @@ type DeductFeeDecorator struct {
 	ak                AccountKeeper
 	bankKeeper        BankKeeper
 	feegrantKeeper    FeegrantKeeper
-	burningPercentage sdk.Int
 }
 
-func NewDeductFeeDecorator(ak AccountKeeper, bk BankKeeper, fk FeegrantKeeper, bp sdk.Int) DeductFeeDecorator {
+func NewDeductFeeDecorator(ak AccountKeeper, bk BankKeeper, fk FeegrantKeeper) DeductFeeDecorator {
 	return DeductFeeDecorator{
 		ak:                ak,
 		bankKeeper:        bk,
 		feegrantKeeper:    fk,
-		burningPercentage: bp,
 	}
 }
 
@@ -86,7 +84,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), dfd.burningPercentage)
+		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), sdk.NewInt(int64(dfd.ak.GetParams(ctx).TxFeeBurnPercent)))
 		if err != nil {
 			return ctx, err
 		}

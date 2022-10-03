@@ -59,7 +59,7 @@ git fetch --tags
 git checkout v2.1.0
 make install
 ```
-To verify the installation you can run `chihuahuad version` and it should return `v2.0.2`
+To verify the installation you can run `chihuahuad version` and it should return `v2.1.0`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name

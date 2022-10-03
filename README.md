@@ -56,7 +56,7 @@ The output should be `go version go1.19 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v2.0.2
+git checkout v2.1.0
 make install
 ```
 To verify the installation you can run `chihuahuad version` and it should return `v2.0.2`
@@ -216,6 +216,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **authz** _(v2.1.0)_ - Block 4182410 - (2022-09-30 14:54:19)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/authz)
 - **minpropdeposit** _(v2.0.2)_ - Block 3654321 - (2022-08-25 13:00:26)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/minpropdeposit)
 - **Chiwawasm** _(v2.0.1)_ - Block 3000800 - (2022-07-11 17:02:14)

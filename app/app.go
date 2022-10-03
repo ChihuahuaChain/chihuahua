@@ -783,12 +783,29 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v220UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
+		// Set permissions for the burn mechanism
 		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
 		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
 		moduleAcc.Permissions = []string{authtypes.Burner}
 		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
+
+		burnPercent := uint64(50)
+
+		// Set TxFeeBurnPercent to 50%
+		params1 := authtypes.NewParams(
+			app.AccountKeeper.GetParams(ctx).MaxMemoCharacters,
+			app.AccountKeeper.GetParams(ctx).TxSigLimit,
+			app.AccountKeeper.GetParams(ctx).TxSizeCostPerByte,
+			app.AccountKeeper.GetParams(ctx).SigVerifyCostED25519,
+			app.AccountKeeper.GetParams(ctx).SigVerifyCostSecp256k1,
+			burnPercent,
+		)
+
+		app.AccountKeeper.SetParams(ctx, params1)
+
+
+		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
 		// Set MinCommissionRate to 0.05
 		params := stakingtypes.NewParams(

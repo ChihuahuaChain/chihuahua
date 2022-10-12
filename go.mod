@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/CosmWasm/wasmd v0.28.1-0.20220825115153-261812986e9a
-	github.com/cosmos/cosmos-sdk v0.45.8
+	github.com/cosmos/cosmos-sdk v0.45.7
 	github.com/cosmos/ibc-go/v3 v3.0.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/spf13/cast v1.5.0
@@ -126,7 +126,7 @@ require (
 )
 
 replace (
-	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua2
+	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.7-chihuahua
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	//github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2

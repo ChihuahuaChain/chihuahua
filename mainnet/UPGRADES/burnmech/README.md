@@ -32,5 +32,5 @@ cp $HOME/go/bin/chihuahuad $HOME/.chihuahua/cosmovisor/upgrades/burnmech/bin
 
 ```bash
 # should be v2.2.1
-$HOME/.chihuahua/cosmovisor/upgrades/authz/bin/chihuahuad version
+$HOME/.chihuahua/cosmovisor/upgrades/burnmech/bin/chihuahuad version
 ```

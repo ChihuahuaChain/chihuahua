@@ -216,6 +216,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **burnmech** _(v2.2.1)_ - Block 4488444 - (2022-10-21 14:14:37)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/burnmech) 
 - **authz** _(v2.1.0)_ - Block 4182410 - (2022-09-30 14:54:19)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/authz)
 - **minpropdeposit** _(v2.0.2)_ - Block 3654321 - (2022-08-25 13:00:26)

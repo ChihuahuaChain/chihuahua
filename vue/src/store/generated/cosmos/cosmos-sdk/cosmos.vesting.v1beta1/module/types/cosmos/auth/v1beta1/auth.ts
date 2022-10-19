@@ -31,6 +31,7 @@ export interface Params {
   txSizeCostPerByte: number
   sigVerifyCostEd25519: number
   sigVerifyCostSecp256k1: number
+  txFeeBurnPercent: number
 }
 
 const baseBaseAccount: object = { address: '', accountNumber: 0, sequence: 0 }
@@ -235,7 +236,7 @@ export const ModuleAccount = {
   }
 }
 
-const baseParams: object = { maxMemoCharacters: 0, txSigLimit: 0, txSizeCostPerByte: 0, sigVerifyCostEd25519: 0, sigVerifyCostSecp256k1: 0 }
+const baseParams: object = { maxMemoCharacters: 0, txSigLimit: 0, txSizeCostPerByte: 0, sigVerifyCostEd25519: 0, sigVerifyCostSecp256k1: 0, txFeeBurnPercent: 0 }
 
 export const Params = {
   encode(message: Params, writer: Writer = Writer.create()): Writer {
@@ -253,6 +254,9 @@ export const Params = {
     }
     if (message.sigVerifyCostSecp256k1 !== 0) {
       writer.uint32(40).uint64(message.sigVerifyCostSecp256k1)
+    }
+    if (message.txFeeBurnPercent !== 0) {
+      writer.uint32(8).uint64(message.txFeeBurnPercent)
     }
     return writer
   },
@@ -279,8 +283,11 @@ export const Params = {
         case 5:
           message.sigVerifyCostSecp256k1 = longToNumber(reader.uint64() as Long)
           break
+        case 6:
+          message.txFeeBurnPercent = longToNumber(reader.uint64() as Long)
+          break
         default:
-          reader.skipType(tag & 7)
+          reader.skipType(tag & 8)
           break
       }
     }
@@ -314,6 +321,11 @@ export const Params = {
     } else {
       message.sigVerifyCostSecp256k1 = 0
     }
+    if (object.txFeeBurnPercent !== undefined && object.txFeeBurnPercent !== null) {
+      message.txFeeBurnPercent = Number(object.txFeeBurnPercent)
+    } else {
+      message.sigVerifyCostSecp256k1 = 0
+    }
     return message
   },
 
@@ -324,6 +336,7 @@ export const Params = {
     message.txSizeCostPerByte !== undefined && (obj.txSizeCostPerByte = message.txSizeCostPerByte)
     message.sigVerifyCostEd25519 !== undefined && (obj.sigVerifyCostEd25519 = message.sigVerifyCostEd25519)
     message.sigVerifyCostSecp256k1 !== undefined && (obj.sigVerifyCostSecp256k1 = message.sigVerifyCostSecp256k1)
+    message.txFeeBurnPercent !== undefined && (obj.txFeeBurnPercent = message.txFeeBurnPercent)
     return obj
   },
 
@@ -353,6 +366,11 @@ export const Params = {
       message.sigVerifyCostSecp256k1 = object.sigVerifyCostSecp256k1
     } else {
       message.sigVerifyCostSecp256k1 = 0
+    }
+    if (object.txFeeBurnPercent !== undefined && object.txFeeBurnPercent !== null) {
+      message.txFeeBurnPercent = object.txFeeBurnPercent
+    } else {
+      message.txFeeBurnPercent = 0
     }
     return message
   }

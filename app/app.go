@@ -105,7 +105,7 @@ import (
 const (
 	AccountAddressPrefix = "chihuahua"
 	Name                 = "chihuahua"
-	v220UpgradeName      = "burnmech"
+	v230UpgradeName      = "burnparam"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -609,9 +609,9 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v220UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v230UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authtypes.FeeCollectorName},
+			Added: []string{},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -782,13 +782,25 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v220UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(v230UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
 		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
 		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
 		moduleAcc.Permissions = []string{authtypes.Burner}
 		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
+
+		// Set TxFeeBurnPercent to 50
+		paramz := authtypes.NewParams(
+			authtypes.DefaultGenesisState().GetParams().MaxMemoCharacters,
+			authtypes.DefaultGenesisState().GetParams().TxSigLimit,
+			authtypes.DefaultGenesisState().GetParams().TxSizeCostPerByte,
+			authtypes.DefaultGenesisState().GetParams().SigVerifyCostED25519,
+			authtypes.DefaultGenesisState().GetParams().SigVerifyCostSecp256k1,
+			authtypes.DefaultGenesisState().GetParams().TxFeeBurnPercent,
+		)
+
+		app.AccountKeeper.SetParams(ctx, paramz)
 
 		// Set MinCommissionRate to 0.05
 		params := stakingtypes.NewParams(

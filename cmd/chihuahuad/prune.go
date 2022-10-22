@@ -23,9 +23,9 @@ import (
 
 const (
 	batchMaxSize      = 1000
-	kValidators       = "validatorsKey:"
-	kConsensusParams  = "consensusParamsKey:"
-	kABCIResponses    = "abciResponsesKey:"
+	Validators        = "validatorsKey:"
+	ConsensusParams   = "consensusParamsKey:"
+	ABCIResponses     = "abciResponsesKey:"
 	fullHeight        = "full_height"
 	minHeight         = "min_height"
 	defaultFullHeight = "188000"
@@ -127,15 +127,14 @@ func pruneBlockStoreAndGetHeights(dbPath string, fullHeight int64) (
 		DisableSeeksCompaction: true,
 	}
 
-	db_bs, err := tmdb.NewGoLevelDBWithOpts("blockstore", dbPath, &opts)
+	dbBs, err := tmdb.NewGoLevelDBWithOpts("blockstore", dbPath, &opts)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	// nolint: staticcheck
-	defer db_bs.Close()
+	defer dbBs.Close()
 
-	bs := tmstore.NewBlockStore(db_bs)
+	bs := tmstore.NewBlockStore(dbBs)
 	startHeight = bs.Base()
 	currentHeight = bs.Height()
 
@@ -150,7 +149,7 @@ func pruneBlockStoreAndGetHeights(dbPath string, fullHeight int64) (
 	// the call in defer statement above to make sure that the resources
 	// are properly released and any potential error from Close()
 	// is handled. Close() should be idempotent so this is acceptable.
-	if err := db_bs.Close(); err != nil {
+	if err := dbBs.Close(); err != nil {
 		return 0, 0, err
 	}
 
@@ -190,24 +189,24 @@ func pruneStateStore(dbPath string, startHeight, currentHeight, minHeight, fullH
 	}
 	defer db.Close()
 
-	stateDBKeys := []string{kValidators, kConsensusParams, kABCIResponses}
+	stateDBKeys := []string{Validators, ConsensusParams, ABCIResponses}
 	fmt.Println("[!] Pruning State Store ...")
 	for i, s := range stateDBKeys {
 		fmt.Println(i, s)
 
-		retain_height := int64(0)
-		if s == kABCIResponses {
-			retain_height = currentHeight - minHeight
+		retainHeight := int64(0)
+		if s == ABCIResponses {
+			retainHeight = currentHeight - minHeight
 		} else {
-			retain_height = currentHeight - fullHeight
+			retainHeight = currentHeight - fullHeight
 		}
 
 		batch := new(leveldb.Batch)
 		curBatchSize := uint64(0)
 
-		fmt.Println(startHeight, currentHeight, retain_height)
+		fmt.Println(startHeight, currentHeight, retainHeight)
 
-		for c := startHeight; c < retain_height; c++ {
+		for c := startHeight; c < retainHeight; c++ {
 			batch.Delete([]byte(s + strconv.FormatInt(c, 10)))
 			curBatchSize++
 

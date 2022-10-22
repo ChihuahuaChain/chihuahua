@@ -140,3 +140,5 @@ replace (
 	// use a grpc version compatible with cosmos-flavored protocol buffers
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
+
+retract v2.2.2

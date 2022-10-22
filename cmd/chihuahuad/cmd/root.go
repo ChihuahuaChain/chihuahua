@@ -39,7 +39,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
 
-// NewRootCmd creates a new root command for junod. It is called once in the
+// NewRootCmd creates a new root command for chihuahuad. It is called once in the
 // main function.
 func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	encodingConfig := app.MakeEncodingConfig()
@@ -64,7 +64,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 
 	rootCmd := &cobra.Command{
 		Use:   version.AppName,
-		Short: "Juno Smart Contract Zone",
+		Short: "Chihuahua is just a stupid dog",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
@@ -224,8 +224,6 @@ func (ac appCreator) newApp(
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		ac.encCfg,
 		app.GetEnabledProposals(),
-		appOpts,
-		wasmOpts,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(cast.ToString(appOpts.Get(server.FlagMinGasPrices))),
 		baseapp.SetHaltHeight(cast.ToUint64(appOpts.Get(server.FlagHaltHeight))),
@@ -251,7 +249,7 @@ func (ac appCreator) appExport(
 	jailAllowedAddrs []string,
 	appOpts servertypes.AppOptions,
 ) (servertypes.ExportedApp, error) {
-	var junoApp *app.App
+	var App *app.App
 	homePath, ok := appOpts.Get(flags.FlagHome).(string)
 	if !ok || homePath == "" {
 		return servertypes.ExportedApp{}, errors.New("application home is not set")
@@ -259,7 +257,7 @@ func (ac appCreator) appExport(
 
 	loadLatest := height == -1
 	var emptyWasmOpts []wasm.Option
-	junoApp = app.New(
+	App = app.New(
 		logger,
 		db,
 		traceStore,
@@ -274,10 +272,10 @@ func (ac appCreator) appExport(
 	)
 
 	if height != -1 {
-		if err := junoApp.LoadHeight(height); err != nil {
+		if err := App.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	}
 
-	return junoApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
+	return App.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
 }

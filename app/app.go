@@ -123,7 +123,7 @@ var (
 	// These are the ones we will want to use in the code, based on
 	// any overrides above
 
-	// DefaultNodeHome default home directories for Juno
+	// DefaultNodeHome default home directories for Chihuahua
 	DefaultNodeHome = os.ExpandEnv("$HOME/") + NodeDir
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address

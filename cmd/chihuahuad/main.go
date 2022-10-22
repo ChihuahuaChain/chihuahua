@@ -3,23 +3,22 @@ package main
 import (
 	"os"
 
-	"github.com/ChihuahuaChain/chihuahua/app"
+	"github.com/ChihuahuaChain/chihuahua/cmd/chihuahuad/cmd"
+	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
-	"github.com/tendermint/starport/starport/pkg/cosmoscmd"
+	"github.com/cosmos/cosmos-sdk/simapp"
 )
 
 func main() {
-	rootCmd, _ := cosmoscmd.NewRootCmd(
-		app.Name,
-		app.AccountAddressPrefix,
-		app.DefaultNodeHome,
-		app.Name,
-		app.ModuleBasics,
-		app.New,
-		// this line is used by starport scaffolding # root/arguments
-	)
-	rootCmd.AddCommand(Cmd())
-	if err := svrcmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
-		os.Exit(1)
+	rootCmd, _ := cmd.NewRootCmd()
+
+	if err := svrcmd.Execute(rootCmd, simapp.DefaultNodeHome); err != nil {
+		switch e := err.(type) {
+		case server.ErrorCode:
+			os.Exit(e.Code)
+
+		default:
+			os.Exit(1)
+		}
 	}
 }

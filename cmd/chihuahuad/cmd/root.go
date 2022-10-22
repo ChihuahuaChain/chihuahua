@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/pruning"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/server"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -84,7 +85,9 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd, "", nil)
+			_, customAppConfig := initAppConfig()
+
+			return server.InterceptConfigsPreRunHandler(cmd, "", customAppConfig)
 		},
 	}
 
@@ -120,6 +123,18 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		txCommand(),
 		keys.Commands(app.DefaultNodeHome),
 	)
+}
+
+// initAppConfig helps to override default appConfig template and configs.
+// return "", nil if no custom configuration is required for the application.
+func initAppConfig() (string, interface{}) {
+	srvCfg := serverconfig.DefaultConfig()
+
+	srvCfg.StateSync.SnapshotInterval = 1500
+	srvCfg.StateSync.SnapshotKeepRecent = 2
+	srvCfg.IAVLDisableFastNode = false
+
+	return "", srvCfg
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {

@@ -141,4 +141,5 @@ replace (
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
 
+// we're retracting v2.2.2 because it broke semantic versioning
 retract v2.2.2

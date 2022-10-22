@@ -92,6 +92,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	encparams "github.com/ChihuahuaChain/chihuahua/app/params"
 	"github.com/tendermint/starport/starport/pkg/openapiconsole"
 
 	"github.com/ChihuahuaChain/chihuahua/docs"

@@ -213,7 +213,7 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     {authtypes.Burner},
+		authtypes.FeeCollectorName:     nil,
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
@@ -278,7 +278,7 @@ type App struct {
 	sm *module.SimulationManager
 }
 
-// New returns a reference to an initialized Stupid Dog.
+// New returns a reference to an initialized Gaia.
 func New(
 	logger log.Logger,
 	db dbm.DB,
@@ -603,7 +603,7 @@ func New(
 
 	if upgradeInfo.Name == v220UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authtypes.FeeCollectorName},
+			Added: []string{},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -798,10 +798,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v220UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		minCommissionRate := sdk.NewDecWithPrec(5, 2)
 
-		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
-		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
-		moduleAcc.Permissions = []string{authtypes.Burner}
-		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
+		// moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
+		// moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
+		// moduleAcc.Permissions = []string{authtypes.Burner}
+		// app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
 
 		// Set MinCommissionRate to 0.05
 		params := stakingtypes.NewParams(

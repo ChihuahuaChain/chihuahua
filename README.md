@@ -24,13 +24,13 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 
 ```bash
 # download the latest version
-wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
 
 # remove old version (if any)
 sudo rm -rf /usr/local/go
 
 # install the new version
-sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
 ```
 
 - #### Configure Environmental Variables
@@ -70,7 +70,7 @@ Replace `$MONIKERNAME` with your choosen node name
 - #### Download the Genesis
 
 ```bash
-wget -O ~/.chihuahua/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/chihuahua/main/mainnet/genesis.json
+wget -O ~/.chihuahuad/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/chihuahua/main/mainnet/genesis.json
 ```
 
 - #### Add Seeds & Persistent Peers
@@ -78,13 +78,13 @@ wget -O ~/.chihuahua/config/genesis.json https://raw.githubusercontent.com/Chihu
 ```bash
 seeds="4936e377b4d4f17048f8961838a5035a4d21240c@chihuahua-seed-01.mercury-nodes.net:29540"
 peers="b140eb36b20f3d201936c4757d5a1dcbf03a42f1@216.238.79.138:26656,19900e1d2b10be9c6672dae7abd1827c8e1aad1e@161.97.96.253:26656,c382a9a0d4c0606d785d2c7c2673a0825f7c53b2@88.99.94.120:26656,a5dfb048e4ed5c3b7d246aea317ab302426b37a1@137.184.250.180:26656,3bad0326026ca4e29c64c8d206c90a968f38edbe@128.199.165.78:26656,89b576c3eb72a4f0c66dc0899bec7c21552ea2a5@23.88.7.73:29538,38547b7b6868f93af1664d9ab0e718949b8853ec@54.184.20.240:30758,a9640eb569620d1f7be018a9e1919b0357a18b8c@38.146.3.160:26656,7e2239a0d4a0176fe4daf7a3fecd15ac663a8eb6@144.91.126.23:26656"
-sed -i.bak -e "s/^seeds *=.*/seeds = \"$seeds\"/; s/^persistent_peers *=.*/persistent_peers = \"$peers\"/" ~/.chihuahua/config/config.toml
+sed -i.bak -e "s/^seeds *=.*/seeds = \"$seeds\"/; s/^persistent_peers *=.*/persistent_peers = \"$peers\"/" ~/.chihuahuad/config/config.toml
 ```
 
 - #### Update minimum-gas-price in app.toml
 
 ```bash
-sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "1uhuahua"/' $HOME/.chihuahua/config/app.toml
+sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "1uhuahua"/' $HOME/.chihuahuad/config/app.toml
 ```
 
 - #### Setting up Cosmovisor
@@ -101,7 +101,7 @@ which cosmovisor
 # run these commands
 cat <<EOF >> ~/.profile
 export DAEMON_NAME=chihuahuad
-export DAEMON_HOME=$HOME/.chihuahua
+export DAEMON_HOME=$HOME/.chihuahuad
 EOF
 
 source ~/.profile
@@ -141,7 +141,7 @@ Restart=always
 RestartSec=3
 LimitNOFILE=4096
 Environment="DAEMON_NAME=chihuahuad"
-Environment="DAEMON_HOME=/home/<your-user>/.chihuahua"
+Environment="DAEMON_HOME=/home/<your-user>/.chihuahuad"
 Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
 Environment="DAEMON_LOG_BUFFER_SIZE=512"
@@ -205,7 +205,7 @@ chihuahuad tx staking create-validator \
   --gas-prices "1uhuahua"
   
 # Make sure to backup the priv_validator_key.json file in your
-# /home/<your-user>/.chihuahua/config directory
+# /home/<your-user>/.chihuahuad/config directory
 # and store it in a safe place
 ```
 

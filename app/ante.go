@@ -16,7 +16,6 @@ import (
 type HandlerOptions struct {
 	ante.HandlerOptions
 
-	BankKeeper        BankKeeper
 	IBCChannelkeeper  *channelkeeper.Keeper
 	TxCounterStoreKey sdk.StoreKey
 	WasmConfig        wasmTypes.WasmConfig

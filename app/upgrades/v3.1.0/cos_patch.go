@@ -19,8 +19,8 @@ type CosMints struct {
 }
 
 var (
-	cosValidatorAddress = "chihuahuavaloper1hscf4cjrhzsea5an5smt4z9aezhh4sf5jjrqka"
-	cosConsensusAddress = "chihuahuavalcons1rd5gs24he44ufnwawshu3u73lh33cx5z7npzre"
+	cosValidatorAddress = "chihuahuavaloper17h628d2wtlw6844nzv0ktnq9qtm5qm3pym0k44"
+	cosConsensusAddress = "chihuahuavalcons1rd5gs24he44ufnwawshu3u73lh33cx5z7npzre" // still need agora's address
 )
 
 func mintLostTokens(

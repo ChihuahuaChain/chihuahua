@@ -14,13 +14,13 @@ import (
 )
 
 type CosMints struct {
-	Address     string `json:"address"`
+	Address       string `json:"address"`
 	AmountUhuahua string `json:"amount"`
 }
 
 var (
 	cosValidatorAddress = "chihuahuavaloper17h628d2wtlw6844nzv0ktnq9qtm5qm3pym0k44"
-	cosConsensusAddress = "chihuahuavalcons1rd5gs24he44ufnwawshu3u73lh33cx5z7npzre" // still need agora's address
+	cosConsensusAddress = "chihuahuavalcons1f0prvv39clgtp8zgng89kc2qyxknquv4mpcpk3"
 )
 
 func mintLostTokens(

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/CosmWasm/wasmd v0.29.1
-	github.com/cosmos/cosmos-sdk v0.45.9
+	github.com/cosmos/cosmos-sdk v0.45.10
 	github.com/cosmos/ibc-go/v3 v3.3.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/spf13/cast v1.5.0
@@ -133,8 +133,8 @@ require (
 replace (
 	// ics23 patch for dragonberry
 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
-	// forked cosmos-sdk with minimum commission code
-	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.9-chihuahua
+	// forked cosmos-sdk with minimum commission and minpropdeposit code
+	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.10-chihuahua
 	// Use cosmos-flavored protocol buffers
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// use a grpc version compatible with cosmos-flavored protocol buffers

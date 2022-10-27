@@ -134,7 +134,7 @@ replace (
 	// ics23 patch for dragonberry
 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
 	// forked cosmos-sdk with minimum commission and minpropdeposit code
-	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.10-chihuahua
+	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.10-chihuahua2
 	// Use cosmos-flavored protocol buffers
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// use a grpc version compatible with cosmos-flavored protocol buffers

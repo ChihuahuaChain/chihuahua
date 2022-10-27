@@ -1,12 +1,14 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	upgrades "github.com/ChihuahuaChain/chihuahua/app/upgrades/v3.1.0"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -105,7 +107,7 @@ import (
 const (
 	Bech32Prefix    = "chihuahua"
 	Name            = "chihuahua"
-	v220UpgradeName = "burnmech"
+	v310UpgradeName = "v3.1.0"
 	NodeDir         = ".chihuahuad"
 )
 
@@ -601,7 +603,7 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v220UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v310UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
 			Added: []string{},
 		}
@@ -795,44 +797,33 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v220UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		minCommissionRate := sdk.NewDecWithPrec(5, 2)
+	app.UpgradeKeeper.SetUpgradeHandler(v310UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// 1) This section is for reverting tombstone
+
+		// We're not upgrading cosmos-sdk, Tendermint or ibc-go, so no ConsensusVersion changes
+		// Therefore mm.RunMigrations() should not find any module to upgrade
+
+		ctx.Logger().Info("Running revert of tombstoning")
+		err := upgrades.RevertCosTombstoning(
+			ctx,
+			&app.SlashingKeeper,
+			&app.MintKeeper,
+			&bankkeeper.BaseKeeper{},
+			&app.StakingKeeper,
+		)
+		if err != nil {
+			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))
+		}
+
+		ctx.Logger().Info("Running module migrations for v3.1.0...")
+
+		// 2) This section is for burning module permissions
 
 		// moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
 		// moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
 		// moduleAcc.Permissions = []string{authtypes.Burner}
 		// app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
 
-		// Set MinCommissionRate to 0.05
-		params := stakingtypes.NewParams(
-			app.StakingKeeper.UnbondingTime(ctx),
-			app.StakingKeeper.MaxValidators(ctx),
-			app.StakingKeeper.MaxEntries(ctx),
-			app.StakingKeeper.HistoricalEntries(ctx),
-			app.StakingKeeper.BondDenom(ctx),
-			minCommissionRate,
-		)
-
-		app.StakingKeeper.SetParams(ctx, params)
-
-		// force an update of validator min commission
-		validators := app.StakingKeeper.GetAllValidators(ctx)
-
-		for _, v := range validators {
-			if v.Commission.Rate.LT(minCommissionRate) {
-				if v.Commission.MaxRate.LT(minCommissionRate) {
-					v.Commission.MaxRate = minCommissionRate
-				}
-
-				v.Commission.Rate = minCommissionRate
-				v.Commission.UpdateTime = ctx.BlockHeader().Time
-
-				// call the before-modification hook since we're about to update the commission
-				app.StakingKeeper.BeforeValidatorModified(ctx, v.GetOperator())
-
-				app.StakingKeeper.SetValidator(ctx, v)
-			}
-		}
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

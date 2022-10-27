@@ -25,9 +25,9 @@ var (
 
 func mintLostTokens(
 	ctx sdk.Context,
-	bankKeeper *bankkeeper.BaseKeeper,
-	stakingKeeper *stakingkeeper.Keeper,
-	mintKeeper *mintkeeper.Keeper,
+	bankKeeper bankkeeper.BaseKeeper,
+	stakingKeeper stakingkeeper.Keeper,
+	mintKeeper mintkeeper.Keeper,
 ) {
 	var cosMints []CosMints
 	err := json.Unmarshal([]byte(recordsJSONString), &cosMints)
@@ -81,7 +81,7 @@ func mintLostTokens(
 	}
 }
 
-func revertTombstone(ctx sdk.Context, slashingKeeper *slashingkeeper.Keeper) error {
+func revertTombstone(ctx sdk.Context, slashingKeeper slashingkeeper.Keeper) error {
 	cosValAddress, err := sdk.ValAddressFromBech32(cosValidatorAddress)
 	if err != nil {
 		panic(fmt.Sprintf("validator address is not valid bech32: %s", cosValAddress))
@@ -103,10 +103,10 @@ func revertTombstone(ctx sdk.Context, slashingKeeper *slashingkeeper.Keeper) err
 
 func RevertCosTombstoning(
 	ctx sdk.Context,
-	slashingKeeper *slashingkeeper.Keeper,
-	mintKeeper *mintkeeper.Keeper,
-	bankKeeper *bankkeeper.BaseKeeper,
-	stakingKeeper *stakingkeeper.Keeper,
+	slashingKeeper slashingkeeper.Keeper,
+	mintKeeper mintkeeper.Keeper,
+	bankKeeper bankkeeper.BaseKeeper,
+	stakingKeeper stakingkeeper.Keeper,
 ) error {
 	err := revertTombstone(ctx, slashingKeeper)
 	if err != nil {

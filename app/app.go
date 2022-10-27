@@ -798,7 +798,6 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v310UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
 		// 1) This section is for reverting tombstone
 
 		// We're not upgrading cosmos-sdk, Tendermint or ibc-go, so no ConsensusVersion changes
@@ -827,14 +826,6 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
-}
-
-func (app *App) CreateUpgradeHandler(mm *module.Manager, configurator module.Configurator,
-) upgradetypes.UpgradeHandler {
-	return func(ctx sdk.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-
-		return mm.RunMigrations(ctx, configurator, vm)
-	}
 }
 
 // SimulationManager implements the SimulationApp interface

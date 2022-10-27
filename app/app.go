@@ -253,7 +253,7 @@ type App struct {
 	// keepers
 	AccountKeeper    authkeeper.AccountKeeper
 	AuthzKeeper      authzkeeper.Keeper
-	BankKeeper       bankkeeper.Keeper
+	BankKeeper       bankkeeper.BaseKeeper
 	CapabilityKeeper *capabilitykeeper.Keeper
 	StakingKeeper    stakingkeeper.Keeper
 	SlashingKeeper   slashingkeeper.Keeper
@@ -808,7 +808,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			ctx,
 			app.SlashingKeeper,
 			app.MintKeeper,
-			bankkeeper.BaseKeeper{},
+			app.BankKeeper,
 			app.StakingKeeper,
 		)
 		if err != nil {

@@ -6,7 +6,7 @@ package v310
 // Slash was 5%
 // Lost APR is 23% for 9 days
 
-var recordsJsonString = `[
+var recordsJSONString = `[
 	{
 		"address": "chihuahua1qf6c6crk6a2uyndt3tnd4xazucpzvyslrxm34s",
 		"amount": "99900000"

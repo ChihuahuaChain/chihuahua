@@ -30,7 +30,7 @@ func mintLostTokens(
 	mintKeeper *mintkeeper.Keeper,
 ) {
 	var cosMints []CosMints
-	err := json.Unmarshal([]byte(recordsJsonString), &cosMints)
+	err := json.Unmarshal([]byte(recordsJSONString), &cosMints)
 	if err != nil {
 		panic(fmt.Sprintf("error reading COS JSON: %+v", err))
 	}

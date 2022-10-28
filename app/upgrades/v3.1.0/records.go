@@ -9,11 +9,11 @@ package v310
 
 var recordsJSONString = `[
 	{
-		"address": "chihuahua12kupfxepn4lu2kjmed84rvhvjddy3wz6rj2llu",
-		"amount": "1000000"
+		"address": "chihuahua14wv5q8s80wu8yujpfrqrlsryfhhm7m4y4m5c7s",
+		"amount": "50057"
 	},
 	{
 		"address": "chihuahua17nssn54y5nmjl874vcdlprhatstq3995p49hu4",
-		"amount": "10000000"
+		"amount": "500575"
 	}
 ]`

@@ -107,7 +107,7 @@ import (
 const (
 	Bech32Prefix    = "chihuahua"
 	Name            = "chihuahua"
-	v310UpgradeName = "v3.1.0"
+	v310UpgradeName = "v3.1.1"
 	NodeDir         = ".chihuahuad"
 )
 
@@ -815,7 +815,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))
 		}
 
-		ctx.Logger().Info("Running module migrations for v3.1.0...")
+		ctx.Logger().Info("Running module migrations for v3.1.1...")
 
 		// 2) This section is for burning module permissions
 

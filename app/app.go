@@ -253,7 +253,7 @@ type App struct {
 	// keepers
 	AccountKeeper    authkeeper.AccountKeeper
 	AuthzKeeper      authzkeeper.Keeper
-	BankKeeper       bankkeeper.Keeper
+	BankKeeper       bankkeeper.BaseKeeper
 	CapabilityKeeper *capabilitykeeper.Keeper
 	StakingKeeper    stakingkeeper.Keeper
 	SlashingKeeper   slashingkeeper.Keeper
@@ -806,10 +806,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		ctx.Logger().Info("Running revert of tombstoning")
 		err := upgrades.RevertCosTombstoning(
 			ctx,
-			&app.SlashingKeeper,
-			&app.MintKeeper,
-			&bankkeeper.BaseKeeper{},
-			&app.StakingKeeper,
+			app.SlashingKeeper,
+			app.MintKeeper,
+			app.BankKeeper,
+			app.StakingKeeper,
 		)
 		if err != nil {
 			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))

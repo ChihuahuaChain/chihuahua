@@ -32,5 +32,5 @@ cp $HOME/go/bin/chihuahuad $HOME/.chihuahuad/cosmovisor/upgrades/v310/bin
 
 ```bash
 # should be v3.1.0
-$HOME/.chihuahuad/cosmovisor/upgrades/burnmech/bin/chihuahuad version
+$HOME/.chihuahuad/cosmovisor/upgrades/v310/bin/chihuahuad version
 ```

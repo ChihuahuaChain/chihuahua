@@ -217,7 +217,7 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
-- **burnmech** _(v3.1.0)_ - Block 4673333 - (2022-11-07 15:11:26)
+- **v310** _(v3.1.0)_ - Block 4673333 - (2022-11-07 15:11:26)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v310)
 - **iavl fast node** _(v2.4.*) - block unk -  state breaking upgrade that ensures that dragonberry is fully patched, go1.19 is used, and iavl fast node is properly configured.
 - **burnmech** _(v2.3.0)_ - Block unk -  We won't be using this version, but we have it for historical purposes and for the creation of archive nodes.

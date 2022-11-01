@@ -811,17 +811,11 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			app.BankKeeper,
 			app.StakingKeeper,
 		)
+		if err != nil {
+			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))
+		}
 
-		app.StakingKeeper.SetParams(ctx, params)
-
-		// force an update of validator min commission
-		validators := app.StakingKeeper.GetAllValidators(ctx)
-
-		for _, v := range validators {
-			if v.Commission.Rate.LT(minCommissionRate) {
-				if v.Commission.MaxRate.LT(minCommissionRate) {
-					v.Commission.MaxRate = minCommissionRate
-				}
+		ctx.Logger().Info("Running module migrations for v3.1.0...")
 
 		// 2) This section is for burning module permissions
 

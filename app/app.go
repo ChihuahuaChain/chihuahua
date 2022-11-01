@@ -797,7 +797,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(v400UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 
-		// This section is for burning module permissions
+		// Burning module permissions
 
 		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
 		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)

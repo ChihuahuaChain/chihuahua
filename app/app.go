@@ -1,14 +1,12 @@
 package app
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	upgrades "github.com/ChihuahuaChain/chihuahua/app/upgrades/v3.1.0"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
@@ -107,7 +105,7 @@ import (
 const (
 	Bech32Prefix    = "chihuahua"
 	Name            = "chihuahua"
-	v310UpgradeName = "v310"
+	v400UpgradeName = "v400"
 	NodeDir         = ".chihuahuad"
 )
 
@@ -215,7 +213,7 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
+		authtypes.FeeCollectorName:     {authtypes.Burner},
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
@@ -580,11 +578,11 @@ func New(
 		HandlerOptions{
 			HandlerOptions: ante.HandlerOptions{
 				AccountKeeper:   app.AccountKeeper,
-				BankKeeper:      app.BankKeeper,
 				SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 				FeegrantKeeper:  app.FeeGrantKeeper,
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
+			BankKeeper:        app.BankKeeper,
 			IBCChannelkeeper:  app.IBCKeeper,
 			TxCounterStoreKey: keys[wasm.StoreKey],
 			WasmConfig:        wasmConfig,
@@ -603,9 +601,9 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v310UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v400UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{},
+			Added: []string{authtypes.FeeCollectorName},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -797,32 +795,14 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v310UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		// 1) This section is for reverting tombstone
+	app.UpgradeKeeper.SetUpgradeHandler(v400UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 
-		// We're not upgrading cosmos-sdk, Tendermint or ibc-go, so no ConsensusVersion changes
-		// Therefore mm.RunMigrations() should not find any module to upgrade
+		// This section is for burning module permissions
 
-		ctx.Logger().Info("Running revert of tombstoning")
-		err := upgrades.RevertCosTombstoning(
-			ctx,
-			app.SlashingKeeper,
-			app.MintKeeper,
-			app.BankKeeper,
-			app.StakingKeeper,
-		)
-		if err != nil {
-			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))
-		}
-
-		ctx.Logger().Info("Running module migrations for v3.1.0...")
-
-		// 2) This section is for burning module permissions
-
-		// moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
-		// moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
-		// moduleAcc.Permissions = []string{authtypes.Burner}
-		// app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
+		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
+		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
+		moduleAcc.Permissions = []string{authtypes.Burner}
+		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})

@@ -803,6 +803,20 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		moduleAcc.Permissions = []string{authtypes.Burner}
 		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
 
+		burnPercent := uint64(50)
+
+		// Set TxFeeBurnPercent to 50%
+		params1 := authtypes.NewParams(
+			app.AccountKeeper.GetParams(ctx).MaxMemoCharacters,
+			app.AccountKeeper.GetParams(ctx).TxSigLimit,
+			app.AccountKeeper.GetParams(ctx).TxSizeCostPerByte,
+			app.AccountKeeper.GetParams(ctx).SigVerifyCostED25519,
+			app.AccountKeeper.GetParams(ctx).SigVerifyCostSecp256k1,
+			burnPercent,
+		)
+
+		app.AccountKeeper.SetParams(ctx, params1)
+
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

@@ -807,11 +807,11 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		// Set TxFeeBurnPercent to 50%
 		params1 := authtypes.NewParams(
-			app.AccountKeeper.GetParams(ctx).MaxMemoCharacters,
-			app.AccountKeeper.GetParams(ctx).TxSigLimit,
-			app.AccountKeeper.GetParams(ctx).TxSizeCostPerByte,
-			app.AccountKeeper.GetParams(ctx).SigVerifyCostED25519,
-			app.AccountKeeper.GetParams(ctx).SigVerifyCostSecp256k1,
+			app.AccountKeeper.MaxMemoCharacters(ctx),
+			app.AccountKeeper.TxSigLimit(ctx),
+			app.AccountKeeper.TxSizeCostPerByte(ctx),
+			app.AccountKeeper.SigVerifyCostED25519(ctx),
+			app.AccountKeeper.SigVerifyCostSecp256k1(ctx),
 			burnPercent,
 		)
 

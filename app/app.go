@@ -803,7 +803,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		moduleAcc.Permissions = []string{authtypes.Burner}
 		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
 
-		burnPercent := uint64(50)
+		burnPercent := sdk.NewInt(50)
 
 		// Set TxFeeBurnPercent to 50%
 		params1 := authtypes.NewParams(

@@ -33,16 +33,16 @@ type BankKeeper interface {
 // Call next AnteHandler if fees successfully deducted
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 type DeductFeeDecorator struct {
-	ak                AccountKeeper
-	bankKeeper        BankKeeper
-	feegrantKeeper    FeegrantKeeper
+	ak             AccountKeeper
+	bankKeeper     BankKeeper
+	feegrantKeeper FeegrantKeeper
 }
 
 func NewDeductFeeDecorator(ak AccountKeeper, bk BankKeeper, fk FeegrantKeeper) DeductFeeDecorator {
 	return DeductFeeDecorator{
-		ak:                ak,
-		bankKeeper:        bk,
-		feegrantKeeper:    fk,
+		ak:             ak,
+		bankKeeper:     bk,
+		feegrantKeeper: fk,
 	}
 }
 
@@ -84,7 +84,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), sdk.NewInt(int64(dfd.ak.GetParams(ctx).TxFeeBurnPercent)))
+		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), dfd.ak.TxFeeBurnPercent(ctx))
 		if err != nil {
 			return ctx, err
 		}

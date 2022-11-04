@@ -84,7 +84,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	// deduct the fees
 	if !feeTx.GetFee().IsZero() {
-		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), dfd.ak.TxFeeBurnPercent(ctx))
+		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee(), dfd.ak.GetParams(ctx).TxFeeBurnPercent)
 		if err != nil {
 			return ctx, err
 		}

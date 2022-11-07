@@ -17,6 +17,7 @@ LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
 TM_VERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::') # grab everything after the space in "github.com/tendermint/tendermint v0.34.7"
 BUILDDIR ?= $(CURDIR)/build
+DOCKER := $(shell which docker)
 
 export GO111MODULE = on
 
@@ -94,3 +95,26 @@ install: go.sum
 
 build:
 	go build $(BUILD_FLAGS) -o bin/chihuahuad ./cmd/chihuahuad
+
+BUILD_TARGETS := build install
+
+
+build-reproducible-all: build-reproducible-amd64 build-reproducible-arm64
+
+build-reproducible-amd64:
+	ARCH=x86_64 PLATFORM=linux/amd64 $(MAKE) build-reproducible-generic
+
+build-reproducible-arm64:
+	ARCH=aarch64 PLATFORM=linux/arm64 $(MAKE) build-reproducible-generic
+	
+
+build-reproducible-generic: go.sum
+	$(DOCKER) rm $(subst /,-,latest-build-$(PLATFORM)) || true
+	DOCKER_BUILDKIT=1 $(DOCKER) build -t latest-build-$(PLATFORM) \
+		--build-arg ARCH=$(ARCH) \
+		--build-arg PLATFORM=$(PLATFORM) \
+		--build-arg VERSION="$(VERSION)" \
+		-f Dockerfile .
+	$(DOCKER) create -ti --name $(subst /,-,latest-build-$(PLATFORM)) latest-build-$(PLATFORM) chihuahuad
+	mkdir -p $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/
+	$(DOCKER) cp -a $(subst /,-,latest-build-$(PLATFORM)):/usr/local/bin/chihuahuad $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/chihuahuad

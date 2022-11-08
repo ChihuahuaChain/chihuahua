@@ -5,7 +5,6 @@ package v310
 // Slash was 5%
 // Lost APR is 42% for 13 days
 
-
 var recordsJSONString = `[
   {
     "address": "chihuahua1qf6c6crk6a2uyndt3tnd4xazucpzvyslrxm34s",

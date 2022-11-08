@@ -596,7 +596,7 @@ func New(
 	app.SetAnteHandler(anteHandler)
 	app.SetEndBlocker(app.EndBlocker)
 
-		if manager := app.SnapshotManager(); manager != nil {
+	if manager := app.SnapshotManager(); manager != nil {
 		err = manager.RegisterExtensions(
 			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.wasmKeeper),
 		)
@@ -604,7 +604,6 @@ func New(
 			panic("failed to register snapshot extension: " + err.Error())
 		}
 	}
-
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
@@ -816,7 +815,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		burnPercent := sdk.NewInt(50)
 
 		// Set TxFeeBurnPercent to 50%
-		params1 := authtypes.NewParams(
+		params := authtypes.NewParams(
 			app.AccountKeeper.MaxMemoCharacters(ctx),
 			app.AccountKeeper.TxSigLimit(ctx),
 			app.AccountKeeper.TxSizeCostPerByte(ctx),
@@ -825,7 +824,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			burnPercent,
 		)
 
-		app.AccountKeeper.SetParams(ctx, params1)
+		app.AccountKeeper.SetParams(ctx, params)
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})

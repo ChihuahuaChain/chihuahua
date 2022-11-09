@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **v400** _(v4.0.0)_ - Block 4787878 - (2022-11-15 13:36:46)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v400)
 - **v310** _(v3.1.0)_ - Block 4673333 - (2022-11-07 15:11:26)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v310)
 - **iavl fast node** _(v2.4.*) - block unk -  state breaking upgrade that ensures that dragonberry is fully patched, go1.19 is used, and iavl fast node is properly configured.

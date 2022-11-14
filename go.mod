@@ -3,9 +3,9 @@ module github.com/ChihuahuaChain/chihuahua
 go 1.19
 
 require (
-	github.com/CosmWasm/wasmd v0.29.1
+	github.com/CosmWasm/wasmd v0.29.2
 	github.com/cosmos/cosmos-sdk v0.45.10
-	github.com/cosmos/ibc-go/v3 v3.3.1
+	github.com/cosmos/ibc-go/v3 v3.4.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.5.0

@@ -133,7 +133,7 @@ require (
 replace (
 	// ics23 patch for dragonberry
 	github.com/confio/ics23/go => github.com/cosmos/cosmos-sdk/ics23/go v0.8.0
-	// forked cosmos-sdk with min commission, minpropdeposit, and revert tombstone code
+	// forked cosmos-sdk with min commission, minpropdeposit, revert tombstone code, and TxFeeBurnPercent parameter
 	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.10-chihuahua3
 	// Use cosmos-flavored protocol buffers
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1

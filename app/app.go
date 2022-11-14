@@ -105,7 +105,7 @@ import (
 const (
 	Bech32Prefix    = "chihuahua"
 	Name            = "chihuahua"
-	v400UpgradeName = "v400"
+	v410UpgradeName = "v410"
 	NodeDir         = ".chihuahuad"
 )
 
@@ -610,9 +610,9 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v400UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == v410UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{
-			Added: []string{authtypes.FeeCollectorName},
+			Added: []string{},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -804,13 +804,27 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v400UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(v410UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		// Burning module permissions
 
 		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
 		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
 		moduleAcc.Permissions = []string{authtypes.Burner}
 		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
+
+		burnPercent := sdk.NewInt(50)
+
+		// Set TxFeeBurnPercent to 50%
+		params := authtypes.NewParams(
+			app.AccountKeeper.MaxMemoCharacters(ctx),
+			app.AccountKeeper.TxSigLimit(ctx),
+			app.AccountKeeper.TxSizeCostPerByte(ctx),
+			app.AccountKeeper.SigVerifyCostED25519(ctx),
+			app.AccountKeeper.SigVerifyCostSecp256k1(ctx),
+			burnPercent,
+		)
+
+		app.AccountKeeper.SetParams(ctx, params)
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})

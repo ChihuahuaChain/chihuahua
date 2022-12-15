@@ -56,7 +56,7 @@ The output should be `go version go1.19 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v4.0.0
+git checkout v4.1.0
 make install
 ```
 

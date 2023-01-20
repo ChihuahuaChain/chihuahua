@@ -1,0 +1,117 @@
+gas_adjustment = 1.5
+provider_min_override = true
+gas_price = "0.0001uhuahua"
+fee_grant_address = ""
+
+[server]
+listen_addr = "0.0.0.0:7171"
+read_timeout = "20s"
+verbose_cors = true
+write_timeout = "20s"
+
+[[deviation_thresholds]]
+base = "USDT"
+threshold = "1.5"
+
+[[deviation_thresholds]]
+base = "ATOM"
+threshold = "1.5"
+
+[[deviation_thresholds]]
+base = "HUA"
+threshold = "1.5"
+
+[[deviation_thresholds]]
+base = "USDC"
+threshold = "1.5"
+
+[[currency_pairs]]
+base = "USDT"
+providers = [
+  "coinbase",
+  "crypto"
+]
+quote = "USD"
+
+[[currency_pairs]]
+base = "ATOM"
+providers = [
+  "okx",
+  "binance"
+]
+quote = "USDT"
+
+[[currency_pairs]]
+base = "ATOM"
+providers = [
+  "kraken",
+  "osmosis"
+]
+quote = "USD"
+
+[[currency_pairs]]
+base = "HUA"
+providers = [
+  "osmosis",
+]
+quote = "USD"
+
+[[currency_pairs]]
+base = "HUA"
+providers = [
+  "chihuahua",
+]
+quote = "USD"
+
+[[currency_pairs]]
+base = "HUA"
+providers = [
+  "bitget",
+]
+quote = "USDT"
+
+[[currency_pairs]]
+base = "HUA"
+providers = [
+  "bitget",
+]
+quote = "USDT"
+
+
+[[currency_pairs]]
+base = "USDC"
+providers = [
+  "okx",
+  "bitget",
+  "kraken",
+]
+quote = "USDT"
+
+[keyring]
+backend = "test"
+dir = "/.chihuahuad"
+
+[rpc]
+grpc_endpoint = "chihuaha-test-a-node-prune-default-snapshot-state-sync-from:9090"
+rpc_timeout = "100ms"
+tmrpc_endpoint = "http://chihuahua-test-a-node-prune-default-snapshot-state-sync-from:26657"
+
+[telemetry]
+enable-hostname = true
+enable-hostname-label = true
+enable-service-label = true
+enabled = true
+global-labels = [["chain_id", "chihuahua-test-a"]]
+service-name = "price-feeder"
+prometheus-retention-time = 100
+
+[[provider_endpoints]]
+name = "binance"
+rest = "https://api1.binance.com"
+websocket = "stream.binance.com:9443"
+
+[account]
+address = "chihuahua1agk4y97wdg2knvxv57jm7zl7dfc227anqpjs6s"
+chain_id = "chihuahua-test-a"
+validator = "chihuahuavaloper1agk4y97wdg2knvxv57jm7zl7dfc227anluylpf"
+prefix = "chihuahua"

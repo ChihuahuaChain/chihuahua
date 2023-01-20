@@ -481,10 +481,15 @@ func New(
 	wasmStack = wasm.NewIBCHandler(app.wasmKeeper, app.IBCKeeper.ChannelKeeper, app.IBCFeeKeeper)
 	wasmStack = ibcfee.NewIBCMiddleware(wasmStack, app.IBCFeeKeeper)
 
+	icaControllerStack := icacontroller.NewIBCMiddleware(nil, app.ICAControllerKeeper)
+	icaHostIBCModule := icahost.NewIBCModule(app.ICAHostKeeper)
+
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter().
 		AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
-		AddRoute(wasm.ModuleName, wasmStack)
+		AddRoute(wasm.ModuleName, wasmStack).
+		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
+		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	app.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
@@ -505,14 +510,6 @@ func New(
 	)
 
 	icaModule := ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper)
-
-	icaControllerStack := icacontroller.NewIBCMiddleware(nil, app.ICAControllerKeeper)
-	icaHostIBCModule := icahost.NewIBCModule(app.ICAHostKeeper)
-
-	// Register host and authentication routes
-	ibcRouter.
-		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
-		AddRoute(icahosttypes.SubModuleName, icaHostIBCModule)
 
 	/****  Module Options ****/
 

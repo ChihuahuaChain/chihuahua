@@ -20,7 +20,7 @@ const (
 
 func (n *NodeConfig) StoreWasmCode(wasmFile, from string) {
 	n.LogActionF("storing wasm code from file %s", wasmFile)
-	cmd := []string{"chihuahuad", "tx", "wasm", "store", wasmFile, fmt.Sprintf("--from=%s", from), "--gas=5000000", "--gas-prices=0.1uchihuahua", "--gas-adjustment=1.5", "--output=json"}
+	cmd := []string{"chihuahuad", "tx", "wasm", "store", wasmFile, fmt.Sprintf("--from=%s", from), "--gas=5000000", "--gas-prices=0.1uhuahua", "--gas-adjustment=1.5", "--output=json"}
 	_, _, err := n.containerManager.ExecTxCmdWithSuccessString(n.t, n.chainID, n.Name, cmd, successCode)
 	require.NoError(n.t, err)
 	n.LogActionF("successfully stored")

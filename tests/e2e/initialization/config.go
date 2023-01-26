@@ -224,11 +224,11 @@ func initGenesis(chain *internalChain, votingPeriod time.Duration, forkHeight in
 		return err
 	}
 
-	cost, _ := sdk.ParseCoinsNormalized("1000000uhuahua,10000000stake")
-	err = updateModuleGenesis(appGenState, tokenfactorytypes.ModuleName, &tokenfactorytypes.GenesisState{}, updateTokenFactoryGenesis(cost))
-	if err != nil {
-		return err
-	}
+	// cost, _ := sdk.ParseCoinsNormalized("1000000uhuahua,10000000stake")
+	// err = updateModuleGenesis(appGenState, tokenfactorytypes.ModuleName, &tokenfactorytypes.GenesisState{}, updateTokenFactoryGenesis(cost))
+	// if err != nil {
+	// 	return err
+	// }
 
 	bz, err := json.MarshalIndent(appGenState, "", "  ")
 	if err != nil {

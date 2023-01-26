@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	tokenfactorytypes "github.com/CosmWasm/token-factory/x/tokenfactory/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -44,15 +43,15 @@ const (
 	IbcSendAmount       = 3300000000
 	ValidatorWalletName = "val"
 	// chainA
-	ChainAID      = "chihuahua-test-a"
-	ChihuahuaBalanceA  = 200000000000
-	StakeBalanceA = 110000000000
-	StakeAmountA  = 100000000000
+	ChainAID          = "chihuahua-test-a"
+	ChihuahuaBalanceA = 200000000000
+	StakeBalanceA     = 110000000000
+	StakeAmountA      = 100000000000
 	// chainB
-	ChainBID      = "chihuahua-test-b"
-	ChihuahuaBalanceB  = 500000000000
-	StakeBalanceB = 440000000000
-	StakeAmountB  = 400000000000
+	ChainBID          = "chihuahua-test-b"
+	ChihuahuaBalanceB = 500000000000
+	StakeBalanceB     = 440000000000
+	StakeAmountB      = 400000000000
 
 	EpochDuration         = time.Second * 60
 	TWAPPruningKeepPeriod = EpochDuration / 4
@@ -66,7 +65,7 @@ var (
 
 	InitBalanceStrA = fmt.Sprintf("%d%s,%d%s", ChihuahuaBalanceA, BaseDenom, StakeBalanceA, StakeDenom)
 	InitBalanceStrB = fmt.Sprintf("%d%s,%d%s", ChihuahuaBalanceB, BaseDenom, StakeBalanceB, StakeDenom)
-	ChihuahuaToken       = sdk.NewInt64Coin(BaseDenom, IbcSendAmount)  // 3,300uhuahua
+	ChihuahuaToken  = sdk.NewInt64Coin(BaseDenom, IbcSendAmount)  // 3,300uhuahua
 	StakeToken      = sdk.NewInt64Coin(StakeDenom, IbcSendAmount) // 3,300ustake
 	tenM            = sdk.Coins{sdk.NewInt64Coin(BaseDenom, 10_000_000)}
 )
@@ -288,11 +287,11 @@ func updateGovGenesis(votingPeriod time.Duration) func(*govtypes.GenesisState) {
 	}
 }
 
-func updateTokenFactoryGenesis(denomCreationFees sdk.Coins) func(*tokenfactorytypes.GenesisState) {
-	return func(tokenfactorytypes *tokenfactorytypes.GenesisState) {
-		tokenfactorytypes.Params.DenomCreationFee = denomCreationFees
-	}
-}
+// func updateTokenFactoryGenesis(denomCreationFees sdk.Coins) func(*tokenfactorytypes.GenesisState) {
+// 	return func(tokenfactorytypes *tokenfactorytypes.GenesisState) {
+// 		tokenfactorytypes.Params.DenomCreationFee = denomCreationFees
+// 	}
+// }
 
 func updateGenUtilGenesis(c *internalChain) func(*genutiltypes.GenesisState) {
 	return func(genUtilGenState *genutiltypes.GenesisState) {

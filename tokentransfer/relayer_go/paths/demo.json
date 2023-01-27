@@ -1,0 +1,15 @@
+{
+  "src": {
+    "chain-id": "chihuahuaa",
+    "port-id": "transfer",
+    "order": "unordered",
+    "version": "ics20-1"
+  },
+  "dst": {
+    "chain-id": "chihuahuab",
+    "port-id": "transfer",
+    "order": "unordered",
+    "version": "ics20-1"
+  },
+  "strategy": { "type": "naive" }
+}

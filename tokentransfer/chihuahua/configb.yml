@@ -1,0 +1,20 @@
+accounts:
+  - name: alice
+    coins: ["20000token", "200000000stake"]
+    mnemonic: "train okay curtain host enact attend boring phone chest news always dress renew buyer empower toss grape vacuum lion squeeze fly fluid surge kiss"
+  - name: bob
+    coins: ["10000token", "100000000stake"]
+    mnemonic: "define envelope federal move soul panel purity language memory illegal little twin borrow menu mule vote alter bright must deal sight muscle weather rug"
+validator:
+  name: alice
+  staked: "100000000stake"
+client:
+  vuex:
+    path: "vue/src/store"
+  openapi:
+    path: "docs/static/openapi.yml"
+faucet:
+  name: bob
+  coins: ["5token", "100000stake"]
+genesis:
+  chain_id: "chihuahuab"

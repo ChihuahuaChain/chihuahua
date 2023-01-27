@@ -1,6 +1,6 @@
 module github.com/ChihuahuaChain/chihuahua
 
-go 1.19
+go 1.18
 
 require (
 	github.com/CosmWasm/wasmd v0.30.0

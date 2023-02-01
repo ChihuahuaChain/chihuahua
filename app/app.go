@@ -81,8 +81,8 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v3/modules/core"
 	ibcclient "github.com/cosmos/ibc-go/v3/modules/core/02-client"
-	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
 	ibcclientclient "github.com/cosmos/ibc-go/v3/modules/core/02-client/client"
+	ibcclienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
 	ibcporttypes "github.com/cosmos/ibc-go/v3/modules/core/05-port/types"
 	ibchost "github.com/cosmos/ibc-go/v3/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v3/modules/core/keeper"
@@ -106,7 +106,7 @@ import (
 const (
 	Bech32Prefix    = "chihuahua"
 	Name            = "chihuahua"
-	v410UpgradeName = "v410"
+	v420UpgradeName = "v420"
 	NodeDir         = ".chihuahuad"
 )
 
@@ -611,10 +611,8 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v410UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{
-			Added: []string{},
-		}
+	if upgradeInfo.Name == v420UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
@@ -805,27 +803,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v410UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		// Burning module permissions
-
-		moduleAccI := app.AccountKeeper.GetModuleAccount(ctx, authtypes.FeeCollectorName)
-		moduleAcc := moduleAccI.(*authtypes.ModuleAccount)
-		moduleAcc.Permissions = []string{authtypes.Burner}
-		app.AccountKeeper.SetModuleAccount(ctx, moduleAcc)
-
-		burnPercent := sdk.NewInt(50)
-
-		// Set TxFeeBurnPercent to 50%
-		params := authtypes.NewParams(
-			app.AccountKeeper.MaxMemoCharacters(ctx),
-			app.AccountKeeper.TxSigLimit(ctx),
-			app.AccountKeeper.TxSizeCostPerByte(ctx),
-			app.AccountKeeper.SigVerifyCostED25519(ctx),
-			app.AccountKeeper.SigVerifyCostSecp256k1(ctx),
-			burnPercent,
-		)
-
-		app.AccountKeeper.SetParams(ctx, params)
+	app.UpgradeKeeper.SetUpgradeHandler(v420UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})

@@ -131,7 +131,7 @@ require (
 
 replace (
 	// forked cosmos-sdk with min commission, minpropdeposit, revert tombstone code, and TxFeeBurnPercent parameter
-	github.com/cosmos/cosmos-sdk => github.com/notional-labs/cosmos-sdk v0.45.12-huahua
+	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.12-chihuahua
 	// Use cosmos-flavored protocol buffers
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	// use a grpc version compatible with cosmos-flavored protocol buffers

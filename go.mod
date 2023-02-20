@@ -133,6 +133,8 @@ require (
 )
 
 replace (
+	// patches a wasmd governance issue
+	github.com/CosmWasm/wasmd => github.com/CosmosContracts/wasmd v0.30.0-patch.1
 	// forked cosmos-sdk with min commission, minpropdeposit, revert tombstone code, and TxFeeBurnPercent parameter
 	github.com/cosmos/cosmos-sdk => github.com/ChihuahuaChain/cosmos-sdk v0.45.12-chihuahua
 	// Use cosmos-flavored protocol buffers

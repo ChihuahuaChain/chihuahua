@@ -107,10 +107,10 @@ import (
 )
 
 const (
-	Bech32Prefix    = "chihuahua"
-	Name            = "chihuahua"
-	v420UpgradeName = "v420"
-	NodeDir         = ".chihuahuad"
+	Bech32Prefix = "chihuahua"
+	Name         = "chihuahua"
+	UpgradeName  = "v421"
+	NodeDir      = ".chihuahuad"
 )
 
 var (
@@ -629,7 +629,7 @@ func New(
 		panic(err)
 	}
 
-	if upgradeInfo.Name == v420UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -821,7 +821,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(v420UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})

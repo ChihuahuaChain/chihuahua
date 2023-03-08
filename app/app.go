@@ -116,7 +116,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v421"
+	UpgradeName  = "v500"
 	NodeDir      = ".chihuahuad"
 )
 

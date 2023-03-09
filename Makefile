@@ -88,27 +88,25 @@ endif
 #$(info $$BUILD_FLAGS is [$(BUILD_FLAGS)])
 
 
-all: install
+all: check-go-version install
 
-install: go.sum
+install: check-go-version go.sum
 	go install -mod=readonly $(BUILD_FLAGS) ./cmd/chihuahuad
 
-build:
+build: check-go-version
 	go build $(BUILD_FLAGS) -o bin/chihuahuad ./cmd/chihuahuad
 
 BUILD_TARGETS := build install
 
+build-reproducible-all: check-go-version build-reproducible-amd64 build-reproducible-arm64
 
-build-reproducible-all: build-reproducible-amd64 build-reproducible-arm64
-
-build-reproducible-amd64:
+build-reproducible-amd64: check-go-version
 	ARCH=x86_64 PLATFORM=linux/amd64 $(MAKE) build-reproducible-generic
 
-build-reproducible-arm64:
+build-reproducible-arm64: check-go-version
 	ARCH=aarch64 PLATFORM=linux/arm64 $(MAKE) build-reproducible-generic
 	
-
-build-reproducible-generic: go.sum
+build-reproducible-generic: check-go-version go.sum
 	$(DOCKER) rm $(subst /,-,latest-build-$(PLATFORM)) || true
 	DOCKER_BUILDKIT=1 $(DOCKER) build -t latest-build-$(PLATFORM) \
 		--build-arg ARCH=$(ARCH) \
@@ -118,3 +116,10 @@ build-reproducible-generic: go.sum
 	$(DOCKER) create -ti --name $(subst /,-,latest-build-$(PLATFORM)) latest-build-$(PLATFORM) chihuahuad
 	mkdir -p $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/
 	$(DOCKER) cp -a $(subst /,-,latest-build-$(PLATFORM)):/usr/local/bin/chihuahuad $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/chihuahuad
+
+# Add check to make sure we are using the proper Go version before proceeding with anything
+check-go-version:
+	@if ! go version | grep -q "go1.19"; then \
+		echo "\033[0;31mERROR:\033[0m Go version 1.19 is required for compiling chihuahuad. It looks like you are using" "$(shell go version) \nThere are potential consensus-breaking changes that can occur when running binaries compiled with different versions of Go. Please download Go version 1.19 and retry. Thank you!"; \
+		exit 1; \
+	fi

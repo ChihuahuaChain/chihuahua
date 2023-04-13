@@ -41,7 +41,7 @@ jobs:
           
           
 # now uploads genesis.json and bin
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: chihuahuad ${{ matrix.targetos }} ${{ matrix.arch }}
           path: cmd/chihuahuad

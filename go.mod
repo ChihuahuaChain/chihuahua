@@ -141,3 +141,5 @@ replace (
 	// use a grpc version compatible with cosmos-flavored protocol buffers
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
+
+replace github.com/CosmWasm/wasmvm => github.com/CosmWasm/wasmvm v1.2.3

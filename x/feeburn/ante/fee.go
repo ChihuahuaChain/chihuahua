@@ -6,24 +6,24 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-)
 
-// TxFeeChecker check if the provided fee is enough and returns the effective fee and tx priority,
-// the effective fee should be deducted later, and the priority should be returned in abci response.
-type TxFeeChecker func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error)
+	feeburnkeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+)
 
 // DeductFeeDecorator deducts fees from the first signer of the tx
 // If the first signer does not have the funds to pay for the fees, return with InsufficientFunds error
 // Call next AnteHandler if fees successfully deducted
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 type DeductFeeDecorator struct {
-	accountKeeper  AccountKeeper
+	accountKeeper  ante.AccountKeeper
 	bankKeeper     BankKeeper
-	feegrantKeeper FeegrantKeeper
-	txFeeChecker   TxFeeChecker
+	feegrantKeeper ante.FeegrantKeeper
+	txFeeChecker   ante.TxFeeChecker
+	feeburnKeeper  feeburnkeeper.Keeper
 }
 
-func NewDeductFeeDecorator(ak AccountKeeper, bk BankKeeper, fk FeegrantKeeper, tfc TxFeeChecker) DeductFeeDecorator {
+func NewDeductFeeDecorator(ak ante.AccountKeeper, bk BankKeeper, fk ante.FeegrantKeeper, tfc ante.TxFeeChecker, fbk feeburnkeeper.Keeper) DeductFeeDecorator {
 	if tfc == nil {
 		tfc = checkTxFeeWithValidatorMinGasPrices
 	}
@@ -33,6 +33,7 @@ func NewDeductFeeDecorator(ak AccountKeeper, bk BankKeeper, fk FeegrantKeeper, t
 		bankKeeper:     bk,
 		feegrantKeeper: fk,
 		txFeeChecker:   tfc,
+		feeburnKeeper:  fbk,
 	}
 }
 
@@ -103,7 +104,11 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 
 	// deduct the fees
 	if !fee.IsZero() {
-		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee)
+		feeBurnPercent, ok := sdk.NewIntFromString(dfd.feeburnKeeper.TxFeeBurnPercent(ctx))
+		if !ok {
+			return sdkerrors.ErrInvalidType
+		}
+		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee, feeBurnPercent)
 		if err != nil {
 			return err
 		}
@@ -122,12 +127,24 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 }
 
 // DeductFees deducts fees from the given account.
-func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
+func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins, bp sdk.Int) error {
 	if !fees.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
 
+	// Calculate burning amounts by given percentage and fee amounts
+	burningFees := sdk.Coins{}
+	for _, fee := range fees {
+		burningAmount := fee.Amount.Mul(bp).Quo(sdk.NewInt(100))
+		burningFees = burningFees.Add(sdk.NewCoin(fee.Denom, burningAmount))
+	}
+
 	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+	}
+
+	err = bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
 	}

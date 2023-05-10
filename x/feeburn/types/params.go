@@ -12,7 +12,7 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 var (
 	KeyTxFeeBurnPercent = []byte("TxFeeBurnPercent")
 	// TODO: Determine the default value
-	DefaultTxFeeBurnPercent string = "tx_fee_burn_percent"
+	DefaultTxFeeBurnPercent string = "0"
 )
 
 // ParamKeyTable the param key table for launch module

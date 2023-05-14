@@ -1,17 +1,20 @@
-package ante
+package app
 
 import (
+	feeburnAnte "github.com/ChihuahuaChain/chihuahua/x/feeburn/ante"
 	feeburnkeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 )
 
 // HandlerOptions are the options required for constructing a default SDK AnteHandler.
 type HandlerOptions struct {
 	ante.HandlerOptions
-	BankKeeper    BankKeeper
-	FeeburnKeeper feeburnkeeper.Keeper
+	BankKeeper    bankkeeper.Keeper
+	FeeburnKeeper *feeburnkeeper.Keeper
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -26,6 +29,10 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrLogic, "bank keeper is required for ante builder")
 	}
 
+	if options.FeeburnKeeper == nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrLogic, "Fee burn keeper is required for ante builder")
+	}
+
 	if options.SignModeHandler == nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrLogic, "sign mode handler is required for ante builder")
 	}
@@ -37,7 +44,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		ante.NewTxTimeoutHeightDecorator(),
 		ante.NewValidateMemoDecorator(options.AccountKeeper),
 		ante.NewConsumeGasForTxSizeDecorator(options.AccountKeeper),
-		NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker, options.FeeburnKeeper),
+		feeburnAnte.NewDeductFeeDecorator(options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker, *options.FeeburnKeeper),
 		ante.NewSetPubKeyDecorator(options.AccountKeeper), // SetPubKeyDecorator must be called before all signature verification decorators
 		ante.NewValidateSigCountDecorator(options.AccountKeeper),
 		ante.NewSigGasConsumeDecorator(options.AccountKeeper, options.SigGasConsumer),

@@ -123,8 +123,6 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
-	feeburnante "github.com/ChihuahuaChain/chihuahua/x/feeburn/ante"
-
 	feeburnmodule "github.com/ChihuahuaChain/chihuahua/x/feeburn"
 	feeburnmodulekeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
 	feeburnmoduletypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
@@ -744,8 +742,8 @@ func New(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 
-	anteHandler, err := feeburnante.NewAnteHandler(
-		feeburnante.HandlerOptions{
+	anteHandler, err := NewAnteHandler(
+		HandlerOptions{
 			HandlerOptions: ante.HandlerOptions{
 				AccountKeeper:   app.AccountKeeper,
 				BankKeeper:      app.BankKeeper,
@@ -754,7 +752,7 @@ func New(
 				SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 			},
 			BankKeeper:    app.BankKeeper,
-			FeeburnKeeper: app.FeeburnKeeper,
+			FeeburnKeeper: &app.FeeburnKeeper,
 		},
 	)
 	if err != nil {

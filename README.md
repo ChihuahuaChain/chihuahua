@@ -56,11 +56,11 @@ The output should be `go version go1.19 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v4.2.1
+git checkout v4.2.3
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v4.2.1`
+To verify the installation you can run `chihuahuad version` and it should return `v4.2.3`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -169,7 +169,7 @@ sudo systemctl start chihuahuad
 journalctl -u chihuahuad -f
 ```
 The node will take some time to catch-up with the blockchain.
-You can follow the blocks being indexed by running
+You can follow the blocks being indexed by rnning
 
 ```bash
 journalctl -u chihuahuad -f | grep indexed

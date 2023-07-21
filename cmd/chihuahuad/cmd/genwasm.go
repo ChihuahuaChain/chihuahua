@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func AddGenesisWasmMsgCmd() *cobra.Command {
+func AddGenesisWasmMsgCmd(_ string) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:                        "add-wasm-genesis-message",
 		Short:                      "Wasm genesis subcommands",

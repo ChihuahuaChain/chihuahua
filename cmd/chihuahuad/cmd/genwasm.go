@@ -13,6 +13,5 @@ func AddGenesisWasmMsgCmd(_ string) *cobra.Command {
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
-
 	return txCmd
 }

@@ -993,6 +993,10 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		params := feeburnmoduletypes.Params{
+			TxFeeBurnPercent: "50",
+		}
+		app.FeeburnKeeper.SetParams(ctx, params)
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

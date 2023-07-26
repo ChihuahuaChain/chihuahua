@@ -1,9 +1,0 @@
-syntax = "proto3";
-package chihuahua.feeburn;
-
-option go_package = "github.com/ChihuahuaChain/chihuahua/x/feeburn/types";
-
-// Msg defines the Msg service.
-service Msg {}
-
-// TODO: Probably should delete this file

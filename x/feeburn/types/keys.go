@@ -14,6 +14,8 @@ const (
 	MemStoreKey = "mem_feeburn"
 )
 
+var ParamsKey = []byte{0x00} // Prefix for params key
+
 func KeyPrefix(p string) []byte {
 	return []byte(p)
 }

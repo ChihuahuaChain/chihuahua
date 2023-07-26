@@ -18,6 +18,7 @@ SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
 TM_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.* ::') # grab everything after the space in "github.com/cometbft/cometbft v0.37.0"
 BUILDDIR ?= $(CURDIR)/build
 DOCKER := $(shell which docker)
+DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:1.7.0
 
 export GO111MODULE = on
 
@@ -123,3 +124,16 @@ check-go-version:
 		echo "\033[0;31mERROR:\033[0m Go version 1.20 is required for compiling chihuahuad. It looks like you are using" "$(shell go version) \nThere are potential consensus-breaking changes that can occur when running binaries compiled with different versions of Go. Please download Go version 1.19 and retry. Thank you!"; \
 		exit 1; \
 	fi
+
+
+###############################################################################
+###                                Protobuf                                 ###
+###############################################################################
+
+containerProtoVer=0.13.0
+containerProtoImage=ghcr.io/cosmos/proto-builder:$(containerProtoVer)
+
+proto-gen:
+	@echo "Generating Protobuf files"
+	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(containerProtoImage) \
+		sh ./scripts/protocgen.sh; 

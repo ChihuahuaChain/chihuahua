@@ -2,23 +2,16 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"gopkg.in/yaml.v2"
 )
-
-var _ paramtypes.ParamSet = (*Params)(nil)
 
 var (
 	KeyTxFeeBurnPercent = []byte("TxFeeBurnPercent")
 	// TODO: Determine the default value
-	DefaultTxFeeBurnPercent string = "0"
+	DefaultTxFeeBurnPercent = "0"
 )
-
-// ParamKeyTable the param key table for launch module
-func ParamKeyTable() paramtypes.KeyTable {
-	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
-}
 
 // NewParams creates a new Params instance
 func NewParams(
@@ -36,20 +29,9 @@ func DefaultParams() Params {
 	)
 }
 
-// ParamSetPairs get the params.ParamSet
-func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(KeyTxFeeBurnPercent, &p.TxFeeBurnPercent, validateTxFeeBurnPercent),
-	}
-}
-
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if err := validateTxFeeBurnPercent(p.TxFeeBurnPercent); err != nil {
-		return err
-	}
-
-	return nil
+	return validateTxFeeBurnPercent(p.TxFeeBurnPercent)
 }
 
 // String implements the Stringer interface.
@@ -65,8 +47,13 @@ func validateTxFeeBurnPercent(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO implement validation
-	_ = txFeeBurnPercent
+	txFeeBurnPercentInt, err := strconv.Atoi(txFeeBurnPercent)
+	if err != nil {
+		return err
+	}
+	if txFeeBurnPercentInt < 0 || txFeeBurnPercentInt > 100 {
+		return fmt.Errorf("fee must be between 0 and 100")
+	}
 
 	return nil
 }

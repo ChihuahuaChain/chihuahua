@@ -19,9 +19,31 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid:    true,
 		},
 		{
-			desc:     "valid genesis state",
-			genState: &types.GenesisState{},
-			valid:    true,
+			desc: "invalid genesis state",
+			genState: &types.GenesisState{
+				Params: types.Params{
+					TxFeeBurnPercent: "101",
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid genesis state",
+			genState: &types.GenesisState{
+				Params: types.Params{
+					TxFeeBurnPercent: "-1",
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "valid genesis state",
+			genState: &types.GenesisState{
+				Params: types.Params{
+					TxFeeBurnPercent: "50",
+				},
+			},
+			valid: true,
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {

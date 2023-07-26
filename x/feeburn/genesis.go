@@ -1,6 +1,7 @@
 package feeburn
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
 	"github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -8,7 +9,10 @@ import (
 
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
-	k.SetParams(ctx, genState.Params)
+	err := k.SetParams(ctx, genState.Params)
+	if err != nil {
+		panic(errorsmod.Wrapf(err, "error setting params"))
+	}
 }
 
 // ExportGenesis returns the module's exported genesis

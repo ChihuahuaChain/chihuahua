@@ -67,6 +67,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govmigrations "github.com/cosmos/cosmos-sdk/x/gov/migrations/v3"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
@@ -994,7 +995,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
-	paramsKeeper.Subspace(wasm.ModuleName)
+	paramsKeeper.Subspace(wasm.ModuleName).WithKeyTable(wasmtypes.ParamKeyTable())
 	paramsKeeper.Subspace(feeburnmoduletypes.ModuleName)
 
 	return paramsKeeper
@@ -1010,6 +1011,11 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		if err != nil {
 			panic(err)
 		}
+
+		// gov consensus version of v0.45.12-chihuahua is 3, which is different from mainline sdk v0.45.12
+		// this makes v47 gov migrations do only v3 => v4 and upgrading panics due to not running v2 => v3 migration.
+		// v2 => v3 migration involves important migration code for converting old type of proposals to new types thus we run that migration manually here.
+		govmigrations.MigrateStore(ctx, app.keys[govtypes.StoreKey], app.appCodec)
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

@@ -91,7 +91,7 @@ sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "1uhuahua"/' $HOME/.ch
 
 Install cosmovisor 
 ```bash
-go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0
+go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
 
 which cosmovisor
 
@@ -136,7 +136,7 @@ After=network-online.target
 
 [Service]
 User=<your-user>
-ExecStart=/home/<your-user>/go/bin/cosmovisor start
+ExecStart=/home/<your-user>/go/bin/cosmovisor run start
 Restart=always
 RestartSec=3
 LimitNOFILE=4096

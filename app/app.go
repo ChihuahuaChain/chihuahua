@@ -1004,6 +1004,12 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// gov consensus version of v0.45.12-chihuahua is 3, which is different from mainline sdk v0.45.12
+		// this makes v47 gov migrations do only v3 => v4 and upgrading panics due to not running v2 => v3 migration.
+		// v2 => v3 migration involves important migration code for converting old type of proposals to new types thus we run that migration manually here.
+		govmigrations.MigrateStore(ctx, app.keys[govtypes.StoreKey], app.appCodec)
+		newVm, vmErr := app.mm.RunMigrations(ctx, cfg, vm)
+
 		// set fee burn percent to 50%
 		feeBurnParams := feeburnmoduletypes.Params{
 			TxFeeBurnPercent: "50",
@@ -1029,11 +1035,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			panic(err)
 		}
 
-		// gov consensus version of v0.45.12-chihuahua is 3, which is different from mainline sdk v0.45.12
-		// this makes v47 gov migrations do only v3 => v4 and upgrading panics due to not running v2 => v3 migration.
-		// v2 => v3 migration involves important migration code for converting old type of proposals to new types thus we run that migration manually here.
-		govmigrations.MigrateStore(ctx, app.keys[govtypes.StoreKey], app.appCodec)
-		return app.mm.RunMigrations(ctx, cfg, vm)
+		return newVm, vmErr
 	})
 }
 

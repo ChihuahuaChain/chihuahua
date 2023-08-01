@@ -1004,10 +1004,27 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// set fee burn percent to 50%
 		feeBurnParams := feeburnmoduletypes.Params{
 			TxFeeBurnPercent: "50",
 		}
 		err := app.FeeburnKeeper.SetParams(ctx, feeBurnParams)
+		if err != nil {
+			panic(err)
+		}
+
+		// set min initial deposit ratio to 25%
+		govParams := app.GovKeeper.GetParams(ctx)
+		govParams.MinInitialDepositRatio = sdk.NewDec(25).Quo(sdk.NewDec(100)).String()
+		err = app.GovKeeper.SetParams(ctx, govParams)
+		if err != nil {
+			panic(err)
+		}
+
+		// set min validator commission to 5%
+		stakingParams := app.StakingKeeper.GetParams(ctx)
+		stakingParams.MinCommissionRate = sdk.NewDec(5).Quo(sdk.NewDec(100))
+		err = app.StakingKeeper.SetParams(ctx, stakingParams)
 		if err != nil {
 			panic(err)
 		}

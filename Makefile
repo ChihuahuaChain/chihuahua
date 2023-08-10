@@ -99,15 +99,15 @@ build: check-go-version
 
 BUILD_TARGETS := build install
 
-build-reproducible-all: check-go-version build-reproducible-amd64 build-reproducible-arm64
+build-reproducible-all: build-reproducible-amd64 build-reproducible-arm64
 
-build-reproducible-amd64: check-go-version
+build-reproducible-amd64:
 	ARCH=x86_64 PLATFORM=linux/amd64 $(MAKE) build-reproducible-generic
 
-build-reproducible-arm64: check-go-version
+build-reproducible-arm64:
 	ARCH=aarch64 PLATFORM=linux/arm64 $(MAKE) build-reproducible-generic
 	
-build-reproducible-generic: check-go-version go.sum
+build-reproducible-generic: go.sum
 	$(DOCKER) rm $(subst /,-,latest-build-$(PLATFORM)) || true
 	DOCKER_BUILDKIT=1 $(DOCKER) build -t latest-build-$(PLATFORM) \
 		--build-arg ARCH=$(ARCH) \

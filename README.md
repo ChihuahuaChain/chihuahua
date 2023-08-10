@@ -91,7 +91,7 @@ sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "1uhuahua"/' $HOME/.ch
 
 Install cosmovisor 
 ```bash
-go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0
+go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
 
 which cosmovisor
 
@@ -136,7 +136,7 @@ After=network-online.target
 
 [Service]
 User=<your-user>
-ExecStart=/home/<your-user>/go/bin/cosmovisor start
+ExecStart=/home/<your-user>/go/bin/cosmovisor run start
 Restart=always
 RestartSec=3
 LimitNOFILE=4096
@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **v500** _(v5.0.0)_ - Block 8711111 - (2023-08-10 15:28:23)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v500)
 - **v421** _(v4.2.1)_ - Block 6376376 - (2022-03-04 12:20:37)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v421)
 - **v420** _(v4.2.0)_ - Block 6039999 - (2022-02-09 13:41:07)

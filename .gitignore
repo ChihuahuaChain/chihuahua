@@ -2,3 +2,4 @@
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/workspace.xml
 test/*
+.DS_Store

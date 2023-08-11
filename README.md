@@ -24,13 +24,13 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 
 ```bash
 # download the latest version
-wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
 
 # remove old version (if any)
 sudo rm -rf /usr/local/go
 
 # install the new version
-sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
 ```
 
 - #### Configure Environmental Variables
@@ -47,7 +47,7 @@ source ~/.profile
 
 go version
 ```
-The output should be `go version go1.19 linux/amd64`
+The output should be `go version go1.20.6 linux/amd64`
 
 - #### Install Chihuahua from sources
 
@@ -56,11 +56,11 @@ The output should be `go version go1.19 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v4.2.3
+git checkout v5.0.0
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v4.2.3`
+To verify the installation you can run `chihuahuad version` and it should return `v5.0.0`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name

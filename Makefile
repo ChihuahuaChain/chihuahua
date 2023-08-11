@@ -2,6 +2,7 @@
 
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
+GO_VERSION := "1.20"
 
 # don't override user values
 ifeq (,$(VERSION))
@@ -111,17 +112,18 @@ build-reproducible-generic: go.sum
 	$(DOCKER) rm $(subst /,-,latest-build-$(PLATFORM)) || true
 	DOCKER_BUILDKIT=1 $(DOCKER) build -t latest-build-$(PLATFORM) \
 		--build-arg ARCH=$(ARCH) \
+		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg PLATFORM=$(PLATFORM) \
 		--build-arg VERSION="$(VERSION)" \
 		-f Dockerfile .
 	$(DOCKER) create -ti --name $(subst /,-,latest-build-$(PLATFORM)) latest-build-$(PLATFORM) chihuahuad
-	mkdir -p $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/
-	$(DOCKER) cp -a $(subst /,-,latest-build-$(PLATFORM)):/usr/local/bin/chihuahuad $(BUILDDIR)/$(NETWORK)/$(PLATFORM)/chihuahuad
+	$(DOCKER) cp -a $(subst /,-,latest-build-$(PLATFORM)):/usr/local/bin/chihuahuad chihuahuad_$(subst /,_,$(PLATFORM))
+	sha256sum chihuahuad_$(subst /,_,$(PLATFORM)) >> ./chihuahuad_sha256.txt
 
 # Add check to make sure we are using the proper Go version before proceeding with anything
 check-go-version:
-	@if ! go version | grep -q "go1.20"; then \
-		echo "\033[0;31mERROR:\033[0m Go version 1.20 is required for compiling chihuahuad. It looks like you are using" "$(shell go version) \nThere are potential consensus-breaking changes that can occur when running binaries compiled with different versions of Go. Please download Go version 1.19 and retry. Thank you!"; \
+	@if ! go version | grep -q "go$(GO_VERSION)"; then \
+		echo "\033[0;31mERROR:\033[0m Go version $(GO_VERSION) is required for compiling chihuahuad. It looks like you are using" "$(shell go version) \nThere are potential consensus-breaking changes that can occur when running binaries compiled with different versions of Go. Please download Go version $(GO_VERSION) and retry. Thank you!"; \
 		exit 1; \
 	fi
 

@@ -24,13 +24,13 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 
 ```bash
 # download the latest version
-wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
 
 # remove old version (if any)
 sudo rm -rf /usr/local/go
 
 # install the new version
-sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
 ```
 
 - #### Configure Environmental Variables
@@ -47,7 +47,7 @@ source ~/.profile
 
 go version
 ```
-The output should be `go version go1.19 linux/amd64`
+The output should be `go version go1.20.6 linux/amd64`
 
 - #### Install Chihuahua from sources
 
@@ -56,11 +56,11 @@ The output should be `go version go1.19 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v4.2.3
+git checkout v5.0.0
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v4.2.3`
+To verify the installation you can run `chihuahuad version` and it should return `v5.0.0`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **v501** _(v5.0.1)_ - Block 8813000 - (2023-08-17 16:03:13)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v501)
 - **v500** _(v5.0.0)_ - Block 8711111 - (2023-08-10 15:28:23)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v500)
 - **v421** _(v4.2.1)_ - Block 6376376 - (2022-03-04 12:20:37)

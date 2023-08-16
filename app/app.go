@@ -71,7 +71,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
-	govmigrations "github.com/cosmos/cosmos-sdk/x/gov/migrations/v3"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
@@ -149,7 +148,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v500"
+	UpgradeName  = "v501"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -697,6 +696,7 @@ func New(
 		ibc.NewAppModule(app.IBCKeeper),
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
+		transfer.NewAppModule(app.TransferKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 	)
@@ -830,16 +830,7 @@ func New(
 
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added: []string{
-				feeburnmoduletypes.StoreKey,
-				consensustypes.StoreKey,
-				crisistypes.StoreKey,
-				ibcfeetypes.StoreKey,
-				group.StoreKey,
-				icacontrollertypes.StoreKey,
-				icahosttypes.StoreKey,
-				nft.StoreKey,
-			},
+			Added: []string{},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -1074,38 +1065,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		// gov consensus version of v0.45.12-chihuahua is 3, which is different from mainline sdk v0.45.12
-		// this makes v47 gov migrations do only v3 => v4 and upgrading panics due to not running v2 => v3 migration.
-		// v2 => v3 migration involves important migration code for converting old type of proposals to new types thus we run that migration manually here.
-		govmigrations.MigrateStore(ctx, app.keys[govtypes.StoreKey], app.appCodec)
-		newVm, vmErr := app.mm.RunMigrations(ctx, cfg, vm)
-
-		// set fee burn percent to 50%
-		feeBurnParams := feeburnmoduletypes.Params{
-			TxFeeBurnPercent: "50",
-		}
-		err := app.FeeburnKeeper.SetParams(ctx, feeBurnParams)
-		if err != nil {
-			panic(err)
-		}
-
-		// set min initial deposit ratio to 25%
-		govParams := app.GovKeeper.GetParams(ctx)
-		govParams.MinInitialDepositRatio = sdk.NewDec(25).Quo(sdk.NewDec(100)).String()
-		err = app.GovKeeper.SetParams(ctx, govParams)
-		if err != nil {
-			panic(err)
-		}
-
-		// set min validator commission to 5%
-		stakingParams := app.StakingKeeper.GetParams(ctx)
-		stakingParams.MinCommissionRate = sdk.NewDec(5).Quo(sdk.NewDec(100))
-		err = app.StakingKeeper.SetParams(ctx, stakingParams)
-		if err != nil {
-			panic(err)
-		}
-
-		return newVm, vmErr
+		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }
 

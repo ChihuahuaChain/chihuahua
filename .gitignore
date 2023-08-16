@@ -3,3 +3,4 @@
 /.idea/workspace.xml
 test/*
 .DS_Store
+node_modules

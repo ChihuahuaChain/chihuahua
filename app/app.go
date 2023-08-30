@@ -148,7 +148,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v501"
+	UpgradeName  = "v502"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -830,7 +830,10 @@ func New(
 
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added: []string{},
+			Added: []string{
+				alliancemoduletypes.StoreKey,
+				ibchookstypes.StoreKey,
+			},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades

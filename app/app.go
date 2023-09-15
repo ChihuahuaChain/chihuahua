@@ -832,8 +832,8 @@ func New(
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added: []string{
-				alliancemoduletypes.StoreKey,
-				ibchookstypes.StoreKey,
+				//alliancemoduletypes.StoreKey,
+				//ibchookstypes.StoreKey,
 			},
 		}
 

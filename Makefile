@@ -139,3 +139,21 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(containerProtoImage) \
 		sh ./scripts/protocgen.sh; 
+
+docs:
+	@echo
+	@echo "=========== Generate Message ============"
+	@echo
+	./scripts/protoc-swagger-gen.sh
+
+	statik -src=client/docs/static -dest=client/docs -f -m
+	@if [ -n "$(git status --porcelain)" ]; then \
+        echo "\033[91mSwagger docs are out of sync!!!\033[0m";\
+        exit 1;\
+    else \
+        echo "\033[92mSwagger docs are in sync\033[0m";\
+    fi
+	@echo
+	@echo "=========== Generate Complete ============"
+	@echo
+.PHONY: docs

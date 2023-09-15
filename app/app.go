@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
-	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
@@ -41,9 +41,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/gorilla/mux"
+	"github.com/rakyll/statik/fs"
+
+	sdkbank "github.com/cosmos/cosmos-sdk/x/bank"
+	sdkbanktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
@@ -54,6 +56,8 @@ import (
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+
+	// distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
@@ -118,20 +122,33 @@ import (
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
+	"github.com/terra-money/alliance/custom/bank"
+	bankkeeper "github.com/terra-money/alliance/custom/bank/keeper"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+	// wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	feeburnmodule "github.com/ChihuahuaChain/chihuahua/x/feeburn"
 	feeburnmodulekeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
 	feeburnmoduletypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
+
+	alliancemodule "github.com/terra-money/alliance/x/alliance"
+	alliancemoduleclient "github.com/terra-money/alliance/x/alliance/client"
+	alliancemodulekeeper "github.com/terra-money/alliance/x/alliance/keeper"
+	alliancemoduletypes "github.com/terra-money/alliance/x/alliance/types"
+
+	_ "github.com/ChihuahuaChain/chihuahua/client/docs/statik"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
 )
 
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v501"
+	UpgradeName  = "v502"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -167,23 +184,23 @@ var (
 
 // GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
 // produce a list of enabled proposals to pass into wasmd app.
-func GetEnabledProposals() []wasm.ProposalType {
+func GetEnabledProposals() []wasmtypes.ProposalType {
 	if EnableSpecificProposals == "" {
 		if ProposalsEnabled == "true" {
-			return wasm.EnableAllProposals
+			return wasmtypes.EnableAllProposals
 		}
-		return wasm.DisableAllProposals
+		return wasmtypes.DisableAllProposals
 	}
 	chunks := strings.Split(EnableSpecificProposals, ",")
-	proposals, err := wasm.ConvertToProposals(chunks)
+	proposals, err := wasmtypes.ConvertToProposals(chunks)
 	if err != nil {
 		panic(err)
 	}
 	return proposals
 }
 
-func GetWasmOpts(appOpts servertypes.AppOptions) []wasm.Option {
-	var wasmOpts []wasm.Option
+func GetWasmOpts(appOpts servertypes.AppOptions) []wasmkeeper.Option {
+	var wasmOpts []wasmkeeper.Option
 	if cast.ToBool(appOpts.Get("telemetry.enabled")) {
 		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(prometheus.DefaultRegisterer))
 	}
@@ -193,21 +210,24 @@ func GetWasmOpts(appOpts servertypes.AppOptions) []wasm.Option {
 	return wasmOpts
 }
 
-// func getGovProposalHandlers() []govclient.ProposalHandler {
-// 	var govProposalHandlers []govclient.ProposalHandler
-// 	govProposalHandlers = wasmclient.ProposalHandlers
+func getGovProposalHandlers() []govclient.ProposalHandler {
+	var govProposalHandlers []govclient.ProposalHandler
+	// govProposalHandlers = wasmclient.ProposalHandlers
 
-// 	govProposalHandlers = append(govProposalHandlers,
-// 		paramsclient.ProposalHandler,
-// 		distrclient.ProposalHandler,
-// 		upgradeclient.ProposalHandler,
-// 		upgradeclient.CancelProposalHandler,
-// 		ibcclientclient.UpdateClientProposalHandler,
-// 		ibcclientclient.UpgradeProposalHandler,
-// 	)
+	govProposalHandlers = append(govProposalHandlers,
+		paramsclient.ProposalHandler,
+		// distrclient.ProposalHandler,
+		upgradeclient.LegacyProposalHandler,
+		upgradeclient.LegacyCancelProposalHandler,
+		ibcclientclient.UpdateClientProposalHandler,
+		ibcclientclient.UpgradeProposalHandler,
+		alliancemoduleclient.CreateAllianceProposalHandler,
+		alliancemoduleclient.UpdateAllianceProposalHandler,
+		alliancemoduleclient.DeleteAllianceProposalHandler,
+	)
 
-// 	return govProposalHandlers
-// }
+	return govProposalHandlers
+}
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
@@ -218,20 +238,12 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-		bank.AppModuleBasic{},
+		sdkbank.AppModuleBasic{},
 		capability.AppModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(
-			[]govclient.ProposalHandler{
-				paramsclient.ProposalHandler,
-				upgradeclient.LegacyProposalHandler,
-				upgradeclient.LegacyCancelProposalHandler,
-				ibcclientclient.UpdateClientProposalHandler,
-				ibcclientclient.UpgradeProposalHandler,
-			},
-		),
+		gov.NewAppModuleBasic(getGovProposalHandlers()),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
@@ -251,21 +263,25 @@ var (
 		ica.AppModuleBasic{},
 		ibcfee.AppModuleBasic{},
 		feeburnmodule.AppModuleBasic{},
+		alliancemodule.AppModuleBasic{},
+		ibchooks.AppModuleBasic{},
 	)
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     {authtypes.Burner},
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		nft.ModuleName:                 nil,
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		ibcfeetypes.ModuleName:         nil,
-		icatypes.ModuleName:            nil,
-		wasm.ModuleName:                {authtypes.Burner},
+		authtypes.FeeCollectorName:          {authtypes.Burner},
+		distrtypes.ModuleName:               nil,
+		minttypes.ModuleName:                {authtypes.Minter},
+		stakingtypes.BondedPoolName:         {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:      {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:                 {authtypes.Burner},
+		nft.ModuleName:                      nil,
+		ibctransfertypes.ModuleName:         {authtypes.Minter, authtypes.Burner},
+		ibcfeetypes.ModuleName:              nil,
+		icatypes.ModuleName:                 nil,
+		wasmtypes.ModuleName:                {authtypes.Burner},
+		alliancemoduletypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		alliancemoduletypes.RewardsPoolName: nil,
 	}
 )
 
@@ -295,7 +311,7 @@ type App struct {
 
 	// keepers
 	AccountKeeper         authkeeper.AccountKeeper
-	BankKeeper            bankkeeper.BaseKeeper
+	BankKeeper            bankkeeper.Keeper
 	CapabilityKeeper      *capabilitykeeper.Keeper
 	StakingKeeper         *stakingkeeper.Keeper
 	SlashingKeeper        slashingkeeper.Keeper
@@ -317,9 +333,11 @@ type App struct {
 	ICAControllerKeeper icacontrollerkeeper.Keeper
 	ICAHostKeeper       icahostkeeper.Keeper
 	TransferKeeper      ibctransferkeeper.Keeper
-	wasmKeeper          wasm.Keeper
+	wasmKeeper          wasmkeeper.Keeper
 
-	FeeburnKeeper feeburnmodulekeeper.Keeper
+	FeeburnKeeper  feeburnmodulekeeper.Keeper
+	AllianceKeeper alliancemodulekeeper.Keeper
+	IBCHooksKeeper ibchookskeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
@@ -344,9 +362,9 @@ func New(
 	skipUpgradeHeights map[int64]bool,
 	homePath string,
 	invCheckPeriod uint,
-	enabledProposals []wasm.ProposalType,
+	enabledProposals []wasmtypes.ProposalType,
 	appOpts servertypes.AppOptions,
-	wasmOpts []wasm.Option,
+	wasmOpts []wasmkeeper.Option,
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
 	encodingConfig := MakeEncodingConfig()
@@ -362,16 +380,18 @@ func New(
 	bApp.SetTxEncoder(encodingConfig.TxConfig.TxEncoder())
 
 	keys := sdk.NewKVStoreKeys(
-		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey, crisistypes.StoreKey,
+		authtypes.StoreKey, sdkbanktypes.StoreKey, stakingtypes.StoreKey, crisistypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, consensustypes.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, capabilitytypes.StoreKey,
 		authzkeeper.StoreKey, nftkeeper.StoreKey, group.StoreKey,
 		// non sdk store keys
 		ibcexported.StoreKey, ibctransfertypes.StoreKey, ibcfeetypes.StoreKey,
-		wasm.StoreKey, icahosttypes.StoreKey,
+		wasmtypes.StoreKey, icahosttypes.StoreKey,
 		icacontrollertypes.StoreKey,
 		feeburnmoduletypes.StoreKey,
+		alliancemoduletypes.StoreKey,
+		ibchookstypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -407,7 +427,7 @@ func New(
 	scopedICAHostKeeper := app.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 	scopedICAControllerKeeper := app.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
 	scopedTransferKeeper := app.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasm.ModuleName)
+	scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasmtypes.ModuleName)
 	app.CapabilityKeeper.Seal()
 
 	// add keepers
@@ -417,7 +437,7 @@ func New(
 	app.AuthzKeeper = authzkeeper.NewKeeper(keys[authzkeeper.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper)
 
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
-		appCodec, keys[banktypes.StoreKey], app.AccountKeeper, app.ModuleAccountAddrs(), authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		appCodec, keys[sdkbanktypes.StoreKey], app.AccountKeeper, app.ModuleAccountAddrs(), authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 	app.StakingKeeper = stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], app.AccountKeeper, app.BankKeeper, authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -439,11 +459,22 @@ func New(
 
 	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], app.AccountKeeper)
 	app.UpgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	app.AllianceKeeper = alliancemodulekeeper.NewKeeper(
+		appCodec,
+		keys[alliancemoduletypes.StoreKey],
+		app.GetSubspace(alliancemoduletypes.ModuleName),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.StakingKeeper,
+		app.DistrKeeper,
+		authtypes.FeeCollectorName,
+	)
+	app.BankKeeper.RegisterKeepers(app.AllianceKeeper, app.StakingKeeper)
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
 	app.StakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
+		stakingtypes.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks(), app.AllianceKeeper.StakingHooks()),
 	)
 
 	app.AuthzKeeper = authzkeeper.NewKeeper(keys[authzkeeper.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper)
@@ -479,7 +510,8 @@ func New(
 	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
 		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper)). // This should be removed. It is still in place to avoid failures of modules that have not yet been upgraded.
 		AddRoute(upgradetypes.RouterKey, upgrade.NewSoftwareUpgradeProposalHandler(app.UpgradeKeeper)).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.IBCKeeper.ClientKeeper))
+		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(app.IBCKeeper.ClientKeeper)).
+		AddRoute(alliancemoduletypes.RouterKey, alliancemodule.NewAllianceProposalHandler(app.AllianceKeeper))
 
 	govConfig := govtypes.DefaultConfig()
 	/*
@@ -557,9 +589,9 @@ func New(
 	// if we want to allow any custom callbacks
 	// See https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
 	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2"
-	app.wasmKeeper = wasm.NewKeeper(
+	app.wasmKeeper = wasmkeeper.NewKeeper(
 		appCodec,
-		keys[wasm.StoreKey],
+		keys[wasmtypes.StoreKey],
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.StakingKeeper,
@@ -579,15 +611,25 @@ func New(
 	)
 	// The gov proposal types can be individually enabled
 	if len(enabledProposals) != 0 {
-		govRouter.AddRoute(wasm.RouterKey, wasm.NewWasmProposalHandler(app.wasmKeeper, enabledProposals))
+		govRouter.AddRoute(wasmtypes.RouterKey, wasmkeeper.NewWasmProposalHandler(app.wasmKeeper, enabledProposals)) //nolint:staticcheck
 	}
 	// Set legacy router for backwards compatibility with gov v1beta1
 	app.GovKeeper.SetLegacyRouter(govRouter)
+
+	app.IBCHooksKeeper = ibchookskeeper.NewKeeper(keys[ibchookstypes.StoreKey])
+	ics20WasmHooks := ibchooks.NewWasmHooks(&app.IBCHooksKeeper, nil, Bech32Prefix)
+
+	ics20WasmHooks.ContractKeeper = &app.wasmKeeper
+	hooksICS4Wrapper := ibchooks.NewICS4Middleware(
+		app.IBCKeeper.ChannelKeeper,
+		ics20WasmHooks,
+	)
 
 	// Create Transfer Stack
 	var transferStack porttypes.IBCModule
 	transferStack = transfer.NewIBCModule(app.TransferKeeper)
 	transferStack = ibcfee.NewIBCMiddleware(transferStack, app.IBCFeeKeeper)
+	transferStack = ibchooks.NewIBCMiddleware(transferStack, &hooksICS4Wrapper)
 
 	// Create Interchain Accounts Stack
 	// SendPacket, since it is originating from the application to core IBC:
@@ -612,7 +654,7 @@ func New(
 	// Create static IBC router, add app routes, then set and seal it
 	ibcRouter := porttypes.NewRouter().
 		AddRoute(ibctransfertypes.ModuleName, transferStack).
-		AddRoute(wasm.ModuleName, wasmStack).
+		AddRoute(wasmtypes.ModuleName, wasmStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(icahosttypes.SubModuleName, icaHostStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
@@ -634,7 +676,7 @@ func New(
 		),
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
-		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(sdkbanktypes.ModuleName)),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper, false),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
@@ -656,6 +698,7 @@ func New(
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
+		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -666,7 +709,7 @@ func New(
 	app.mm.SetOrderBeginBlockers(
 		upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName,
-		authtypes.ModuleName, banktypes.ModuleName, govtypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName,
+		authtypes.ModuleName, sdkbanktypes.ModuleName, govtypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName,
 		authz.ModuleName, feegrant.ModuleName, nft.ModuleName, group.ModuleName,
 		paramstypes.ModuleName, vestingtypes.ModuleName, consensustypes.ModuleName,
 		feeburnmoduletypes.ModuleName,
@@ -675,12 +718,14 @@ func New(
 		ibcexported.ModuleName,
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
-		wasm.ModuleName,
+		ibchookstypes.ModuleName,
+		wasmtypes.ModuleName,
+		alliancemoduletypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
 		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
-		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName, distrtypes.ModuleName,
+		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName, distrtypes.ModuleName,
 		slashingtypes.ModuleName, minttypes.ModuleName,
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		feegrant.ModuleName, nft.ModuleName, group.ModuleName,
@@ -691,7 +736,9 @@ func New(
 		ibcexported.ModuleName,
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
-		wasm.ModuleName,
+		ibchookstypes.ModuleName,
+		wasmtypes.ModuleName,
+		alliancemoduletypes.ModuleName,
 	)
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -702,7 +749,7 @@ func New(
 	// NOTE: wasm module should be at the end as it can call other module functionality direct or via message dispatching during
 	// genesis phase. For example bank transfer, auth account check, staking, ...
 	genesisModuleOrder := []string{
-		capabilitytypes.ModuleName, authtypes.ModuleName, banktypes.ModuleName,
+		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName,
 		distrtypes.ModuleName, stakingtypes.ModuleName, slashingtypes.ModuleName, govtypes.ModuleName,
 		minttypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		feegrant.ModuleName, nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
@@ -713,8 +760,10 @@ func New(
 		ibcexported.ModuleName,
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
+		ibchookstypes.ModuleName,
 		// wasm after ibc transfer
-		wasm.ModuleName,
+		wasmtypes.ModuleName,
+		alliancemoduletypes.ModuleName,
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
 	app.mm.SetOrderExportGenesis(genesisModuleOrder...)
@@ -781,7 +830,10 @@ func New(
 
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
-			Added: []string{},
+			Added: []string{
+				alliancemoduletypes.StoreKey,
+				ibchookstypes.StoreKey,
+			},
 		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
@@ -806,7 +858,7 @@ func New(
 	// transactions
 	app.sm = module.NewSimulationManager(
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
-		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
+		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(sdkbanktypes.ModuleName)),
 		capability.NewAppModule(appCodec, *app.CapabilityKeeper, false),
 		feegrantmodule.NewAppModule(appCodec, app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, app.interfaceRegistry),
 		gov.NewAppModule(appCodec, &app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
@@ -825,6 +877,7 @@ func New(
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		feeburnmodule.NewAppModule(appCodec, app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper),
+		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -866,6 +919,14 @@ func (app *App) ModuleAccountAddrs() map[string]bool {
 	for acc := range maccPerms {
 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
+
+	return modAccAddrs
+}
+
+func (app *App) BlockedModuleAccountAddrs() map[string]bool {
+	modAccAddrs := app.ModuleAccountAddrs()
+	delete(modAccAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	delete(modAccAddrs, authtypes.NewModuleAddress(alliancemoduletypes.ModuleName).String())
 
 	return modAccAddrs
 }
@@ -922,7 +983,7 @@ func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *App) RegisterAPIRoutes(apiSvr *api.Server, _ config.APIConfig) {
+func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
@@ -937,9 +998,21 @@ func (app *App) RegisterAPIRoutes(apiSvr *api.Server, _ config.APIConfig) {
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
-	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, true); err != nil {
+	if apiConfig.Swagger {
+		RegisterSwaggerAPI(clientCtx, apiSvr.Router)
+	}
+}
+
+// RegisterSwaggerAPI registers swagger route with API Server.
+func RegisterSwaggerAPI(ctx client.Context, rtr *mux.Router) {
+	statikFS, err := fs.New()
+	if err != nil {
 		panic(err)
 	}
+
+	staticServer := http.FileServer(statikFS)
+	rtr.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticServer))
+	rtr.PathPrefix("/swagger/").Handler(staticServer)
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.
@@ -974,21 +1047,21 @@ func GetMaccPerms() map[string][]string {
 func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino, key, tkey storetypes.StoreKey) paramskeeper.Keeper {
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
-	paramsKeeper.Subspace(authtypes.ModuleName).WithKeyTable(authtypes.ParamKeyTable())
-	paramsKeeper.Subspace(banktypes.ModuleName).WithKeyTable(banktypes.ParamKeyTable())
-	paramsKeeper.Subspace(stakingtypes.ModuleName).WithKeyTable(stakingtypes.ParamKeyTable())
-	paramsKeeper.Subspace(minttypes.ModuleName).WithKeyTable(minttypes.ParamKeyTable())
-	paramsKeeper.Subspace(distrtypes.ModuleName).WithKeyTable(distrtypes.ParamKeyTable())
-	paramsKeeper.Subspace(slashingtypes.ModuleName).WithKeyTable(slashingtypes.ParamKeyTable())
-	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypesv1.ParamKeyTable())
-	paramsKeeper.Subspace(crisistypes.ModuleName).WithKeyTable(crisistypes.ParamKeyTable())
+	paramsKeeper.Subspace(authtypes.ModuleName).WithKeyTable(authtypes.ParamKeyTable())         //nolint:staticcheck
+	paramsKeeper.Subspace(sdkbanktypes.ModuleName).WithKeyTable(sdkbanktypes.ParamKeyTable())   //nolint:staticcheck
+	paramsKeeper.Subspace(stakingtypes.ModuleName).WithKeyTable(stakingtypes.ParamKeyTable())   //nolint:staticcheck
+	paramsKeeper.Subspace(minttypes.ModuleName).WithKeyTable(minttypes.ParamKeyTable())         //nolint:staticcheck
+	paramsKeeper.Subspace(distrtypes.ModuleName).WithKeyTable(distrtypes.ParamKeyTable())       //nolint:staticcheck
+	paramsKeeper.Subspace(slashingtypes.ModuleName).WithKeyTable(slashingtypes.ParamKeyTable()) //nolint:staticcheck
+	paramsKeeper.Subspace(govtypes.ModuleName).WithKeyTable(govtypesv1.ParamKeyTable())         //nolint:staticcheck
+	paramsKeeper.Subspace(crisistypes.ModuleName).WithKeyTable(crisistypes.ParamKeyTable())     //nolint:staticcheck
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
-	paramsKeeper.Subspace(wasm.ModuleName).WithKeyTable(wasmtypes.ParamKeyTable())
+	paramsKeeper.Subspace(wasmtypes.ModuleName).WithKeyTable(wasmtypes.ParamKeyTable()) //nolint:staticcheck
 	paramsKeeper.Subspace(feeburnmoduletypes.ModuleName)
-
+	paramsKeeper.Subspace(alliancemoduletypes.ModuleName)
 	return paramsKeeper
 }
 

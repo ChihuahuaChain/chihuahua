@@ -1,4 +1,8 @@
 .vscode/*
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/workspace.xml
-test/*
+tmp
+logs
+keys
+.DS_Store
+node_modules

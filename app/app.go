@@ -148,7 +148,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v502"
+	UpgradeName  = "v503"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -462,12 +462,13 @@ func New(
 	app.AllianceKeeper = alliancemodulekeeper.NewKeeper(
 		appCodec,
 		keys[alliancemoduletypes.StoreKey],
-		app.GetSubspace(alliancemoduletypes.ModuleName),
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.StakingKeeper,
 		app.DistrKeeper,
 		authtypes.FeeCollectorName,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+
 	)
 	app.BankKeeper.RegisterKeepers(app.AllianceKeeper, app.StakingKeeper)
 
@@ -698,7 +699,7 @@ func New(
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		transfer.NewAppModule(app.TransferKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
-		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -877,7 +878,7 @@ func New(
 		ibcfee.NewAppModule(app.IBCFeeKeeper),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		feeburnmodule.NewAppModule(appCodec, app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper),
-		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry),
+		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -1061,7 +1062,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(wasmtypes.ModuleName).WithKeyTable(wasmtypes.ParamKeyTable()) //nolint:staticcheck
 	paramsKeeper.Subspace(feeburnmoduletypes.ModuleName)
-	paramsKeeper.Subspace(alliancemoduletypes.ModuleName)
+	paramsKeeper.Subspace(alliancemoduletypes.ModuleName).WithKeyTable(alliancemoduletypes.ParamKeyTable())
 	return paramsKeeper
 }
 

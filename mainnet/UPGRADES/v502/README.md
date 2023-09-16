@@ -18,7 +18,7 @@ make install
 # should be v5.0.2
 chihuahuad version
 # Should be commit 3c20e93c7dc16f82fa2584382402f9149ec1b431
-chihuahuad version --long
+chihuahuad version --long | grep commit
 ```
 
 # Make new directory and copy binary
@@ -32,5 +32,5 @@ cp $HOME/go/bin/chihuahuad $HOME/.chihuahuad/cosmovisor/upgrades/v502/bin
 
 ```bash
 # should be v5.0.2
-$HOME/.chihuahuad/cosmovisor/upgrades/v501/bin/chihuahuad version
+$HOME/.chihuahuad/cosmovisor/upgrades/v502/bin/chihuahuad version
 ```

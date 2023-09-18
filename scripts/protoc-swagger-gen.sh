@@ -7,8 +7,9 @@ mkdir -p ./tmp-swagger-gen
 cd proto
 # Get the path of the cosmos-sdk repo from go/pkg/mod
 cosmos_sdk_dir=$(go list -f '{{ .Dir }}' -m github.com/cosmos/cosmos-sdk) || { echo "Error: Failed to find github.com/cosmos/cosmos-sdk"; exit 1; }
+alliance_dir=$(go list -f '{{ .Dir }}' -m github.com/terra-money/alliance) || { echo "Error: Failed to find github.com/terra-money/alliance"; exit 1; }
 if [ -d "${cosmos_sdk_dir}/proto" ]; then
-  proto_dirs=$(find ./chihuahua "${cosmos_sdk_dir}/proto" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
+  proto_dirs=$(find ./chihuahua "${cosmos_sdk_dir}/proto" "${alliance_dir}/proto" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
   for dir in $proto_dirs; do
     # generate swagger files (filter query files)
     query_file=$(find "${dir}" -maxdepth 1 \( -name 'query.proto' -o -name 'service.proto' \))

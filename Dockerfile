@@ -13,10 +13,10 @@ COPY . .
 # For more details see https://github.com/CosmWasm/wasmvm#builds-of-libwasmvm
 ARG ARCH=x86_64
 # See https://github.com/CosmWasm/wasmvm/releases
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.3.0/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.3.0/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a
-RUN sha256sum /lib/libwasmvm_muslc.aarch64.a | grep b1610f9c8ad8bdebf5b8f819f71d238466f83521c74a2deb799078932e862722
-RUN sha256sum /lib/libwasmvm_muslc.x86_64.a | grep b4aad4480f9b4c46635b4943beedbb72c929eab1d1b9467fe3b43e6dbf617e32
+ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.4.0/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
+ADD https://github.com/CosmWasm/wasmvm/releases/download/v1.4.0/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a
+RUN sha256sum /lib/libwasmvm_muslc.aarch64.a | grep 2a72c7062e3c791792b3dab781c815c9a76083a7997ce6f9f2799aaf577f3c25
+RUN sha256sum /lib/libwasmvm_muslc.x86_64.a | grep 8ea2e3b5fae83e671da2bb51115adc88591045953f509955ec38dc02ea5a7b94
 RUN cp /lib/libwasmvm_muslc.${ARCH}.a /lib/libwasmvm_muslc.a
 
 ENV PACKAGES curl make git libc-dev bash gcc linux-headers eudev-dev python3

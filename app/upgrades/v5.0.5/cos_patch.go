@@ -18,10 +18,9 @@ type CosMints struct {
 	AmountUhuahua string `json:"amount"`
 }
 
-var (
-	cosValidatorAddress = "chihuahuavaloper124mp8y5prmrumcq9sv6veykf3gutmph5wu2mku"
-	cosConsensusAddress = "chihuahuavalcons1fn0vsw2aqq300pdzyulc7mze735x5jnnttm0qz"
-)
+var cosValidatorAddress = [...]string {"chihuahuavaloper124mp8y5prmrumcq9sv6veykf3gutmph5wu2mku","chihuahuavaloper16df4qs7tk523gu2qlcvd505cxcf6n2jkvv0nq3"}
+
+var cosConsensusAddress = [...]string {"chihuahuavalcons1fn0vsw2aqq300pdzyulc7mze735x5jnnttm0qz","chihuahuavalcons1upu4m275cax50f5qpv9tel74vecju5gc6jcdta"}
 
 func mintLostTokens(
 	ctx sdk.Context,

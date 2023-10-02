@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	upgrades "github.com/effofxprime/chihuahua/app/upgrades/v5.0.5"
+	
+	upgrades "github.com/ChihuahuaChain/chihuahua/app/upgrades/v5.0.5"
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"

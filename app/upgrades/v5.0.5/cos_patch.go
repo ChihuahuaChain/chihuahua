@@ -8,9 +8,6 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 type CosMints struct {
@@ -18,30 +15,15 @@ type CosMints struct {
 	AmountUhuahua string `json:"amount"`
 }
 
-var cosValidatorAddress = [...]string {"chihuahuavaloper124mp8y5prmrumcq9sv6veykf3gutmph5wu2mku","chihuahuavaloper16df4qs7tk523gu2qlcvd505cxcf6n2jkvv0nq3"}
-
-var cosConsensusAddress = [...]string {"chihuahuavalcons1fn0vsw2aqq300pdzyulc7mze735x5jnnttm0qz","chihuahuavalcons1upu4m275cax50f5qpv9tel74vecju5gc6jcdta"}
-
 func mintLostTokens(
 	ctx sdk.Context,
 	bankKeeper bankkeeper.Keeper,
-	stakingKeeper stakingkeeper.Keeper,
 	mintKeeper mintkeeper.Keeper,
 ) {
 	var cosMints []CosMints
 	err := json.Unmarshal([]byte(recordsJSONString), &cosMints)
 	if err != nil {
 		panic(fmt.Sprintf("error reading COS JSON: %+v", err))
-	}
-
-	cosValAddress, err := sdk.ValAddressFromBech32(cosValidatorAddress)
-	if err != nil {
-		panic(fmt.Sprintf("validator address is not valid bech32: %s", cosValAddress))
-	}
-
-	cosValidator, found := stakingKeeper.GetValidator(ctx, cosValAddress)
-	if !found {
-		panic(fmt.Sprintf("cos validator '%s' not found", cosValAddress))
 	}
 
 	for _, mintRecord := range cosMints {
@@ -67,52 +49,15 @@ func mintLostTokens(
 		if err != nil {
 			panic(fmt.Sprintf("error sending minted %suhuahua to %s: %+v", mintRecord.AmountUhuahua, mintRecord.Address, err))
 		}
-
-		sdkAddress, err := sdk.AccAddressFromBech32(mintRecord.Address)
-		if err != nil {
-			panic(fmt.Sprintf("account address is not valid bech32: %s", mintRecord.Address))
-		}
-
-		_, err = stakingKeeper.Delegate(ctx, sdkAddress, coin.Amount, stakingtypes.Unbonded, cosValidator, true)
-		if err != nil {
-			panic(fmt.Sprintf("error delegating minted %suhuahua from %s to %s: %+v", mintRecord.AmountUhuahua, mintRecord.Address, cosValidatorAddress, err))
-		}
-	}
+	}	
 }
 
-func revertTombstone(ctx sdk.Context, slashingKeeper slashingkeeper.Keeper) error {
-	cosValAddress, err := sdk.ValAddressFromBech32(cosValidatorAddress)
-	if err != nil {
-		panic(fmt.Sprintf("validator address is not valid bech32: %s", cosValAddress))
-	}
-
-	cosConsAddress, err := sdk.ConsAddressFromBech32(cosConsensusAddress)
-	if err != nil {
-		panic(fmt.Sprintf("consensus address is not valid bech32: %s", cosValAddress))
-	}
-
-	// Revert Tombstone info
-	slashingKeeper.RevertTombstone(ctx, cosConsAddress)	
-
-	// Set jail until=now, the validator then must unjail manually
-	slashingKeeper.JailUntil(ctx, cosConsAddress, ctx.BlockTime())
-
-	return nil
-}
-
-func RevertCosTombstoning(
+func restoreDelegatorTokens(
 	ctx sdk.Context,
-	slashingKeeper slashingkeeper.Keeper,
-	mintKeeper mintkeeper.Keeper,
 	bankKeeper bankkeeper.Keeper,
-	stakingKeeper stakingkeeper.Keeper,
+	mintKeeper mintkeeper.Keeper,
 ) error {
-	err := revertTombstone(ctx, slashingKeeper)
-	if err != nil {
-		return err
-	}
-
-	mintLostTokens(ctx, bankKeeper, stakingKeeper, mintKeeper)
+	mintLostTokens(ctx, bankKeeper, mintKeeper)
 
 	return nil
 }

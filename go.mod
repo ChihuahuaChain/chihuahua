@@ -186,10 +186,6 @@ require (
 
 replace (
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-
-	// forked cosmos-sdk for tombstone revert
-	// https://github.com/effofxprime/cosmos-sdk/commit/5f74a97e84dfece97208152b5290c3efeb74b27a
-	github.com/cosmos/cosmos-sdk => github.com/effofxprime/cosmos-sdk v0.47.5-chihuahua-ts
 	// dgrijalva/jwt-go is deprecated and doesn't receive security updates.
 	// See: https://github.com/cosmos/cosmos-sdk/issues/13134
 	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
@@ -201,4 +197,5 @@ replace (
 
 	// pin version! 126854af5e6d has issues with the store so that queries fail
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+
 )

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -9,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	upgrades "github.com/ChihuahuaChain/chihuahua/app/upgrades/v5.0.5"
+	upgrades "github.com/effofxprime/chihuahua/app/upgrades/v5.0.5"
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"
@@ -1070,24 +1069,21 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		// 1) This section is for reverting tombstone
+		// 1) This section is for reverting slashed delegations
 
 		// We're not upgrading cosmos-sdk, Tendermint or ibc-go, so no ConsensusVersion changes
 		// Therefore mm.RunMigrations() should not find any module to upgrade
 
-		ctx.Logger().Info("Running revert of tombstoning")
-		err := upgrades.RevertCosTombstoning(
+		ctx.Logger().Info("Reverting slashed delegators")
+		err := upgrades.restoreDelegatorTokens(
 			ctx,
-			app.SlashingKeeper,
-			app.MintKeeper,
 			app.BankKeeper,
-			*app.StakingKeeper,
+			app.MintKeeper,
 		)
 		if err != nil {
-			panic(fmt.Sprintf("failed to revert tombstoning: %s", err))
+			ctx.Logger().Error("failed restoring tokens: %s")
 		}
 
-		ctx.Logger().Info("Running module migrations for v3.1.0...")
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

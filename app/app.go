@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	upgrades "github.com/effofxprime/chihuahua/app/upgrades/v5.0.5"
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"
@@ -148,7 +149,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v503"
+	UpgradeName  = "v505"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -1068,6 +1069,21 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// 1) This section is for reverting slashed delegations
+
+		// We're not upgrading cosmos-sdk, Tendermint or ibc-go, so no ConsensusVersion changes
+		// Therefore mm.RunMigrations() should not find any module to upgrade
+
+		ctx.Logger().Info("Reverting slashed delegators")
+		err := upgrades.restoreDelegatorTokens(
+			ctx,
+			app.BankKeeper,
+			app.MintKeeper,
+		)
+		if err != nil {
+			ctx.Logger().Error("failed restoring tokens: %s")
+		}
+
 		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }

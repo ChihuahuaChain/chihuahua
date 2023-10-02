@@ -10,9 +10,9 @@ package v505
 
 //Based on the current, 22% APR, 5% slash, and possible 9 days of missed rewards:
 // The Silver Fox
-// jq '.delegation_responses[] | map({address:.delegation.delegator_address,amount:((.balance.amount | tonumber)*0.05*((0.23/365)*9+1) | floor) | tostring})' chihuahua-tombstone-delegations.json
+// jq '.delegation_responses | map({address:.delegation.delegator_address,amount:((.balance.amount | tonumber)*0.05*((0.23/365)*9+1) | floor) | tostring})' chihuahua-tombstone-delegations.json
 // Andreisid
-// jq '.delegation_responses[] | map({address:.delegation.delegator_address,amount:((.balance.amount | tonumber)*0.05*((0.23/365)*9+1) | floor) | tostring})' andreisid-chihuahua-tombstone-delegations.json
+// jq '.delegation_responses | map({address:.delegation.delegator_address,amount:((.balance.amount | tonumber)*0.05*((0.23/365)*9+1) | floor) | tostring})' andreisid-chihuahua-tombstone-delegations.json
 
 var recordsJSONString = `[
 	  {

@@ -143,6 +143,11 @@ import (
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
 	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/keeper"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
+
+	tokenfactory "github.com/ChihuahuaChain/chihuahua/x/tokenfactory"
+	tokenbindings "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings"
+	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
+	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 )
 
 const (
@@ -180,6 +185,12 @@ var (
 	Bech32PrefixConsAddr = Bech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus
 	// Bech32PrefixConsPub defines the Bech32 prefix of a consensus node public key
 	Bech32PrefixConsPub = Bech32Prefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
+
+	tokenFactoryCapabilities = []string{
+		tokenfactorytypes.EnableBurnFrom,
+		tokenfactorytypes.EnableForceTransfer,
+		tokenfactorytypes.EnableSetMetadata,
+	}
 )
 
 // GetEnabledProposals parses the ProposalsEnabled / EnableSpecificProposals values to
@@ -265,6 +276,7 @@ var (
 		feeburnmodule.AppModuleBasic{},
 		alliancemodule.AppModuleBasic{},
 		ibchooks.AppModuleBasic{},
+		tokenfactory.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -282,6 +294,7 @@ var (
 		wasmtypes.ModuleName:                {authtypes.Burner},
 		alliancemoduletypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		alliancemoduletypes.RewardsPoolName: nil,
+		tokenfactorytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -335,9 +348,10 @@ type App struct {
 	TransferKeeper      ibctransferkeeper.Keeper
 	wasmKeeper          wasmkeeper.Keeper
 
-	FeeburnKeeper  feeburnmodulekeeper.Keeper
-	AllianceKeeper alliancemodulekeeper.Keeper
-	IBCHooksKeeper ibchookskeeper.Keeper
+	FeeburnKeeper      feeburnmodulekeeper.Keeper
+	AllianceKeeper     alliancemodulekeeper.Keeper
+	IBCHooksKeeper     ibchookskeeper.Keeper
+	TokenFactoryKeeper tokenfactorykeeper.Keeper
 
 	// make scoped keepers public for test purposes
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
@@ -392,6 +406,7 @@ func New(
 		feeburnmoduletypes.StoreKey,
 		alliancemoduletypes.StoreKey,
 		ibchookstypes.StoreKey,
+		tokenfactorytypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -578,6 +593,19 @@ func New(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
+	app.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
+		appCodec,
+		app.keys[tokenfactorytypes.StoreKey],
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.DistrKeeper,
+		tokenFactoryCapabilities,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
+	tfOpts := tokenbindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper)
+	wasmOpts = append(wasmOpts, tfOpts...)
+
 	wasmDir := filepath.Join(homePath, "data")
 
 	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
@@ -699,6 +727,7 @@ func New(
 		transfer.NewAppModule(app.TransferKeeper),
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
+		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -721,6 +750,7 @@ func New(
 		ibchookstypes.ModuleName,
 		wasmtypes.ModuleName,
 		alliancemoduletypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
@@ -739,6 +769,7 @@ func New(
 		ibchookstypes.ModuleName,
 		wasmtypes.ModuleName,
 		alliancemoduletypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 	)
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -764,6 +795,7 @@ func New(
 		// wasm after ibc transfer
 		wasmtypes.ModuleName,
 		alliancemoduletypes.ModuleName,
+		tokenfactorytypes.ModuleName,
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
 	app.mm.SetOrderExportGenesis(genesisModuleOrder...)

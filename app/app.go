@@ -1105,7 +1105,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		if err := app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.Params{
 			DenomCreationFee:        nil,
-			DenomCreationGasConsume: 5_000_000,
+			DenomCreationGasConsume: 50_000, // 50k gas consume for creating a token. Ref: Juno is 2m and Osmosis 2m.
 		}); err != nil {
 			return nil, err
 		}

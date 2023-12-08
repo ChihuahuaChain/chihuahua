@@ -153,7 +153,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v503"
+	UpgradeName  = "v6"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -865,6 +865,7 @@ func New(
 			Added: []string{
 				//alliancemoduletypes.StoreKey,
 				//ibchookstypes.StoreKey,
+				tokenfactorytypes.ModuleName,
 			},
 		}
 
@@ -1100,7 +1101,16 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		return app.mm.RunMigrations(ctx, cfg, vm)
+		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
+
+		if err := app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.Params{
+			DenomCreationFee:        nil,
+			DenomCreationGasConsume: 5_000_000,
+		}); err != nil {
+			return nil, err
+		}
+
+		return vm, err
 	})
 }
 

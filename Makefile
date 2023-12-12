@@ -86,7 +86,7 @@ BUILD_FLAGS := -tags "$(build_tags)" -ldflags '$(ldflags)'
 ifeq (,$(findstring nostrip,$(chihuahua_BUILD_OPTIONS)))
   BUILD_FLAGS += -trimpath
 endif
- 
+
 #$(info $$BUILD_FLAGS is [$(BUILD_FLAGS)])
 
 
@@ -107,7 +107,7 @@ build-reproducible-amd64:
 
 build-reproducible-arm64:
 	ARCH=aarch64 PLATFORM=linux/arm64 $(MAKE) build-reproducible-generic
-	
+
 build-reproducible-generic: go.sum
 	$(DOCKER) rm $(subst /,-,latest-build-$(PLATFORM)) || true
 	DOCKER_BUILDKIT=1 $(DOCKER) build -t latest-build-$(PLATFORM) \
@@ -138,7 +138,7 @@ containerProtoImage=ghcr.io/cosmos/proto-builder:$(containerProtoVer)
 proto-gen:
 	@echo "Generating Protobuf files"
 	@$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(containerProtoImage) \
-		sh ./scripts/protocgen.sh; 
+		sh ./scripts/protocgen.sh;
 
 docs:
 	@echo

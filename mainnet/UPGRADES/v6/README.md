@@ -1,6 +1,6 @@
 # Chihuahua v6 Upgrade
 
-The Upgrade is scheduled for block `10666000`. A countdown clock is [here](https://www.mintscan.io/chihuahua/blocks/9430000)
+The Upgrade is scheduled for block `10666000`. A countdown clock is [here](https://www.mintscan.io/chihuahua/blocks/10666000)
 
 This guide assumes that you use cosmovisor to manage upgrades.
 

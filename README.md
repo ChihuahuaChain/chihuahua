@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a mod
 
 # Chain Upgrades
 
+- **v6** _(v6)_ - Block 10666000 - (2023-12-23 15:30:00)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v6)
 - **v503** _(v5.0.4)_ - Block 9430000 - (2023-09-28 16:30:00) - (Halt height 9431130 due to wrong wasmd/wasmvm - Use v5.0.4 on directory v503)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v503)
 - **v502** _(v5.0.2)_ - Block 9180000 - (2023-09-11 15:00:00)

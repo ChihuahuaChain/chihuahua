@@ -56,11 +56,11 @@ The output should be `go version go1.20.6 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v5.0.4
+git checkout v6
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v5.0.4`
+To verify the installation you can run `chihuahuad version` and it should return `v6`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -84,7 +84,7 @@ sed -i.bak -e "s/^seeds *=.*/seeds = \"$seeds\"/; s/^persistent_peers *=.*/persi
 - #### Update minimum-gas-price in app.toml
 
 ```bash
-sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "1uhuahua"/' $HOME/.chihuahuad/config/app.toml
+sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "100uhuahua"/' $HOME/.chihuahuad/config/app.toml
 ```
 
 - #### Setting up Cosmovisor

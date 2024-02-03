@@ -211,7 +211,7 @@ chihuahuad tx staking create-validator \
 
 **Congratulation!** Your Validator node should be up and running
 
-_Make sure to join our [Discord](https://discord.gg/chihuahua) and contact a moderator if you have a mainnet node so we can invite you to the validator's channel to follow up the latest updates and future upgrades._
+_Make sure to join our [Discord](https://discord.gg/chihuahuachain-878201449421619211) and contact a moderator if you have a mainnet node so we can invite you to the validator's channel to follow up the latest updates and future upgrades._
 
 ---
 

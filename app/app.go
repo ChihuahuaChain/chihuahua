@@ -58,6 +58,9 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 
 	// distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	"github.com/Victor118/liquidity/x/liquidity"
+	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
+	liquiditytypes "github.com/Victor118/liquidity/x/liquidity/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
@@ -277,6 +280,7 @@ var (
 		alliancemodule.AppModuleBasic{},
 		ibchooks.AppModuleBasic{},
 		tokenfactory.AppModuleBasic{},
+		liquidity.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -295,6 +299,7 @@ var (
 		alliancemoduletypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		alliancemoduletypes.RewardsPoolName: nil,
 		tokenfactorytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+		liquiditytypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -361,6 +366,7 @@ type App struct {
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
 
 	scopedWasmKeeper capabilitykeeper.ScopedKeeper
+	LiquidityKeeper  liquiditykeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -406,7 +412,7 @@ func New(
 		feeburnmoduletypes.StoreKey,
 		alliancemoduletypes.StoreKey,
 		ibchookstypes.StoreKey,
-		tokenfactorytypes.StoreKey,
+		tokenfactorytypes.StoreKey, liquiditytypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -500,6 +506,11 @@ func New(
 		groupConfig.MaxMetadataLen = 1000
 	*/
 	app.GroupKeeper = groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper, groupConfig)
+
+	app.LiquidityKeeper = liquiditykeeper.NewKeeper(
+		appCodec, keys[liquiditytypes.StoreKey],
+		app.BankKeeper, app.AccountKeeper, app.DistrKeeper,
+	)
 
 	// ... other modules keepers
 
@@ -728,6 +739,7 @@ func New(
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
 		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
+		liquidity.NewAppModule(appCodec, app.LiquidityKeeper, app.AccountKeeper, app.BankKeeper, app.DistrKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -737,7 +749,7 @@ func New(
 	// NOTE: capability module's beginblocker must come before any modules using capabilities (e.g. IBC)
 	app.mm.SetOrderBeginBlockers(
 		upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName,
+		evidencetypes.ModuleName, stakingtypes.ModuleName, liquiditytypes.ModuleName,
 		authtypes.ModuleName, sdkbanktypes.ModuleName, govtypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName,
 		authz.ModuleName, feegrant.ModuleName, nft.ModuleName, group.ModuleName,
 		paramstypes.ModuleName, vestingtypes.ModuleName, consensustypes.ModuleName,
@@ -754,7 +766,7 @@ func New(
 	)
 
 	app.mm.SetOrderEndBlockers(
-		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
+		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, liquiditytypes.ModuleName,
 		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName, distrtypes.ModuleName,
 		slashingtypes.ModuleName, minttypes.ModuleName,
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
@@ -783,7 +795,8 @@ func New(
 		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName,
 		distrtypes.ModuleName, stakingtypes.ModuleName, slashingtypes.ModuleName, govtypes.ModuleName,
 		minttypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
-		feegrant.ModuleName, nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
+		feegrant.ModuleName, liquiditytypes.ModuleName,
+		nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
 		vestingtypes.ModuleName, consensustypes.ModuleName,
 		feeburnmoduletypes.ModuleName,
 		// additional non simd modules
@@ -911,6 +924,7 @@ func New(
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		feeburnmodule.NewAppModule(appCodec, app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper),
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
+		liquidity.NewAppModule(appCodec, app.LiquidityKeeper, app.AccountKeeper, app.BankKeeper, app.DistrKeeper),
 	)
 
 	app.sm.RegisterStoreDecoders()

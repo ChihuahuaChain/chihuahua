@@ -231,6 +231,12 @@ github.com/Victor118/liquidity v0.0.0-20240410172830-cba2a5b509bf h1:iVBftVCOT3c
 github.com/Victor118/liquidity v0.0.0-20240410172830-cba2a5b509bf/go.mod h1:gYDdx34EgJri4PCwabZvVI3ZH6K1FfIhaRDf85NTftU=
 github.com/Victor118/liquidity v1.6.0 h1:JOIwRavMNE/54DN3QiZAhn+QDeZEpLJ3ZFXomtjf1T4=
 github.com/Victor118/liquidity v1.6.0/go.mod h1:gYDdx34EgJri4PCwabZvVI3ZH6K1FfIhaRDf85NTftU=
+github.com/Victor118/liquidity v1.6.1 h1:hJr70b1LR+sx6yTVPo4yZ9yWM1cQNyfJo3JFz7E79f8=
+github.com/Victor118/liquidity v1.6.1/go.mod h1:gYDdx34EgJri4PCwabZvVI3ZH6K1FfIhaRDf85NTftU=
+github.com/Victor118/liquidity v1.6.2 h1:bnkjEZpY+n4fAJAIxYOnnwE1pkc8RjDXAQv++Ys1Nok=
+github.com/Victor118/liquidity v1.6.2/go.mod h1:gYDdx34EgJri4PCwabZvVI3ZH6K1FfIhaRDf85NTftU=
+github.com/Victor118/liquidity v1.6.3 h1:98FbcQh7B+EiOxmDPcqyfYvcRxI174tNL2fu2RePCE0=
+github.com/Victor118/liquidity v1.6.3/go.mod h1:gYDdx34EgJri4PCwabZvVI3ZH6K1FfIhaRDf85NTftU=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

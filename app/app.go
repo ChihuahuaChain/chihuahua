@@ -151,12 +151,14 @@ import (
 	tokenbindings "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+
+	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
 )
 
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v6"
+	UpgradeName  = "v7"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -1114,13 +1116,37 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler("v6", func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
 
 		if err := app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.Params{
 			DenomCreationFee:        nil,
 			DenomCreationGasConsume: 50_000, // 50k gas consume for creating a token. Ref: Juno is 2m and Osmosis 2m.
 		}); err != nil {
+			return nil, err
+		}
+
+		return vm, err
+	})
+	app.UpgradeKeeper.SetUpgradeHandler("v7", func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
+		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
+		params := app.LiquidityKeeper.GetParams(ctx)
+		params.SwapFeeRate = sdk.NewDecWithPrec(5, 3)                                                       // 0.5% swap fees
+		params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(10_000_000_000))) // 10 000 huahua to create a pool
+		params.BuildersAddresses = []liquiditytypes.WeightedAddress{
+			{
+				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",
+				Weight:  sdk.NewDecWithPrec(25, 2), //will receive 25% of commission from swap fees and pool creation fees
+			},
+			{
+				Address: "chihuahua1nm50zycnm9yf33rv8n6lpks24usxzahk53yux9",
+				Weight:  sdk.NewDecWithPrec(75, 2), //will receive 75% of commission from swap fees and pool creation fees
+			},
+		}
+		params.BuildersCommission = sdk.NewDecWithPrec(2, 1) //20% of fees will go to builders
+
+		if err := app.LiquidityKeeper.SetParams(ctx, params); err != nil {
 			return nil, err
 		}
 

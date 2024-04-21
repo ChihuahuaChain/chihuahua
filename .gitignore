@@ -6,3 +6,6 @@ logs
 keys
 .DS_Store
 node_modules
+draft_metadata.json
+draft_proposal.json
+bin/chihuahuad

@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -874,13 +875,15 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-
+	logger.Debug(fmt.Sprintf("Victor: upgrade info : %v", upgradeInfo))
+	logger.Debug(fmt.Sprintf("Victor: UpgradeName : %s", UpgradeName))
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added: []string{
 				//alliancemoduletypes.StoreKey,
 				//ibchookstypes.StoreKey,
-				tokenfactorytypes.ModuleName,
+				//tokenfactorytypes.ModuleName,
+				liquiditytypes.ModuleName,
 			},
 		}
 

@@ -1143,7 +1143,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 				Weight:  sdk.NewDecWithPrec(25, 2), //will receive 25% of commission from swap fees and pool creation fees
 			},
 			{
-				Address: "chihuahua1nm50zycnm9yf33rv8n6lpks24usxzahk53yux9",
+				Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
 				Weight:  sdk.NewDecWithPrec(75, 2), //will receive 75% of commission from swap fees and pool creation fees
 			},
 		}

@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -875,8 +874,6 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-	logger.Debug(fmt.Sprintf("Victor: upgrade info : %v", upgradeInfo))
-	logger.Debug(fmt.Sprintf("Victor: UpgradeName : %s", UpgradeName))
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added: []string{
@@ -1153,6 +1150,19 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			return nil, err
 		}
 
+		tokenFactoryParams := app.TokenFactoryKeeper.GetParams(ctx)
+		tokenFactoryParams.BuildersAddresses = []tokenfactorytypes.WeightedAddress{
+			{
+				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",
+				Weight:  sdk.NewDecWithPrec(10, 2), //will receive 10% of commission from minting tokens
+			},
+			{
+				Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+				Weight:  sdk.NewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
+			},
+		}
+		tokenFactoryParams.BuildersCommission = sdk.NewDecWithPrec(1, 2) //1% of minted token goes to builders
+		app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
 		return vm, err
 	})
 }

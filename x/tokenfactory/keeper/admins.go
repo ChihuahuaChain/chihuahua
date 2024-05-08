@@ -1,11 +1,13 @@
 package keeper
 
 import (
+	"fmt"
+
 	"github.com/cosmos/gogoproto/proto"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // GetAuthorityMetadata returns the authority metadata for a specific denom
@@ -47,4 +49,23 @@ func (k Keeper) setAdmin(ctx sdk.Context, denom string, admin string) error {
 	metadata.Admin = admin
 
 	return k.setAuthorityMetadata(ctx, denom, metadata)
+}
+
+func (k Keeper) validAccountForBurnOrForceTransfer(ctx sdk.Context, addressFrom string) error {
+	accountI := k.accountKeeper.GetAccount(ctx, sdk.MustAccAddressFromBech32(addressFrom))
+	_, ok := accountI.(authtypes.ModuleAccountI)
+	ctx.Logger().Error(fmt.Sprintf("Test if address %s is a module account", addressFrom))
+	if ok {
+		ctx.Logger().Error(fmt.Sprintf("Address %s is a module account => ERROR", addressFrom))
+		return types.ErrBurnOrForceTransferFromModuleAccount
+	}
+	ctx.Logger().Error(fmt.Sprintf("Address %s is not a module account => OK", addressFrom))
+	params := k.GetParams(ctx)
+	builderWeightedAddresses := params.BuildersAddresses
+	for _, builder := range builderWeightedAddresses {
+		if builder.Address == addressFrom {
+			return types.ErrBurnOrForceTransferFromBuilderAccount
+		}
+	}
+	return nil
 }

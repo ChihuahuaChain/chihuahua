@@ -104,6 +104,11 @@ func (server msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.
 		return nil, types.ErrCapabilityNotEnabled
 	}
 
+	err = server.Keeper.validAccountForBurnOrForceTransfer(ctx, msg.BurnFromAddress)
+	if err != nil {
+		return nil, err
+	}
+
 	err = server.Keeper.burnFrom(ctx, msg.Amount, msg.BurnFromAddress)
 	if err != nil {
 		return nil, err
@@ -134,6 +139,11 @@ func (server msgServer) ForceTransfer(goCtx context.Context, msg *types.MsgForce
 
 	if msg.Sender != authorityMetadata.GetAdmin() {
 		return nil, types.ErrUnauthorized
+	}
+
+	err = server.Keeper.validAccountForBurnOrForceTransfer(ctx, msg.TransferFromAddress)
+	if err != nil {
+		return nil, err
 	}
 
 	err = server.Keeper.forceTransfer(ctx, msg.Amount, msg.TransferFromAddress, msg.TransferToAddress)

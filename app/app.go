@@ -58,6 +58,9 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 
 	// distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	"github.com/Victor118/liquidity/x/liquidity"
+	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
+	liquiditytypes "github.com/Victor118/liquidity/x/liquidity/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
@@ -148,12 +151,14 @@ import (
 	tokenbindings "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+
+	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
 )
 
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v6"
+	UpgradeName  = "v7"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -277,6 +282,7 @@ var (
 		alliancemodule.AppModuleBasic{},
 		ibchooks.AppModuleBasic{},
 		tokenfactory.AppModuleBasic{},
+		liquidity.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -295,6 +301,7 @@ var (
 		alliancemoduletypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		alliancemoduletypes.RewardsPoolName: nil,
 		tokenfactorytypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+		liquiditytypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -361,6 +368,7 @@ type App struct {
 	ScopedIBCFeeKeeper        capabilitykeeper.ScopedKeeper
 
 	scopedWasmKeeper capabilitykeeper.ScopedKeeper
+	LiquidityKeeper  liquiditykeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -406,7 +414,7 @@ func New(
 		feeburnmoduletypes.StoreKey,
 		alliancemoduletypes.StoreKey,
 		ibchookstypes.StoreKey,
-		tokenfactorytypes.StoreKey,
+		tokenfactorytypes.StoreKey, liquiditytypes.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
@@ -500,6 +508,11 @@ func New(
 		groupConfig.MaxMetadataLen = 1000
 	*/
 	app.GroupKeeper = groupkeeper.NewKeeper(keys[group.StoreKey], appCodec, app.MsgServiceRouter(), app.AccountKeeper, groupConfig)
+
+	app.LiquidityKeeper = liquiditykeeper.NewKeeper(
+		appCodec, keys[liquiditytypes.StoreKey],
+		app.BankKeeper, app.AccountKeeper, app.DistrKeeper,
+	)
 
 	// ... other modules keepers
 
@@ -728,6 +741,7 @@ func New(
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
 		tokenfactory.NewAppModule(app.TokenFactoryKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(tokenfactorytypes.ModuleName)),
+		liquidity.NewAppModule(appCodec, app.LiquidityKeeper, app.AccountKeeper, app.BankKeeper, app.DistrKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -737,7 +751,7 @@ func New(
 	// NOTE: capability module's beginblocker must come before any modules using capabilities (e.g. IBC)
 	app.mm.SetOrderBeginBlockers(
 		upgradetypes.ModuleName, capabilitytypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName,
+		evidencetypes.ModuleName, stakingtypes.ModuleName, liquiditytypes.ModuleName,
 		authtypes.ModuleName, sdkbanktypes.ModuleName, govtypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName,
 		authz.ModuleName, feegrant.ModuleName, nft.ModuleName, group.ModuleName,
 		paramstypes.ModuleName, vestingtypes.ModuleName, consensustypes.ModuleName,
@@ -754,7 +768,7 @@ func New(
 	)
 
 	app.mm.SetOrderEndBlockers(
-		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
+		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName, liquiditytypes.ModuleName,
 		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName, distrtypes.ModuleName,
 		slashingtypes.ModuleName, minttypes.ModuleName,
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
@@ -783,7 +797,8 @@ func New(
 		capabilitytypes.ModuleName, authtypes.ModuleName, sdkbanktypes.ModuleName,
 		distrtypes.ModuleName, stakingtypes.ModuleName, slashingtypes.ModuleName, govtypes.ModuleName,
 		minttypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
-		feegrant.ModuleName, nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
+		feegrant.ModuleName, liquiditytypes.ModuleName,
+		nft.ModuleName, group.ModuleName, paramstypes.ModuleName, upgradetypes.ModuleName,
 		vestingtypes.ModuleName, consensustypes.ModuleName,
 		feeburnmoduletypes.ModuleName,
 		// additional non simd modules
@@ -859,13 +874,13 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-
 	if upgradeInfo.Name == UpgradeName && !app.UpgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := storetypes.StoreUpgrades{
 			Added: []string{
 				//alliancemoduletypes.StoreKey,
 				//ibchookstypes.StoreKey,
-				tokenfactorytypes.ModuleName,
+				//tokenfactorytypes.ModuleName,
+				liquiditytypes.ModuleName,
 			},
 		}
 
@@ -911,6 +926,7 @@ func New(
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		feeburnmodule.NewAppModule(appCodec, app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper),
 		alliancemodule.NewAppModule(appCodec, app.AllianceKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.interfaceRegistry, app.GetSubspace(alliancemoduletypes.ModuleName)),
+		liquidity.NewAppModule(appCodec, app.LiquidityKeeper, app.AccountKeeper, app.BankKeeper, app.DistrKeeper),
 	)
 
 	app.sm.RegisterStoreDecoders()
@@ -1100,7 +1116,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 
 // RegisterUpgradeHandlers returns upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
-	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler("v6", func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
 
 		if err := app.TokenFactoryKeeper.SetParams(ctx, tokenfactorytypes.Params{
@@ -1110,6 +1126,46 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			return nil, err
 		}
 
+		return vm, err
+	})
+	app.UpgradeKeeper.SetUpgradeHandler("v7", func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
+		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
+		params := app.LiquidityKeeper.GetParams(ctx)
+		params.SwapFeeRate = sdk.NewDecWithPrec(5, 3)                                                       // 0.5% swap fees
+		params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(10_000_000_000))) // 10 000 huahua to create a pool
+		params.BuildersAddresses = []liquiditytypes.WeightedAddress{
+			{
+				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",
+				Weight:  sdk.NewDecWithPrec(25, 2), //will receive 25% of commission from swap fees and pool creation fees
+			},
+			{
+				Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+				Weight:  sdk.NewDecWithPrec(75, 2), //will receive 75% of commission from swap fees and pool creation fees
+			},
+		}
+		params.BuildersCommission = sdk.NewDecWithPrec(2, 1) //20% of fees will go to builders
+
+		if err := app.LiquidityKeeper.SetParams(ctx, params); err != nil {
+			return nil, err
+		}
+
+		tokenFactoryParams := app.TokenFactoryKeeper.GetParams(ctx)
+		tokenFactoryParams.BuildersAddresses = []tokenfactorytypes.WeightedAddress{
+			{
+				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",
+				Weight:  sdk.NewDecWithPrec(10, 2), //will receive 10% of commission from minting tokens
+			},
+			{
+				Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+				Weight:  sdk.NewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
+			},
+		}
+		tokenFactoryParams.BuildersCommission = sdk.NewDecWithPrec(1, 2) //1% of minted token goes to builders
+		errParams := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
+		if err == nil {
+			err = errParams
+		}
 		return vm, err
 	})
 }

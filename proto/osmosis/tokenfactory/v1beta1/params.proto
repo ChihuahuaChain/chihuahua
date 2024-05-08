@@ -8,6 +8,21 @@ import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
 
+// WeightedAddress represents an address with a weight assigned to it.
+// The weight is used to determine the proportion of the total minted
+// tokens to be minted to the address.
+message WeightedAddress {
+  option (gogoproto.equal) = true;
+  string address = 1 [ (gogoproto.moretags) = "yaml:\"address\"" ];
+  string weight = 2 [
+    (gogoproto.moretags) = "yaml:\"weight\"",
+
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
+}
+
+
 // Params defines the parameters for the tokenfactory module.
 message Params {
   repeated cosmos.base.v1beta1.Coin denom_creation_fee = 1 [
@@ -22,5 +37,16 @@ message Params {
   uint64 denom_creation_gas_consume = 2 [
     (gogoproto.moretags) = "yaml:\"denom_creation_gas_consume\"",
     (gogoproto.nullable) = true
+  ];
+
+  string builders_commission = 3 [
+    (gogoproto.moretags) = "yaml:\"builders_commission\"",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ]; 
+
+  repeated WeightedAddress builders_addresses = 4 [
+    (gogoproto.moretags) = "yaml:\"builders_addresses\"",
+    (gogoproto.nullable) = false
   ];
 }

@@ -3,6 +3,7 @@ package types_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
@@ -30,6 +31,9 @@ func TestGenesisState_Validate(t *testing.T) {
 						},
 					},
 				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+				},
 			},
 			valid: true,
 		},
@@ -43,6 +47,9 @@ func TestGenesisState_Validate(t *testing.T) {
 							Admin: "cosmos1ft6e5esdtdegnvcr3djd3ftk4kwpcr6jta8eyh",
 						},
 					},
+				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -58,6 +65,9 @@ func TestGenesisState_Validate(t *testing.T) {
 						},
 					},
 				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+				},
 			},
 			valid: true,
 		},
@@ -68,6 +78,9 @@ func TestGenesisState_Validate(t *testing.T) {
 					{
 						Denom: "factory/cosmos1t7egva48prqmzl59x5ngv4zx0dtrwewcdqdjr8/bitcoin",
 					},
+				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -82,6 +95,9 @@ func TestGenesisState_Validate(t *testing.T) {
 							Admin: "moose",
 						},
 					},
+				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
 				},
 			},
 			valid: false,
@@ -103,6 +119,9 @@ func TestGenesisState_Validate(t *testing.T) {
 						},
 					},
 				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+				},
 			},
 			valid: true,
 		},
@@ -122,6 +141,9 @@ func TestGenesisState_Validate(t *testing.T) {
 							Admin: "",
 						},
 					},
+				},
+				Params: types.Params{
+					BuildersCommission: sdk.NewDecWithPrec(1, 2),
 				},
 			},
 			valid: false,

@@ -1162,7 +1162,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			},
 		}
 		tokenFactoryParams.BuildersCommission = sdk.NewDecWithPrec(1, 2) //1% of minted token goes to builders
-		err = app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
+		errParams := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
+		if err == nil {
+			err = errParams
+		}
 		return vm, err
 	})
 }

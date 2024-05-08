@@ -41,8 +41,11 @@ func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string) error {
 			accBuilder := sdk.MustAccAddressFromBech32(builderAddr.Address)
 			builderAmount := commAmount.Mul(builderAddr.Weight).TruncateInt()
 			builderCoin := sdk.NewCoin(amount.Denom, builderAmount)
-			k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, accBuilder, sdk.NewCoins(builderCoin))
-			totalCommSent = totalCommSent.Add(builderAmount)
+			error := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, accBuilder, sdk.NewCoins(builderCoin))
+			if error == nil {
+				totalCommSent = totalCommSent.Add(builderAmount)
+			}
+
 		}
 		amount = amount.SubAmount(totalCommSent)
 	}

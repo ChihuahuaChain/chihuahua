@@ -1161,6 +1161,8 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 				Weight:  sdk.NewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
 			},
 		}
+		tokenFactoryParams.DenomCreationFee = nil
+		tokenFactoryParams.DenomCreationGasConsume = 50_000
 		tokenFactoryParams.BuildersCommission = sdk.NewDecWithPrec(1, 2) //1% of minted token goes to builders
 		errParams := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
 		if err == nil {

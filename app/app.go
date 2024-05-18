@@ -1132,8 +1132,8 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		vm, err := app.mm.RunMigrations(ctx, cfg, vm)
 		params := app.LiquidityKeeper.GetParams(ctx)
-		params.SwapFeeRate = sdk.NewDecWithPrec(5, 3)                                                       // 0.5% swap fees
-		params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(10_000_000_000))) // 10 000 huahua to create a pool
+		params.SwapFeeRate = sdk.NewDecWithPrec(5, 3)                                                        // 0.5% swap fees
+		params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, sdk.NewInt(100_000_000_000))) // 100 000 huahua to create a pool
 		params.BuildersAddresses = []liquiditytypes.WeightedAddress{
 			{
 				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",

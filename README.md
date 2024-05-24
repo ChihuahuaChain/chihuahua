@@ -24,13 +24,13 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 
 ```bash
 # download the latest version
-wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz
 
 # remove old version (if any)
 sudo rm -rf /usr/local/go
 
 # install the new version
-sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.21.1.linux-amd64.tar.gz
 ```
 
 - #### Configure Environmental Variables
@@ -47,7 +47,7 @@ source ~/.profile
 
 go version
 ```
-The output should be `go version go1.20.6 linux/amd64`
+The output should be `go version go1.21.1 linux/amd64`
 
 - #### Install Chihuahua from sources
 
@@ -56,11 +56,11 @@ The output should be `go version go1.20.6 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v6.0.1
+git checkout v7
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v6.0.1`
+To verify the installation you can run `chihuahuad version` and it should return `v7`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahuachain-8782014494216
 
 # Chain Upgrades
 
+- **v7** _(v7)_ - Block 12900000 - (2024-05-24 10:12:00)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v7)
 - **v6** _(v6)_ - Block 10666000 - (2023-12-23 15:30:00)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v6)
 - **v503** _(v5.0.4)_ - Block 9430000 - (2023-09-28 16:30:00) - (Halt height 9431130 due to wrong wasmd/wasmvm - Use v5.0.4 on directory v503)

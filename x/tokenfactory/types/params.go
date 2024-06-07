@@ -16,10 +16,11 @@ func NewParams(denomCreationFee sdk.Coins) Params {
 // default tokenfactory module parameters.
 func DefaultParams() Params {
 	return Params{
-		DenomCreationFee:        sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)),
-		DenomCreationGasConsume: 2_000_000,
-		BuildersCommission:      sdk.NewDecWithPrec(5, 3), // "0.005" if there is builders addresses, this commission rate from minted amount is redirected to builders
-		BuildersAddresses:       []WeightedAddress(nil),
+		DenomCreationFee:           sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)),
+		DenomCreationGasConsume:    2_000_000,
+		BuildersCommission:         sdk.NewDecWithPrec(5, 3), // "0.005" if there is builders addresses, this commission rate from minted amount is redirected to builders
+		BuildersAddresses:          []WeightedAddress(nil),
+		FreeMintWhitelistAddresses: []string(nil),
 	}
 }
 
@@ -41,8 +42,32 @@ func (p Params) Validate() error {
 	if err != nil {
 		return err
 	}
+	err = validateFreeMintWhitelistAddresses(p.FreeMintWhitelistAddresses)
+	if err != nil {
+		return err
+	}
 	return nil
 
+}
+
+func validateFreeMintWhitelistAddresses(i interface{}) error {
+	v, ok := i.([]string)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+
+	// whitelist can be empty
+	if len(v) == 0 {
+		return nil
+	}
+	for i, addr := range v {
+		_, err := sdk.AccAddressFromBech32(addr)
+		if err != nil {
+			return fmt.Errorf("invalid address at %dth", i)
+		}
+
+	}
+	return nil
 }
 
 func validateBuildersAddresses(i interface{}) error {
@@ -58,8 +83,6 @@ func validateBuildersAddresses(i interface{}) error {
 
 	weightSum := sdk.ZeroDec()
 	for i, w := range v {
-		// we allow address to be "" to go to community pool
-
 		_, err := sdk.AccAddressFromBech32(w.Address)
 		if err != nil {
 			return fmt.Errorf("invalid address at %dth", i)

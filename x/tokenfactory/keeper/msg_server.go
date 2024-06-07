@@ -70,7 +70,7 @@ func (server msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.
 		msg.MintToAddress = msg.Sender
 	}
 
-	err = server.Keeper.mintTo(ctx, msg.Amount, msg.MintToAddress)
+	err = server.Keeper.mintTo(ctx, msg.Amount, msg.MintToAddress, msg.Sender)
 	if err != nil {
 		return nil, err
 	}

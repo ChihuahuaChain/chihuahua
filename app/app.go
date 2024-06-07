@@ -158,7 +158,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v7"
+	UpgradeName  = "v7.0.1"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -880,7 +880,7 @@ func New(
 				//alliancemoduletypes.StoreKey,
 				//ibchookstypes.StoreKey,
 				//tokenfactorytypes.ModuleName,
-				liquiditytypes.ModuleName,
+				//liquiditytypes.ModuleName,
 			},
 		}
 
@@ -1169,6 +1169,31 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			err = errParams
 		}
 		return vm, err
+	})
+
+	app.UpgradeKeeper.SetUpgradeHandler("v7.0.1", func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+
+		tokenFactoryParams := app.TokenFactoryKeeper.GetParams(ctx)
+		tokenFactoryParams.BuildersAddresses = []tokenfactorytypes.WeightedAddress{
+			{
+				Address: "chihuahua1yjak0p2f6yjwhvf00r0wd4kqhdpvn57qc887m3",
+				Weight:  sdk.NewDecWithPrec(10, 2), //will receive 10% of commission from minting tokens
+			},
+			{
+				Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+				Weight:  sdk.NewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
+			},
+		}
+		tokenFactoryParams.DenomCreationFee = nil
+		tokenFactoryParams.DenomCreationGasConsume = 50_000
+		tokenFactoryParams.BuildersCommission = sdk.NewDecWithPrec(1, 2) //1% of minted token goes to builders
+
+		tokenFactoryParams.FreeMintWhitelistAddresses = []string{
+			"chihuahua1e85rxa4r8utk6ee0j93serytcchgeayqteeystkshqsvryk55egs6l9jhu",
+			"chihuahua1hplyuj2hzxd75q8686g9vm3uzrrny9ggvt8aza2csupgdp98vg2sp0e3h0",
+		}
+		errParams := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams)
+		return vm, errParams
 	})
 }
 

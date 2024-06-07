@@ -9,7 +9,7 @@ import (
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 )
 
-func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string) error {
+func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string, sender string) error {
 	// verify that denom is an x/tokenfactory denom
 	_, _, err := types.DeconstructDenom(amount.Denom)
 	if err != nil {
@@ -33,26 +33,39 @@ func (k Keeper) mintTo(ctx sdk.Context, amount sdk.Coin, mintTo string) error {
 	params := k.GetParams(ctx)
 	comm := params.BuildersCommission
 	buildersAddresses := params.BuildersAddresses
-	if len(buildersAddresses) > 0 {
-		decAmount := sdk.NewDecCoinFromCoin(amount)
-		commAmount := decAmount.Amount.Mul(comm)
-		totalCommSent := math.NewInt(0)
-		for _, builderAddr := range buildersAddresses {
-			accBuilder := sdk.MustAccAddressFromBech32(builderAddr.Address)
-			builderAmount := commAmount.Mul(builderAddr.Weight).TruncateInt()
-			builderCoin := sdk.NewCoin(amount.Denom, builderAmount)
-			error := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, accBuilder, sdk.NewCoins(builderCoin))
-			if error == nil {
-				totalCommSent = totalCommSent.Add(builderAmount)
-			}
+	if !isWhitelistedAddress(sender, params) {
+		if len(buildersAddresses) > 0 {
+			decAmount := sdk.NewDecCoinFromCoin(amount)
+			commAmount := decAmount.Amount.Mul(comm)
+			totalCommSent := math.NewInt(0)
+			for _, builderAddr := range buildersAddresses {
+				accBuilder := sdk.MustAccAddressFromBech32(builderAddr.Address)
+				builderAmount := commAmount.Mul(builderAddr.Weight).TruncateInt()
+				builderCoin := sdk.NewCoin(amount.Denom, builderAmount)
+				error := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, accBuilder, sdk.NewCoins(builderCoin))
+				if error == nil {
+					totalCommSent = totalCommSent.Add(builderAmount)
+				}
 
+			}
+			amount = amount.SubAmount(totalCommSent)
 		}
-		amount = amount.SubAmount(totalCommSent)
 	}
 
 	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName,
 		addr,
 		sdk.NewCoins(amount))
+}
+
+func isWhitelistedAddress(sender string, params types.Params) bool {
+	if len(params.FreeMintWhitelistAddresses) > 0 {
+		for _, addr := range params.FreeMintWhitelistAddresses {
+			if addr == sender {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (k Keeper) burnFrom(ctx sdk.Context, amount sdk.Coin, burnFrom string) error {

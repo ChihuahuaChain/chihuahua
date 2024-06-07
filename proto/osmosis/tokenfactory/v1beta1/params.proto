@@ -49,4 +49,6 @@ message Params {
     (gogoproto.moretags) = "yaml:\"builders_addresses\"",
     (gogoproto.nullable) = false
   ];
+
+  repeated string free_mint_whitelist_addresses = 5;
 }

@@ -3,7 +3,7 @@
 # ChihuahuaChain
 ##### _The Cosmos MEME Coin_
 Stay up to date with the latest news on our Socials
- - Join our [Telegram Community](https://t.me/chihuahua_cosmos)
+ - Join our [Telegram Community](https://t.me/chihuahua_wtf)
  - Join our [Discord](https://discord.gg/chihuahuachain-878201449421619211)
  - Follow us on [Twitter](https://twitter.com/ChihuahuaChain)
  - Check out our [Medium](https://medium.com/@chihuahuachain)

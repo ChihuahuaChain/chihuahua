@@ -1,6 +1,7 @@
 package simulation
 
 import (
+	"context"
 	"math/rand"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -37,8 +38,8 @@ type TokenfactoryKeeper interface {
 
 type BankKeeper interface {
 	simulation.BankKeeper
-	GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
+	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 }
 
 func WeightedOperations(

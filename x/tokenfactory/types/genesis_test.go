@@ -3,10 +3,9 @@ package types_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
+	"cosmossdk.io/math"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -32,7 +31,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -49,7 +48,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -66,7 +65,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -80,7 +79,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -97,7 +96,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: false,
@@ -120,7 +119,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: true,
@@ -143,7 +142,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 				Params: types.Params{
-					BuildersCommission: sdk.NewDecWithPrec(1, 2),
+					BuildersCommission: math.LegacyNewDecWithPrec(1, 2),
 				},
 			},
 			valid: false,

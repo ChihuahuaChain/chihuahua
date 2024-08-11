@@ -10,6 +10,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
+	"cosmossdk.io/math"
+	storetypes "cosmossdk.io/store/types"
 	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 )
@@ -29,7 +31,7 @@ const (
 type TokenfactoryKeeper interface {
 	GetParams(ctx sdk.Context) (params types.Params)
 	GetAuthorityMetadata(ctx sdk.Context, denom string) (types.DenomAuthorityMetadata, error)
-	GetAllDenomsIterator(ctx sdk.Context) sdk.Iterator
+	GetAllDenomsIterator(ctx sdk.Context) storetypes.Iterator
 	GetDenomsFromCreator(ctx sdk.Context, creator string) []string
 }
 
@@ -54,32 +56,32 @@ func WeightedOperations(
 		weightMsgForceTransfer    int
 	)
 
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgCreateDenom, &weightMsgCreateDenom, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgCreateDenom, &weightMsgCreateDenom, nil,
 		func(_ *rand.Rand) {
 			weightMsgCreateDenom = appparams.DefaultWeightMsgCreateDenom
 		},
 	)
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgMint, &weightMsgMint, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgMint, &weightMsgMint, nil,
 		func(_ *rand.Rand) {
 			weightMsgMint = appparams.DefaultWeightMsgMint
 		},
 	)
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgBurn, &weightMsgBurn, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgBurn, &weightMsgBurn, nil,
 		func(_ *rand.Rand) {
 			weightMsgBurn = appparams.DefaultWeightMsgBurn
 		},
 	)
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgChangeAdmin, &weightMsgChangeAdmin, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgChangeAdmin, &weightMsgChangeAdmin, nil,
 		func(_ *rand.Rand) {
 			weightMsgChangeAdmin = appparams.DefaultWeightMsgChangeAdmin
 		},
 	)
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgSetDenomMetadata, &weightMsgSetDenomMetadata, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgSetDenomMetadata, &weightMsgSetDenomMetadata, nil,
 		func(_ *rand.Rand) {
 			weightMsgSetDenomMetadata = appparams.DefaultWeightMsgSetDenomMetadata
 		},
 	)
-	simstate.AppParams.GetOrGenerate(simstate.Cdc, OpWeightMsgForceTransfer, &weightMsgForceTransfer, nil,
+	simstate.AppParams.GetOrGenerate(OpWeightMsgForceTransfer, &weightMsgForceTransfer, nil,
 		func(_ *rand.Rand) {
 			weightMsgForceTransfer = appparams.DefaultWeightMsgForceTransfer
 		},
@@ -283,7 +285,7 @@ func SimulateMsgBurn(
 
 		// Check if admin account balance = 0
 		accountBalance := bk.GetBalance(ctx, adminAccount.Address, denom)
-		if accountBalance.Amount.LTE(sdk.ZeroInt()) {
+		if accountBalance.Amount.LTE(math.ZeroInt()) {
 			return simtypes.NoOpMsg(types.ModuleName, types.MsgBurn{}.Type(), "sim account have no balance"), nil, nil
 		}
 
@@ -336,7 +338,7 @@ func SimulateMsgMint(
 		}
 
 		// Rand mint amount
-		mintAmount, _ := simtypes.RandPositiveInt(r, sdk.NewIntFromUint64(100_000_000))
+		mintAmount, _ := simtypes.RandPositiveInt(r, math.NewIntFromUint64(100_000_000))
 
 		// Create msg mint
 		msg := types.MsgMint{
@@ -400,7 +402,6 @@ func BuildOperationInput(
 		TxGen:           appparams.MakeEncodingConfig().TxConfig,
 		Cdc:             nil,
 		Msg:             msg,
-		MsgType:         msg.Type(),
 		Context:         ctx,
 		SimAccount:      simAccount,
 		AccountKeeper:   ak,

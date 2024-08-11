@@ -1,8 +1,9 @@
 package types
 
 import (
+	context "context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -29,8 +30,8 @@ type BankKeeper interface {
 }
 
 type AccountKeeper interface {
-	SetModuleAccount(ctx sdk.Context, macc authtypes.ModuleAccountI)
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
+	SetModuleAccount(ctx context.Context, macc sdk.ModuleAccountI)
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 }
 
 // CommunityPoolKeeper defines the contract needed to be fulfilled for community pool interactions.

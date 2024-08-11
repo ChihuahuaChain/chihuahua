@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
+	storetypes "cosmossdk.io/store/types"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/exported"
 	v2 "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/migrations/v2"
@@ -32,8 +33,8 @@ func TestMigrate(t *testing.T) {
 	encCfg := moduletestutil.MakeTestEncodingConfig(tokenfactory.AppModuleBasic{})
 	cdc := encCfg.Codec
 
-	storeKey := sdk.NewKVStoreKey(v2.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	storeKey := storetypes.NewKVStoreKey(v2.ModuleName)
+	tKey := storetypes.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	store := ctx.KVStore(storeKey)
 

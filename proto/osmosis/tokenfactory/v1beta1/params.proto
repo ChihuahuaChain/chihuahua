@@ -41,7 +41,8 @@ message Params {
 
   string builders_commission = 3 [
     (gogoproto.moretags) = "yaml:\"builders_commission\"",
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (cosmos_proto.scalar)  = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ]; 
 

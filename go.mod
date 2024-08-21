@@ -2,8 +2,6 @@ module github.com/ChihuahuaChain/chihuahua
 
 go 1.22
 
-toolchain go1.22.6
-
 require (
 	github.com/CosmWasm/wasmd v0.53.0
 	github.com/CosmWasm/wasmvm/v2 v2.1.2

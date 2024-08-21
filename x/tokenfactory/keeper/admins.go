@@ -5,7 +5,6 @@ import (
 
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // GetAuthorityMetadata returns the authority metadata for a specific denom
@@ -51,7 +50,7 @@ func (k Keeper) setAdmin(ctx sdk.Context, denom string, admin string) error {
 
 func (k Keeper) validAccountForBurnOrForceTransfer(ctx sdk.Context, addressFrom string) error {
 	accountI := k.accountKeeper.GetAccount(ctx, sdk.MustAccAddressFromBech32(addressFrom))
-	_, ok := accountI.(authtypes.ModuleAccountI)
+	_, ok := accountI.(sdk.ModuleAccountI)
 	if ok {
 		return types.ErrBurnOrForceTransferFromModuleAccount
 	}

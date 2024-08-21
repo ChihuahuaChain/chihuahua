@@ -131,7 +131,7 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 }
 
 // DeductFees deducts fees from the given account.
-func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins, bp math.Int) error {
+func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees sdk.Coins, bp math.Int) error {
 	if !fees.IsValid() {
 		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
@@ -143,14 +143,14 @@ func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc types.AccountI, fees
 		burningFees = burningFees.Add(sdk.NewCoin(fee.Denom, burningAmount))
 	}
 
-	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
-	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+	err1 := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
+	if err1 != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err1.Error())
 	}
 
-	err = bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
-	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
+	err2 := bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
+	if err2 != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
 	}
 
 	return nil

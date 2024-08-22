@@ -18,7 +18,7 @@ func DefaultParams() Params {
 	return Params{
 		DenomCreationFee:           sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 10_000_000)),
 		DenomCreationGasConsume:    2_000_000,
-		BuildersCommission:         sdk.NewDecWithPrec(5, 3), // "0.005" if there is builders addresses, this commission rate from minted amount is redirected to builders
+		BuildersCommission:         math.LegacyNewDecWithPrec(5, 3), // "0.005" if there is builders addresses, this commission rate from minted amount is redirected to builders
 		BuildersAddresses:          []WeightedAddress(nil),
 		FreeMintWhitelistAddresses: []string(nil),
 	}
@@ -81,7 +81,7 @@ func validateBuildersAddresses(i interface{}) error {
 		return nil
 	}
 
-	weightSum := sdk.ZeroDec()
+	weightSum := math.LegacyZeroDec()
 	for i, w := range v {
 		_, err := sdk.AccAddressFromBech32(w.Address)
 		if err != nil {
@@ -97,7 +97,7 @@ func validateBuildersAddresses(i interface{}) error {
 		weightSum = weightSum.Add(w.Weight)
 	}
 
-	if !weightSum.Equal(sdk.OneDec()) {
+	if !weightSum.Equal(math.LegacyOneDec()) {
 		return fmt.Errorf("invalid weight sum: %s", weightSum.String())
 	}
 
@@ -127,7 +127,7 @@ func validateDenomCreationFeeGasConsume(i interface{}) error {
 }
 
 func validateBuildersCommission(i interface{}) error {
-	v, ok := i.(sdk.Dec)
+	v, ok := i.(math.LegacyDec)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
@@ -140,7 +140,7 @@ func validateBuildersCommission(i interface{}) error {
 		return fmt.Errorf("builders commission must not be negative: %s", v)
 	}
 
-	if v.GT(sdk.OneDec()) {
+	if v.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("builders commission too large: %s", v)
 	}
 

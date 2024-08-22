@@ -1,7 +1,7 @@
 package app
 
 import (
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 )
 
 const (
@@ -12,14 +12,14 @@ const (
 )
 
 // ChihuahuaGasRegisterConfig is defaults plus a custom compile amount
-func ChihuahuaGasRegisterConfig() wasmkeeper.WasmGasRegisterConfig {
-	gasConfig := wasmkeeper.DefaultGasRegisterConfig()
+func ChihuahuaGasRegisterConfig() wasmtypes.WasmGasRegisterConfig {
+	gasConfig := wasmtypes.DefaultGasRegisterConfig()
 	gasConfig.InstanceCost = DefaultChihuahuaInstanceCost
 	gasConfig.CompileCost = DefaultChihuahuaCompileCost
 
 	return gasConfig
 }
 
-func NewChihuahuaWasmGasRegister() wasmkeeper.WasmGasRegister {
-	return wasmkeeper.NewWasmGasRegister(ChihuahuaGasRegisterConfig())
+func NewChihuahuaWasmGasRegister() wasmtypes.WasmGasRegister {
+	return wasmtypes.NewWasmGasRegister(ChihuahuaGasRegisterConfig())
 }

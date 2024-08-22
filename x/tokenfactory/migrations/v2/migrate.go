@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	storetypes "cosmossdk.io/store/types"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/exported"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 )
@@ -18,7 +19,7 @@ var ParamsKey = []byte{0x00}
 // module state.
 func Migrate(
 	_ sdk.Context,
-	store sdk.KVStore,
+	store storetypes.KVStore,
 	_ exported.Subspace,
 	cdc codec.BinaryCodec,
 ) error {

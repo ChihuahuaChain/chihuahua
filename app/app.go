@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -171,7 +172,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v8.0.0"
+	UpgradeName  = "v8.0.1"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -995,7 +996,7 @@ func New(
 				//ibchookstypes.StoreKey,
 				//tokenfactorytypes.ModuleName,
 				//liquiditytypes.ModuleName,
-				circuittypes.ModuleName,
+				//circuittypes.ModuleName,
 			},
 			Deleted: []string{},
 		}
@@ -1316,6 +1317,33 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		return app.mm.RunMigrations(ctx, cfg, vm)
 
 	})
+	app.UpgradeKeeper.SetUpgradeHandler(
+		"v8.0.1",
+		func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			app.Logger().Info("V8.0.1 upgrade ...")
+			// New consensus params keeper using the wrong key again and move the data into the consensus params keeper with the right key
+			storesvc := runtime.NewKVStoreService(app.GetKey("upgrade"))
+			consensuskeeper := consensuskeeper.NewKeeper(
+				app.appCodec,
+				storesvc,
+				app.AccountKeeper.GetAuthority(),
+				runtime.EventService{},
+			)
+			params, err := consensuskeeper.ParamsStore.Get(ctx)
+			app.Logger().Info("Getting the params into the Consensus params keeper...")
+			if err != nil {
+				return nil, err
+			}
+			err = app.ConsensusParamsKeeper.ParamsStore.Set(ctx, params)
+			app.Logger().Info("Setting the params into the Consensus params keeper...")
+			if err != nil {
+				return nil, err
+			}
+			versionMap, err := app.mm.RunMigrations(ctx, cfg, vm)
+			app.Logger().Info(fmt.Sprintf("post migrate version map: %v", versionMap))
+			// return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
+			return versionMap, err
+		})
 }
 
 // SimulationManager implements the SimulationApp interface

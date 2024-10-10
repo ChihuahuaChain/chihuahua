@@ -10,3 +10,4 @@ draft_metadata.json
 draft_proposal.json
 bin/chihuahuad
 bin/chihuahuad
+start-localnet.sh

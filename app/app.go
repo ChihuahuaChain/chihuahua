@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
@@ -21,6 +21,7 @@ import (
 	circuittypes "cosmossdk.io/x/circuit/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -1318,31 +1319,31 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 	})
 	app.UpgradeKeeper.SetUpgradeHandler(
-		"v8.0.1",
-		func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			app.Logger().Info("V8.0.1 upgrade ...")
-			// New consensus params keeper using the wrong key again and move the data into the consensus params keeper with the right key
-			storesvc := runtime.NewKVStoreService(app.GetKey("upgrade"))
-			consensuskeeper := consensuskeeper.NewKeeper(
-				app.appCodec,
-				storesvc,
-				app.AccountKeeper.GetAuthority(),
-				runtime.EventService{},
-			)
-			params, err := consensuskeeper.ParamsStore.Get(ctx)
-			app.Logger().Info("Getting the params into the Consensus params keeper...")
+		"v8.0.2",
+		func(c context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			app.Logger().Info("V8.0.2 upgrade ...")
+			params, err := app.ConsensusParamsKeeper.ParamsStore.Get(c)
 			if err != nil {
-				return nil, err
+				params = cmtproto.ConsensusParams{}
+				block := cmtproto.BlockParams{}
+				block.MaxBytes = 22020096
+				block.MaxGas = -1
+				params.Block = &block
+				evidence := cmtproto.EvidenceParams{}
+				evidence.MaxAgeNumBlocks = 100000
+				evidence.MaxAgeDuration = 48 * time.Hour
+				evidence.MaxBytes = 1048576
+				params.Evidence = &evidence
+				validator := cmtproto.ValidatorParams{}
+				validator.PubKeyTypes = []string{"ed25519"}
+				params.Validator = &validator
+				params.Version = &cmtproto.VersionParams{}
+				err := app.ConsensusParamsKeeper.ParamsStore.Set(c, params)
+				return vm, err
 			}
-			err = app.ConsensusParamsKeeper.ParamsStore.Set(ctx, params)
-			app.Logger().Info("Setting the params into the Consensus params keeper...")
-			if err != nil {
-				return nil, err
-			}
-			versionMap, err := app.mm.RunMigrations(ctx, cfg, vm)
-			app.Logger().Info(fmt.Sprintf("post migrate version map: %v", versionMap))
-			// return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
-			return versionMap, err
+
+			return vm, nil
+
 		})
 }
 

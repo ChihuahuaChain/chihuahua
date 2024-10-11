@@ -1320,31 +1320,37 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	})
 	app.UpgradeKeeper.SetUpgradeHandler(
 		"v8.0.2",
-		func(c context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			app.Logger().Info("V8.0.2 upgrade ...")
-			params, err := app.ConsensusParamsKeeper.ParamsStore.Get(c)
-			if err != nil {
-				params = cmtproto.ConsensusParams{}
-				block := cmtproto.BlockParams{}
-				block.MaxBytes = 22020096
-				block.MaxGas = -1
-				params.Block = &block
-				evidence := cmtproto.EvidenceParams{}
-				evidence.MaxAgeNumBlocks = 100000
-				evidence.MaxAgeDuration = 48 * time.Hour
-				evidence.MaxBytes = 1048576
-				params.Evidence = &evidence
-				validator := cmtproto.ValidatorParams{}
-				validator.PubKeyTypes = []string{"ed25519"}
-				params.Validator = &validator
-				params.Version = &cmtproto.VersionParams{}
-				err := app.ConsensusParamsKeeper.ParamsStore.Set(c, params)
-				return vm, err
+			consensusParams := cmtproto.ConsensusParams{}
+
+			block := cmtproto.BlockParams{
+				MaxBytes: 22020096,
+				MaxGas:   -1,
 			}
+			consensusParams.Block = &block
 
-			return vm, nil
+			evidence := cmtproto.EvidenceParams{
+				MaxAgeNumBlocks: 100000,
+				MaxAgeDuration:  48 * time.Hour,
+				MaxBytes:        1048576,
+			}
+			consensusParams.Evidence = &evidence
 
+			validator := cmtproto.ValidatorParams{
+				PubKeyTypes: []string{"ed25519"},
+			}
+			consensusParams.Validator = &validator
+
+			consensusParams.Version = &cmtproto.VersionParams{}
+
+			err := app.ConsensusParamsKeeper.ParamsStore.Set(ctx, consensusParams)
+			if err != nil {
+				app.Logger().Info("Error 2: " + err.Error())
+			}
+			return app.mm.RunMigrations(ctx, cfg, vm)
 		})
+
 }
 
 // SimulationManager implements the SimulationApp interface

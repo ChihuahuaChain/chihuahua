@@ -1320,8 +1320,28 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	})
 	app.UpgradeKeeper.SetUpgradeHandler(
 		"v8.0.2",
-		func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		func(c context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			app.Logger().Info("V8.0.2 upgrade ...")
+			ctx := sdk.UnwrapSDKContext(c)
+			params := app.LiquidityKeeper.GetParams(ctx)
+			params.SwapFeeRate = math.LegacyNewDecWithPrec(5, 3)                                                  // 0.5% swap fees
+			params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, math.NewInt(100_000_000_000))) // 100 000 huahua to create a pool
+			params.BuildersAddresses = []liquiditytypes.WeightedAddress{
+				{
+					Address: "chihuahua14nvxlmstzc63w4cshgjmhwr2ep4gax5wlgeqe2",
+
+					Weight: math.LegacyNewDecWithPrec(25, 2), //will receive 25% of commission from swap fees and pool creation fees
+				},
+				{
+					Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+					Weight:  math.LegacyNewDecWithPrec(75, 2), //will receive 75% of commission from swap fees and pool creation fees
+				},
+			}
+			params.BuildersCommission = math.LegacyNewDecWithPrec(2, 1) //20% of fees will go to builders
+
+			if err := app.LiquidityKeeper.SetParams(ctx, params); err != nil {
+				return nil, err
+			}
 			consensusParams := cmtproto.ConsensusParams{}
 
 			block := cmtproto.BlockParams{
@@ -1344,11 +1364,11 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 			consensusParams.Version = &cmtproto.VersionParams{}
 
-			err := app.ConsensusParamsKeeper.ParamsStore.Set(ctx, consensusParams)
+			err := app.ConsensusParamsKeeper.ParamsStore.Set(c, consensusParams)
 			if err != nil {
 				app.Logger().Info("Error 2: " + err.Error())
 			}
-			return app.mm.RunMigrations(ctx, cfg, vm)
+			return app.mm.RunMigrations(c, cfg, vm)
 		})
 
 }

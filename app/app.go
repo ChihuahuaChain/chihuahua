@@ -1340,7 +1340,26 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			params.BuildersCommission = math.LegacyNewDecWithPrec(2, 1) //20% of fees will go to builders
 
 			if err := app.LiquidityKeeper.SetParams(ctx, params); err != nil {
-				return nil, err
+				app.Logger().Error("Upgrade Error 1: " + err.Error())
+			}
+
+			tokenFactoryParams := app.TokenFactoryKeeper.GetParams(ctx)
+			tokenFactoryParams.BuildersAddresses = []tokenfactorytypes.WeightedAddress{
+				{
+					Address: "chihuahua14nvxlmstzc63w4cshgjmhwr2ep4gax5wlgeqe2",
+					Weight:  math.LegacyNewDecWithPrec(10, 2), //will receive 10% of commission from minting tokens
+				},
+				{
+					Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+					Weight:  math.LegacyNewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
+				},
+			}
+			tokenFactoryParams.DenomCreationFee = nil
+			tokenFactoryParams.DenomCreationGasConsume = 50_000
+			tokenFactoryParams.BuildersCommission = math.LegacyNewDecWithPrec(1, 2) //1% of minted token goes to builders
+
+			if err := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams); err != nil {
+				app.Logger().Error("Upgrade Error 2: " + err.Error())
 			}
 			consensusParams := cmtproto.ConsensusParams{}
 
@@ -1366,7 +1385,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 			err := app.ConsensusParamsKeeper.ParamsStore.Set(c, consensusParams)
 			if err != nil {
-				app.Logger().Info("Error 2: " + err.Error())
+				app.Logger().Error("Upgrade Error 3: " + err.Error())
 			}
 			return app.mm.RunMigrations(c, cfg, vm)
 		})

@@ -3,11 +3,11 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
@@ -21,6 +21,7 @@ import (
 	circuittypes "cosmossdk.io/x/circuit/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -1318,32 +1319,77 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 	})
 	app.UpgradeKeeper.SetUpgradeHandler(
-		"v8.0.1",
-		func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			app.Logger().Info("V8.0.1 upgrade ...")
-			// New consensus params keeper using the wrong key again and move the data into the consensus params keeper with the right key
-			storesvc := runtime.NewKVStoreService(app.GetKey("upgrade"))
-			consensuskeeper := consensuskeeper.NewKeeper(
-				app.appCodec,
-				storesvc,
-				app.AccountKeeper.GetAuthority(),
-				runtime.EventService{},
-			)
-			params, err := consensuskeeper.ParamsStore.Get(ctx)
-			app.Logger().Info("Getting the params into the Consensus params keeper...")
-			if err != nil {
-				return nil, err
+		"v8.0.2",
+		func(c context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			app.Logger().Info("V8.0.2 upgrade ...")
+			ctx := sdk.UnwrapSDKContext(c)
+			params := app.LiquidityKeeper.GetParams(ctx)
+			params.SwapFeeRate = math.LegacyNewDecWithPrec(5, 3)                                                  // 0.5% swap fees
+			params.PoolCreationFee = sdk.NewCoins(sdk.NewCoin(appparams.BondDenom, math.NewInt(100_000_000_000))) // 100 000 huahua to create a pool
+			params.BuildersAddresses = []liquiditytypes.WeightedAddress{
+				{
+					Address: "chihuahua14nvxlmstzc63w4cshgjmhwr2ep4gax5wlgeqe2",
+
+					Weight: math.LegacyNewDecWithPrec(25, 2), //will receive 25% of commission from swap fees and pool creation fees
+				},
+				{
+					Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+					Weight:  math.LegacyNewDecWithPrec(75, 2), //will receive 75% of commission from swap fees and pool creation fees
+				},
 			}
-			err = app.ConsensusParamsKeeper.ParamsStore.Set(ctx, params)
-			app.Logger().Info("Setting the params into the Consensus params keeper...")
-			if err != nil {
-				return nil, err
+			params.BuildersCommission = math.LegacyNewDecWithPrec(2, 1) //20% of fees will go to builders
+
+			if err := app.LiquidityKeeper.SetParams(ctx, params); err != nil {
+				app.Logger().Error("Upgrade Error 1: " + err.Error())
 			}
-			versionMap, err := app.mm.RunMigrations(ctx, cfg, vm)
-			app.Logger().Info(fmt.Sprintf("post migrate version map: %v", versionMap))
-			// return app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
-			return versionMap, err
+
+			tokenFactoryParams := app.TokenFactoryKeeper.GetParams(ctx)
+			tokenFactoryParams.BuildersAddresses = []tokenfactorytypes.WeightedAddress{
+				{
+					Address: "chihuahua14nvxlmstzc63w4cshgjmhwr2ep4gax5wlgeqe2",
+					Weight:  math.LegacyNewDecWithPrec(10, 2), //will receive 10% of commission from minting tokens
+				},
+				{
+					Address: "chihuahua1jpfqqpna4nasv53gkn08ta9ygfryq38l8af602",
+					Weight:  math.LegacyNewDecWithPrec(90, 2), //will receive 90% of commission from minting tokens
+				},
+			}
+			tokenFactoryParams.DenomCreationFee = nil
+			tokenFactoryParams.DenomCreationGasConsume = 50_000
+			tokenFactoryParams.BuildersCommission = math.LegacyNewDecWithPrec(1, 2) //1% of minted token goes to builders
+
+			if err := app.TokenFactoryKeeper.SetParams(ctx, tokenFactoryParams); err != nil {
+				app.Logger().Error("Upgrade Error 2: " + err.Error())
+			}
+			consensusParams := cmtproto.ConsensusParams{}
+
+			block := cmtproto.BlockParams{
+				MaxBytes: 22020096,
+				MaxGas:   -1,
+			}
+			consensusParams.Block = &block
+
+			evidence := cmtproto.EvidenceParams{
+				MaxAgeNumBlocks: 100000,
+				MaxAgeDuration:  48 * time.Hour,
+				MaxBytes:        1048576,
+			}
+			consensusParams.Evidence = &evidence
+
+			validator := cmtproto.ValidatorParams{
+				PubKeyTypes: []string{"ed25519"},
+			}
+			consensusParams.Validator = &validator
+
+			consensusParams.Version = &cmtproto.VersionParams{}
+
+			err := app.ConsensusParamsKeeper.ParamsStore.Set(c, consensusParams)
+			if err != nil {
+				app.Logger().Error("Upgrade Error 3: " + err.Error())
+			}
+			return app.mm.RunMigrations(c, cfg, vm)
 		})
+
 }
 
 // SimulationManager implements the SimulationApp interface

@@ -3,6 +3,9 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/collections"
+	"cosmossdk.io/collections/indexes"
+	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
@@ -15,8 +18,9 @@ import (
 
 type (
 	Keeper struct {
-		cdc      codec.BinaryCodec
-		storeKey storetypes.StoreKey
+		cdc          codec.BinaryCodec
+		storeKey     storetypes.StoreKey
+		storeService store.KVStoreService
 
 		accountKeeper       types.AccountKeeper
 		bankKeeper          types.BankKeeper
@@ -26,32 +30,60 @@ type (
 
 		// the address capable of executing a MsgUpdateParams message. Typically, this
 		// should be the x/gov module account.
-		authority string
+		authority        string
+		AirdropSequence  collections.Sequence
+		ActiveAirdrop    *collections.IndexedMap[collections.Pair[uint64, uint64], types.Stakedrop, StakedropIndexes]
+		FeeCollectorName string
 	}
 )
+
+type StakedropIndexes struct {
+	StakedropByDenom *indexes.Multi[string, collections.Pair[uint64, uint64], types.Stakedrop]
+}
+
+func (stkdIndexes StakedropIndexes) IndexesList() []collections.Index[collections.Pair[uint64, uint64], types.Stakedrop] {
+	return []collections.Index[collections.Pair[uint64, uint64], types.Stakedrop]{stkdIndexes.StakedropByDenom}
+}
 
 // NewKeeper returns a new instance of the x/tokenfactory keeper
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey storetypes.StoreKey,
+	storeService store.KVStoreService,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	communityPoolKeeper types.CommunityPoolKeeper,
 	enabledCapabilities []string,
+	feeCollectorName string,
 	authority string,
 ) Keeper {
-	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-
+	sb := collections.NewSchemaBuilder(storeService)
+	k := Keeper{
+		cdc:                 cdc,
+		storeKey:            storeKey,
+		storeService:        storeService,
 		accountKeeper:       accountKeeper,
 		bankKeeper:          bankKeeper,
 		communityPoolKeeper: communityPoolKeeper,
 
 		enabledCapabilities: enabledCapabilities,
 
-		authority: authority,
+		authority:        authority,
+		FeeCollectorName: feeCollectorName,
+		AirdropSequence:  collections.NewSequence(sb, types.AirdropSequenceKey, "airdrop_sequence"),
+		ActiveAirdrop: collections.NewIndexedMap(sb, types.ActiveStakedropPrefix, "active_airdrop", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), codec.CollValue[types.Stakedrop](cdc),
+			StakedropIndexes{
+				StakedropByDenom: indexes.NewMulti(sb, types.StakedropIndexKey, "stakedrop_by_denom", collections.StringKey, collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), func(pk collections.Pair[uint64, uint64], value types.Stakedrop) (string, error) {
+					return value.Amount.Denom, nil
+				}),
+			}),
 	}
+	_, err := sb.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return k
 }
 
 // GetAuthority returns the x/mint module's authority.

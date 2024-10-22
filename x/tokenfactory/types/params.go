@@ -21,6 +21,7 @@ func DefaultParams() Params {
 		BuildersCommission:         math.LegacyNewDecWithPrec(5, 3), // "0.005" if there is builders addresses, this commission rate from minted amount is redirected to builders
 		BuildersAddresses:          []WeightedAddress(nil),
 		FreeMintWhitelistAddresses: []string(nil),
+		StakedropChargePerBlock:    sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(0)),
 	}
 }
 
@@ -46,8 +47,24 @@ func (p Params) Validate() error {
 	if err != nil {
 		return err
 	}
+	err = validateStakedropChargePerBlock(p.StakedropChargePerBlock)
+	if err != nil {
+		return err
+	}
 	return nil
 
+}
+
+func validateStakedropChargePerBlock(i interface{}) error {
+	v, ok := i.(sdk.Coin)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	if v.Validate() != nil {
+		return fmt.Errorf("invalid denom stakedrop creation fee: %+v", i)
+	}
+
+	return nil
 }
 
 func validateFreeMintWhitelistAddresses(i interface{}) error {

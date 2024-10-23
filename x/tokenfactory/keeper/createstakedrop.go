@@ -1,13 +1,14 @@
 package keeper
 
 import (
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (k Keeper) CreateStakedrop(ctx sdk.Context, creatorAddr string, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
-	denom, err := k.validateCreateStakedrop(ctx, creatorAddr, amount, startBlock, endBlock)
+func (k Keeper) CreateStakedropByDenom(ctx sdk.Context, creatorAddr string, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
+	err := k.validateCreateStakedrop(ctx, creatorAddr, amount, startBlock, endBlock)
 	if err != nil {
 		return err
 	}
@@ -17,30 +18,47 @@ func (k Keeper) CreateStakedrop(ctx sdk.Context, creatorAddr string, amount sdk.
 		return err
 	}
 
-	err = k.createStakedropAfterValidation(ctx, creatorAddr, denom)
+	err = k.createStakedropAfterValidation(ctx, amount, startBlock, endBlock)
 	return err
 }
 
 func (k Keeper) createStakedropAfterValidation(ctx sdk.Context, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
 
+	seq, err := k.getNextStakedropSequence(ctx)
+	if err != nil {
+		return err
+	}
+	amountPerBlock := amount.Amount.Quo(math.NewInt(int64(endBlock - startBlock)))
+	newStakedrop := types.Stakedrop{
+		Amount:         amount,
+		AmountPerBlock: sdk.NewCoin(amount.Denom, amountPerBlock),
+		StartBlock:     int64(startBlock),
+		EndBlock:       int64(endBlock),
+	}
+	key := collections.Join(startBlock, seq)
+	return k.ActiveStakedrop.Set(ctx, key, newStakedrop)
+
 }
 
-func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amount sdk.Coin, startBlock uint64, endBlock uint64) (string, error) {
+func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
 	//verify sender has created a subdenom (amount.Denom)
-	denom, err := types.GetTokenDenom(creatorAddr, amount.Denom)
+	creator, _, err := types.DeconstructDenom(amount.Denom)
 	if err != nil {
-		return "", err
+		return err
 	}
-	_, found := k.bankKeeper.GetDenomMetaData(ctx, denom)
+	if creator != creatorAddr {
+		return types.ErrInvalidCreator
+	}
+	_, found := k.bankKeeper.GetDenomMetaData(ctx, amount.Denom)
 	if !found {
-		return "", types.ErrDenomDoesNotExist
+		return types.ErrDenomDoesNotExist
 	}
 
 	if ctx.BlockHeight() > int64(startBlock) || startBlock >= endBlock {
-		return "", types.ErrBadBlockParameters
+		return types.ErrBadBlockParameters
 	}
 
-	return denom, nil
+	return nil
 }
 
 func (k Keeper) chargeForCreateStakedrop(ctx sdk.Context, creatorAddr string, startBlock uint64, endBlock uint64) (err error) {
@@ -48,7 +66,7 @@ func (k Keeper) chargeForCreateStakedrop(ctx sdk.Context, creatorAddr string, st
 
 	// if StakedropChargePerBlock is non-zero, transfer the tokens from the creator
 	// account to community pool
-	if params.StakedropChargePerBlock.Amount.GT(math.NewInt(0)) {
+	if (params.StakedropChargePerBlock != sdk.Coin{} && params.StakedropChargePerBlock.Amount.GT(math.NewInt(0))) {
 		accAddr, err := sdk.AccAddressFromBech32(creatorAddr)
 		if err != nil {
 			return err

@@ -697,10 +697,12 @@ func New(
 	app.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
 		appCodec,
 		app.keys[tokenfactorytypes.StoreKey],
+		runtime.NewKVStoreService(keys[tokenfactorytypes.StoreKey]),
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.DistrKeeper,
 		tokenFactoryCapabilities,
+		authtypes.FeeCollectorName,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 

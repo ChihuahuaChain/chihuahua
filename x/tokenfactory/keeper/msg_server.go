@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strconv"
 
 	"cosmossdk.io/errors"
 
@@ -188,6 +189,31 @@ func (server msgServer) ChangeAdmin(goCtx context.Context, msg *types.MsgChangeA
 	})
 
 	return &types.MsgChangeAdminResponse{}, nil
+}
+
+func (server msgServer) CreateStakeDrop(goCtx context.Context, msg *types.MsgCreateStakeDrop) (*types.MsgCreateStakeDropResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	authorityMetadata, err := server.Keeper.GetAuthorityMetadata(ctx, msg.Amount.Denom)
+	if err != nil {
+		return nil, err
+	}
+
+	if msg.Sender != authorityMetadata.GetAdmin() {
+		return nil, types.ErrUnauthorized
+	}
+	err = server.Keeper.CreateStakedropByDenom(ctx, msg.Sender, msg.Amount, uint64(msg.StartBlock), uint64(msg.EndBlock))
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.TypeMsgCreateStakeDrop,
+			sdk.NewAttribute(types.AttributeCreator, msg.Sender),
+			sdk.NewAttribute(types.AttributeAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeStakedropStartBlock, strconv.FormatInt(msg.StartBlock, 10)),
+			sdk.NewAttribute(types.AttributeStakedropEndBlock, strconv.FormatInt(msg.EndBlock, 10)),
+		),
+	})
+
+	return &types.MsgCreateStakeDropResponse{}, err
 }
 
 func (server msgServer) SetDenomMetadata(goCtx context.Context, msg *types.MsgSetDenomMetadata) (*types.MsgSetDenomMetadataResponse, error) {

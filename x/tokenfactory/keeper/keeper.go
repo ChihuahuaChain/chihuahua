@@ -30,10 +30,10 @@ type (
 
 		// the address capable of executing a MsgUpdateParams message. Typically, this
 		// should be the x/gov module account.
-		authority        string
-		AirdropSequence  collections.Sequence
-		ActiveAirdrop    *collections.IndexedMap[collections.Pair[uint64, uint64], types.Stakedrop, StakedropIndexes]
-		FeeCollectorName string
+		authority         string
+		StakedropSequence collections.Sequence
+		ActiveStakedrop   *collections.IndexedMap[collections.Pair[uint64, uint64], types.Stakedrop, StakedropIndexes]
+		FeeCollectorName  string
 	}
 )
 
@@ -68,10 +68,10 @@ func NewKeeper(
 
 		enabledCapabilities: enabledCapabilities,
 
-		authority:        authority,
-		FeeCollectorName: feeCollectorName,
-		AirdropSequence:  collections.NewSequence(sb, types.AirdropSequenceKey, "airdrop_sequence"),
-		ActiveAirdrop: collections.NewIndexedMap(sb, types.ActiveStakedropPrefix, "active_airdrop", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), codec.CollValue[types.Stakedrop](cdc),
+		authority:         authority,
+		FeeCollectorName:  feeCollectorName,
+		StakedropSequence: collections.NewSequence(sb, types.AirdropSequenceKey, "airdrop_sequence"),
+		ActiveStakedrop: collections.NewIndexedMap(sb, types.ActiveStakedropPrefix, "active_airdrop", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), codec.CollValue[types.Stakedrop](cdc),
 			StakedropIndexes{
 				StakedropByDenom: indexes.NewMulti(sb, types.StakedropIndexKey, "stakedrop_by_denom", collections.StringKey, collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), func(pk collections.Pair[uint64, uint64], value types.Stakedrop) (string, error) {
 					return value.Amount.Denom, nil
@@ -84,6 +84,11 @@ func NewKeeper(
 	}
 
 	return k
+}
+
+func (k Keeper) getNextStakedropSequence(ctx sdk.Context) (uint64, error) {
+	seq, err := k.StakedropSequence.Next(ctx)
+	return seq, err
 }
 
 // GetAuthority returns the x/mint module's authority.

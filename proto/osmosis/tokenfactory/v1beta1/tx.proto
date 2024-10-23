@@ -13,6 +13,7 @@ option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
 // Msg defines the tokefactory module's gRPC message service.
 service Msg {
   rpc CreateDenom(MsgCreateDenom) returns (MsgCreateDenomResponse);
+  rpc CreateStakeDrop(MsgCreateStakeDrop) returns (MsgCreateStakeDropResponse);
   rpc Mint(MsgMint) returns (MsgMintResponse);
   rpc Burn(MsgBurn) returns (MsgBurnResponse);
   rpc ChangeAdmin(MsgChangeAdmin) returns (MsgChangeAdminResponse);
@@ -57,7 +58,10 @@ message MsgCreateStakeDrop {
 
   string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
   //amount to stakedrop
-  cosmos.base.v1beta1.Coin amount = 3 [(gogoproto.moretags) = "yaml:\"amount\""];
+  cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.nullable) = false
+    ];
 
   int64 start_block = 4;
   int64 end_block = 5;

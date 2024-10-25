@@ -197,7 +197,6 @@ func (server msgServer) CreateStakeDrop(goCtx context.Context, msg *types.MsgCre
 	if err != nil {
 		return nil, err
 	}
-
 	if msg.Sender != authorityMetadata.GetAdmin() {
 		return nil, types.ErrUnauthorized
 	}

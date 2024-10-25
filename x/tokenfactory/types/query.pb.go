@@ -6,7 +6,8 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-sdk/types/query"
+	query "github.com/cosmos/cosmos-sdk/types/query"
+	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -297,6 +298,200 @@ func (m *QueryDenomsFromCreatorResponse) GetDenoms() []string {
 	return nil
 }
 
+// QueryDenomsMetadataRequest is the request type for the Query/DenomsMetadata RPC method.
+type QueryStakeDropsRequest struct {
+	// pagination defines an optional pagination for the request.
+	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryStakeDropsRequest) Reset()         { *m = QueryStakeDropsRequest{} }
+func (m *QueryStakeDropsRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryStakeDropsRequest) ProtoMessage()    {}
+func (*QueryStakeDropsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6f22013ad0f72e3f, []int{6}
+}
+func (m *QueryStakeDropsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryStakeDropsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryStakeDropsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryStakeDropsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryStakeDropsRequest.Merge(m, src)
+}
+func (m *QueryStakeDropsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryStakeDropsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryStakeDropsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryStakeDropsRequest proto.InternalMessageInfo
+
+func (m *QueryStakeDropsRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryDenomsMetadataResponse is the response type for the Query/DenomsMetadata RPC
+// method.
+type QueryStakeDropsResponse struct {
+	// metadata provides the client information for all the registered tokens.
+	Stakedrops []Stakedrop `protobuf:"bytes,1,rep,name=stakedrops,proto3" json:"stakedrops"`
+	// pagination defines the pagination in the response.
+	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryStakeDropsResponse) Reset()         { *m = QueryStakeDropsResponse{} }
+func (m *QueryStakeDropsResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryStakeDropsResponse) ProtoMessage()    {}
+func (*QueryStakeDropsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6f22013ad0f72e3f, []int{7}
+}
+func (m *QueryStakeDropsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryStakeDropsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryStakeDropsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryStakeDropsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryStakeDropsResponse.Merge(m, src)
+}
+func (m *QueryStakeDropsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryStakeDropsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryStakeDropsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryStakeDropsResponse proto.InternalMessageInfo
+
+func (m *QueryStakeDropsResponse) GetStakedrops() []Stakedrop {
+	if m != nil {
+		return m.Stakedrops
+	}
+	return nil
+}
+
+func (m *QueryStakeDropsResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryDenomsFromCreatorRequest defines the request structure for the
+// DenomsFromCreator gRPC query.
+type QueryStakeDropFromDenomRequest struct {
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty" yaml:"denom"`
+}
+
+func (m *QueryStakeDropFromDenomRequest) Reset()         { *m = QueryStakeDropFromDenomRequest{} }
+func (m *QueryStakeDropFromDenomRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryStakeDropFromDenomRequest) ProtoMessage()    {}
+func (*QueryStakeDropFromDenomRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6f22013ad0f72e3f, []int{8}
+}
+func (m *QueryStakeDropFromDenomRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryStakeDropFromDenomRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryStakeDropFromDenomRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryStakeDropFromDenomRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryStakeDropFromDenomRequest.Merge(m, src)
+}
+func (m *QueryStakeDropFromDenomRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryStakeDropFromDenomRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryStakeDropFromDenomRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryStakeDropFromDenomRequest proto.InternalMessageInfo
+
+func (m *QueryStakeDropFromDenomRequest) GetDenom() string {
+	if m != nil {
+		return m.Denom
+	}
+	return ""
+}
+
+// QueryDenomsFromCreatorRequest defines the response structure for the
+// DenomsFromCreator gRPC query.
+type QueryStakeDropFromDenomResponse struct {
+	Stakedrops []Stakedrop `protobuf:"bytes,1,rep,name=stakedrops,proto3" json:"stakedrops"`
+}
+
+func (m *QueryStakeDropFromDenomResponse) Reset()         { *m = QueryStakeDropFromDenomResponse{} }
+func (m *QueryStakeDropFromDenomResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryStakeDropFromDenomResponse) ProtoMessage()    {}
+func (*QueryStakeDropFromDenomResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6f22013ad0f72e3f, []int{9}
+}
+func (m *QueryStakeDropFromDenomResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryStakeDropFromDenomResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryStakeDropFromDenomResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryStakeDropFromDenomResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryStakeDropFromDenomResponse.Merge(m, src)
+}
+func (m *QueryStakeDropFromDenomResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryStakeDropFromDenomResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryStakeDropFromDenomResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryStakeDropFromDenomResponse proto.InternalMessageInfo
+
+func (m *QueryStakeDropFromDenomResponse) GetStakedrops() []Stakedrop {
+	if m != nil {
+		return m.Stakedrops
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "osmosis.tokenfactory.v1beta1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "osmosis.tokenfactory.v1beta1.QueryParamsResponse")
@@ -304,6 +499,10 @@ func init() {
 	proto.RegisterType((*QueryDenomAuthorityMetadataResponse)(nil), "osmosis.tokenfactory.v1beta1.QueryDenomAuthorityMetadataResponse")
 	proto.RegisterType((*QueryDenomsFromCreatorRequest)(nil), "osmosis.tokenfactory.v1beta1.QueryDenomsFromCreatorRequest")
 	proto.RegisterType((*QueryDenomsFromCreatorResponse)(nil), "osmosis.tokenfactory.v1beta1.QueryDenomsFromCreatorResponse")
+	proto.RegisterType((*QueryStakeDropsRequest)(nil), "osmosis.tokenfactory.v1beta1.QueryStakeDropsRequest")
+	proto.RegisterType((*QueryStakeDropsResponse)(nil), "osmosis.tokenfactory.v1beta1.QueryStakeDropsResponse")
+	proto.RegisterType((*QueryStakeDropFromDenomRequest)(nil), "osmosis.tokenfactory.v1beta1.QueryStakeDropFromDenomRequest")
+	proto.RegisterType((*QueryStakeDropFromDenomResponse)(nil), "osmosis.tokenfactory.v1beta1.QueryStakeDropFromDenomResponse")
 }
 
 func init() {
@@ -311,44 +510,56 @@ func init() {
 }
 
 var fileDescriptor_6f22013ad0f72e3f = []byte{
-	// 579 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x4f, 0x6f, 0xd3, 0x3e,
-	0x18, 0xae, 0x7f, 0xbf, 0xad, 0x68, 0xe6, 0x8f, 0xa8, 0x99, 0x10, 0x54, 0x23, 0x05, 0x33, 0x4d,
-	0x1d, 0x9a, 0x62, 0x3a, 0x76, 0x40, 0x0c, 0x04, 0x4d, 0x11, 0x1c, 0x60, 0x12, 0xe4, 0x06, 0x97,
-	0xca, 0xed, 0xbc, 0x24, 0x62, 0x89, 0xb3, 0xd8, 0x41, 0x54, 0xd3, 0x2e, 0x1c, 0x38, 0x23, 0x71,
-	0xe4, 0x3b, 0xf0, 0x39, 0x76, 0x9c, 0xb4, 0x0b, 0xa7, 0x0a, 0xb5, 0x13, 0x1f, 0xa0, 0x9f, 0x00,
-	0xc5, 0x76, 0xc7, 0x46, 0x4a, 0x54, 0xe0, 0x54, 0xd7, 0x7e, 0x9e, 0xe7, 0x7d, 0x9e, 0xf7, 0x7d,
-	0x15, 0x58, 0xe7, 0x22, 0xe4, 0x22, 0x10, 0x44, 0xf2, 0x37, 0x2c, 0xda, 0xa2, 0x5d, 0xc9, 0x93,
-	0x1e, 0x79, 0xdb, 0xe8, 0x30, 0x49, 0x1b, 0x64, 0x27, 0x65, 0x49, 0xcf, 0x8e, 0x13, 0x2e, 0x39,
-	0x5a, 0x30, 0x48, 0xfb, 0x24, 0xd2, 0x36, 0xc8, 0xea, 0xbc, 0xc7, 0x3d, 0xae, 0x80, 0x24, 0x3b,
-	0x69, 0x4e, 0x75, 0xc1, 0xe3, 0xdc, 0xdb, 0x66, 0x84, 0xc6, 0x01, 0xa1, 0x51, 0xc4, 0x25, 0x95,
-	0x01, 0x8f, 0x84, 0x79, 0xbd, 0xd5, 0x55, 0x92, 0xa4, 0x43, 0x05, 0xd3, 0xa5, 0x8e, 0x0b, 0xc7,
-	0xd4, 0x0b, 0x22, 0x05, 0x36, 0xd8, 0xb5, 0x42, 0x9f, 0x34, 0x95, 0x3e, 0x4f, 0x02, 0xd9, 0xdb,
-	0x60, 0x92, 0x6e, 0x52, 0x49, 0x0d, 0x6b, 0xb9, 0x90, 0x15, 0xd3, 0x84, 0x86, 0xc6, 0x0c, 0x9e,
-	0x87, 0xe8, 0x65, 0x66, 0xe1, 0x85, 0xba, 0x74, 0xd9, 0x4e, 0xca, 0x84, 0xc4, 0xaf, 0xe0, 0xa5,
-	0x53, 0xb7, 0x22, 0xe6, 0x91, 0x60, 0xc8, 0x81, 0x65, 0x4d, 0xbe, 0x02, 0xae, 0x83, 0xfa, 0xd9,
-	0xd5, 0x45, 0xbb, 0xa8, 0x39, 0xb6, 0x66, 0x3b, 0x33, 0xfb, 0xfd, 0x5a, 0xc9, 0x35, 0x4c, 0xfc,
-	0x1c, 0x62, 0x25, 0xfd, 0x98, 0x45, 0x3c, 0x6c, 0xfe, 0x1a, 0xc0, 0x18, 0x40, 0x4b, 0x70, 0x76,
-	0x33, 0x03, 0xa8, 0x42, 0x73, 0xce, 0xc5, 0x51, 0xbf, 0x76, 0xae, 0x47, 0xc3, 0xed, 0x7b, 0x58,
-	0x5d, 0x63, 0x57, 0x3f, 0xe3, 0x2f, 0x00, 0xde, 0x2c, 0x94, 0x33, 0xce, 0x3f, 0x00, 0x88, 0x8e,
-	0xbb, 0xd5, 0x0e, 0xcd, 0xb3, 0x89, 0xb1, 0x56, 0x1c, 0x63, 0xb2, 0xb4, 0x73, 0x23, 0x8b, 0x35,
-	0xea, 0xd7, 0xae, 0x6a, 0x5f, 0x79, 0x75, 0xec, 0x56, 0x72, 0x03, 0xc2, 0x1b, 0xf0, 0xda, 0x4f,
-	0xbf, 0xe2, 0x49, 0xc2, 0xc3, 0x56, 0xc2, 0xa8, 0xe4, 0xc9, 0x38, 0xf9, 0x0a, 0x3c, 0xd3, 0xd5,
-	0x37, 0x26, 0x3b, 0x1a, 0xf5, 0x6b, 0x17, 0x74, 0x0d, 0xf3, 0x80, 0xdd, 0x31, 0x04, 0x3f, 0x83,
-	0xd6, 0xef, 0xe4, 0x4c, 0xf2, 0x65, 0x58, 0x56, 0xad, 0xca, 0x66, 0xf6, 0x7f, 0x7d, 0xce, 0xa9,
-	0x8c, 0xfa, 0xb5, 0xf3, 0x27, 0x5a, 0x29, 0xb0, 0x6b, 0x00, 0xab, 0x47, 0x33, 0x70, 0x56, 0xa9,
-	0xa1, 0xcf, 0x00, 0x96, 0xf5, 0xf4, 0xd0, 0xed, 0xe2, 0xe6, 0xe4, 0x97, 0xa7, 0xda, 0xf8, 0x03,
-	0x86, 0x36, 0x89, 0x57, 0xde, 0x1f, 0x1e, 0x7d, 0xfa, 0x6f, 0x09, 0x2d, 0x92, 0x29, 0x36, 0x17,
-	0x7d, 0x07, 0xf0, 0xf2, 0xe4, 0xa1, 0xa0, 0x47, 0x53, 0xd4, 0x2e, 0xdc, 0xbc, 0x6a, 0xf3, 0x1f,
-	0x14, 0x4c, 0x9a, 0xa7, 0x2a, 0x4d, 0x13, 0x3d, 0x2c, 0x4e, 0xa3, 0xbb, 0x4e, 0x76, 0xd5, 0xef,
-	0x1e, 0xc9, 0x2f, 0x10, 0x3a, 0x04, 0xb0, 0x92, 0x9b, 0x2c, 0x5a, 0x9f, 0xd6, 0xe1, 0x84, 0xf5,
-	0xaa, 0xde, 0xff, 0x3b, 0xb2, 0x49, 0xd6, 0x52, 0xc9, 0x1e, 0xa0, 0xf5, 0x69, 0x92, 0xb5, 0xb7,
-	0x12, 0x1e, 0xb6, 0xcd, 0xa6, 0x92, 0x5d, 0x73, 0xd8, 0x73, 0xdc, 0xfd, 0x81, 0x05, 0x0e, 0x06,
-	0x16, 0xf8, 0x36, 0xb0, 0xc0, 0xc7, 0xa1, 0x55, 0x3a, 0x18, 0x5a, 0xa5, 0xaf, 0x43, 0xab, 0xf4,
-	0xfa, 0xae, 0x17, 0x48, 0x3f, 0xed, 0xd8, 0x5d, 0x1e, 0x92, 0x96, 0x1f, 0xf8, 0x29, 0xf5, 0x53,
-	0xda, 0xf2, 0x69, 0x10, 0x91, 0xee, 0xf8, 0x2f, 0x79, 0x77, 0xba, 0xa6, 0xec, 0xc5, 0x4c, 0x74,
-	0xca, 0xea, 0x6b, 0x76, 0xe7, 0x47, 0x00, 0x00, 0x00, 0xff, 0xff, 0x30, 0x50, 0x2e, 0x2e, 0xd8,
-	0x05, 0x00, 0x00,
+	// 776 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xcf, 0x4f, 0x13, 0x41,
+	0x14, 0xee, 0xa0, 0x94, 0x30, 0xa8, 0xb1, 0x03, 0x41, 0x6d, 0xb0, 0xd5, 0x91, 0x40, 0x21, 0x64,
+	0x07, 0x10, 0x13, 0x23, 0x10, 0xa5, 0x25, 0x60, 0xa2, 0x24, 0xba, 0x9c, 0xf4, 0x82, 0xd3, 0x32,
+	0xb4, 0x1b, 0xd8, 0x9d, 0x65, 0x77, 0x6a, 0x6c, 0x08, 0x17, 0x0f, 0x9e, 0x4d, 0x3c, 0xfa, 0x0f,
+	0x98, 0x98, 0x18, 0x4f, 0xfe, 0x0d, 0x1c, 0x49, 0x38, 0xe8, 0xa9, 0x31, 0x60, 0xf4, 0xe2, 0xa9,
+	0x7f, 0x81, 0xd9, 0x99, 0xe9, 0x2f, 0x0a, 0x6b, 0x8b, 0xf1, 0x02, 0x65, 0xe6, 0x7b, 0xdf, 0xfb,
+	0xbe, 0xf7, 0xe6, 0x3d, 0x0a, 0x53, 0xdc, 0xb7, 0xb9, 0x6f, 0xf9, 0x44, 0xf0, 0x4d, 0xe6, 0x6c,
+	0xd0, 0x9c, 0xe0, 0x5e, 0x89, 0xbc, 0x9c, 0xca, 0x32, 0x41, 0xa7, 0xc8, 0x76, 0x91, 0x79, 0x25,
+	0xc3, 0xf5, 0xb8, 0xe0, 0x68, 0x48, 0x23, 0x8d, 0x46, 0xa4, 0xa1, 0x91, 0xf1, 0x81, 0x3c, 0xcf,
+	0x73, 0x09, 0x24, 0xc1, 0x27, 0x15, 0x13, 0x1f, 0xca, 0x73, 0x9e, 0xdf, 0x62, 0x84, 0xba, 0x16,
+	0xa1, 0x8e, 0xc3, 0x05, 0x15, 0x16, 0x77, 0x7c, 0x7d, 0x3b, 0x9e, 0x93, 0x94, 0x24, 0x4b, 0x7d,
+	0xa6, 0x52, 0xd5, 0x12, 0xbb, 0x34, 0x6f, 0x39, 0x12, 0xac, 0xb1, 0x33, 0xa1, 0x3a, 0x69, 0x51,
+	0x14, 0xb8, 0x67, 0x89, 0xd2, 0x0a, 0x13, 0x74, 0x9d, 0x0a, 0xaa, 0xa3, 0x26, 0x42, 0xa3, 0x7c,
+	0x41, 0x37, 0xd9, 0xba, 0xc7, 0x5d, 0x8d, 0x1e, 0x0b, 0x45, 0xbb, 0xd4, 0xa3, 0x76, 0x55, 0x7a,
+	0x8c, 0xda, 0x96, 0xc3, 0x89, 0xfc, 0xa9, 0x8e, 0xf0, 0x00, 0x44, 0x4f, 0x03, 0x0f, 0x4f, 0x24,
+	0xce, 0x64, 0xdb, 0x45, 0xe6, 0x0b, 0xfc, 0x0c, 0xf6, 0x37, 0x9d, 0xfa, 0x2e, 0x77, 0x7c, 0x86,
+	0xd2, 0x30, 0xaa, 0xf8, 0xae, 0x82, 0x1b, 0x20, 0xd5, 0x37, 0x3d, 0x6c, 0x84, 0x55, 0xd7, 0x50,
+	0xd1, 0xe9, 0xf3, 0x7b, 0xe5, 0x64, 0xc4, 0xd4, 0x91, 0xf8, 0x31, 0xc4, 0x92, 0x7a, 0x91, 0x39,
+	0xdc, 0x5e, 0x38, 0x5e, 0x01, 0x2d, 0x00, 0x8d, 0xc0, 0xee, 0xf5, 0x00, 0x20, 0x13, 0xf5, 0xa6,
+	0x2f, 0x57, 0xca, 0xc9, 0x0b, 0x25, 0x6a, 0x6f, 0xdd, 0xc3, 0xf2, 0x18, 0x9b, 0xea, 0x1a, 0x7f,
+	0x02, 0xf0, 0x56, 0x28, 0x9d, 0x56, 0xfe, 0x06, 0x40, 0x54, 0x2b, 0xf7, 0x9a, 0xad, 0xaf, 0xb5,
+	0x8d, 0x99, 0x70, 0x1b, 0x27, 0x53, 0xa7, 0x6f, 0x06, 0xb6, 0x2a, 0xe5, 0xe4, 0x35, 0xa5, 0xab,
+	0x95, 0x1d, 0x9b, 0xb1, 0x96, 0x0e, 0xe3, 0x15, 0x78, 0xbd, 0xae, 0xd7, 0x5f, 0xf2, 0xb8, 0x9d,
+	0xf1, 0x18, 0x15, 0xdc, 0xab, 0x3a, 0x9f, 0x80, 0x3d, 0x39, 0x75, 0xa2, 0xbd, 0xa3, 0x4a, 0x39,
+	0x79, 0x49, 0xe5, 0xd0, 0x17, 0xd8, 0xac, 0x42, 0xf0, 0x23, 0x98, 0x38, 0x8d, 0x4e, 0x3b, 0x1f,
+	0x83, 0x51, 0x59, 0xaa, 0xa0, 0x67, 0xe7, 0x52, 0xbd, 0xe9, 0x58, 0xa5, 0x9c, 0xbc, 0xd8, 0x50,
+	0x4a, 0x1f, 0x9b, 0x1a, 0x80, 0x5f, 0xc0, 0x41, 0x49, 0xb6, 0x1a, 0xbc, 0xb0, 0x45, 0x8f, 0xbb,
+	0xd5, 0xf7, 0x80, 0x96, 0x20, 0xac, 0xbf, 0x6d, 0x5d, 0xb5, 0x11, 0x43, 0x0d, 0x82, 0x11, 0x0c,
+	0x82, 0xa1, 0x66, 0xae, 0xde, 0xf9, 0x3c, 0xd3, 0xb1, 0x66, 0x43, 0x24, 0xfe, 0x02, 0xe0, 0x95,
+	0x96, 0x14, 0x5a, 0xa8, 0x09, 0x61, 0xed, 0x69, 0x2b, 0xb1, 0x7d, 0xd3, 0xa3, 0xe1, 0x9d, 0x59,
+	0xad, 0xe2, 0xd3, 0xbd, 0x41, 0x33, 0x3e, 0xfc, 0xfa, 0x3c, 0x0e, 0xcc, 0x06, 0x16, 0xb4, 0xdc,
+	0xa4, 0xbb, 0x4b, 0xea, 0x1e, 0xfd, 0xab, 0x6e, 0x25, 0xa8, 0x49, 0xf8, 0x43, 0x5d, 0xe7, 0x9a,
+	0xee, 0xa0, 0xd4, 0xb2, 0xe8, 0x9d, 0xbe, 0xd8, 0x22, 0x4c, 0x9e, 0xca, 0xf4, 0xff, 0x2a, 0x31,
+	0xfd, 0xbb, 0x07, 0x76, 0xcb, 0xbc, 0xe8, 0x3d, 0x80, 0x51, 0x35, 0x99, 0x68, 0x32, 0x9c, 0xb4,
+	0x75, 0x31, 0xc4, 0xa7, 0x3a, 0x88, 0x50, 0x6e, 0xf0, 0xc4, 0xeb, 0x83, 0x1f, 0xef, 0xba, 0x46,
+	0xd0, 0x30, 0x69, 0x63, 0x51, 0xa1, 0x9f, 0x00, 0x0e, 0x9e, 0x3c, 0x70, 0xe8, 0x41, 0x1b, 0xb9,
+	0x43, 0xb7, 0x4a, 0x7c, 0xe1, 0x1f, 0x18, 0xb4, 0x9b, 0x65, 0xe9, 0x66, 0x01, 0xdd, 0x0f, 0x77,
+	0xa3, 0x26, 0x8a, 0xec, 0xc8, 0xdf, 0xbb, 0xa4, 0x75, 0x39, 0xa0, 0x03, 0x00, 0x63, 0x2d, 0x53,
+	0x8b, 0x66, 0xdb, 0x55, 0x78, 0xc2, 0xea, 0x88, 0xcf, 0x9d, 0x2d, 0x58, 0x3b, 0xcb, 0x48, 0x67,
+	0xf3, 0x68, 0xb6, 0x1d, 0x67, 0x6b, 0x1b, 0x1e, 0xb7, 0xd7, 0xf4, 0x16, 0x22, 0x3b, 0xfa, 0xc3,
+	0x2e, 0xfa, 0x08, 0x20, 0xac, 0xcf, 0x36, 0x9a, 0x69, 0x43, 0x51, 0xcb, 0xb6, 0x89, 0xdf, 0xe9,
+	0x30, 0x4a, 0x1b, 0x98, 0x94, 0x06, 0xc6, 0x51, 0x8a, 0xb4, 0xf7, 0xff, 0xd3, 0x47, 0x5f, 0x01,
+	0xec, 0xaf, 0x13, 0xd5, 0x06, 0x11, 0xcd, 0x75, 0x22, 0xe0, 0xf8, 0x26, 0x88, 0xcf, 0x9f, 0x31,
+	0xba, 0xb3, 0x3e, 0xd4, 0x6d, 0xa8, 0x5e, 0xc8, 0xbe, 0x54, 0x1f, 0x5c, 0xda, 0xdc, 0x3b, 0x4c,
+	0x80, 0xfd, 0xc3, 0x04, 0xf8, 0x7e, 0x98, 0x00, 0x6f, 0x8f, 0x12, 0x91, 0xfd, 0xa3, 0x44, 0xe4,
+	0xdb, 0x51, 0x22, 0xf2, 0xfc, 0x6e, 0xde, 0x12, 0x85, 0x62, 0xd6, 0xc8, 0x71, 0x9b, 0x64, 0x0a,
+	0x56, 0xa1, 0x48, 0x0b, 0x45, 0x9a, 0x29, 0x50, 0xcb, 0x21, 0xb9, 0xea, 0x9f, 0xe4, 0x55, 0x73,
+	0x4e, 0x51, 0x72, 0x99, 0x9f, 0x8d, 0xca, 0x6f, 0x0c, 0xb7, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff,
+	0x56, 0x5b, 0x90, 0xf5, 0x7d, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -372,6 +583,8 @@ type QueryClient interface {
 	// DenomsFromCreator defines a gRPC query method for fetching all
 	// denominations created by a specific admin/creator.
 	DenomsFromCreator(ctx context.Context, in *QueryDenomsFromCreatorRequest, opts ...grpc.CallOption) (*QueryDenomsFromCreatorResponse, error)
+	StakeDrops(ctx context.Context, in *QueryStakeDropsRequest, opts ...grpc.CallOption) (*QueryStakeDropsResponse, error)
+	StakeDropsFromDenom(ctx context.Context, in *QueryStakeDropFromDenomRequest, opts ...grpc.CallOption) (*QueryStakeDropFromDenomResponse, error)
 }
 
 type queryClient struct {
@@ -409,6 +622,24 @@ func (c *queryClient) DenomsFromCreator(ctx context.Context, in *QueryDenomsFrom
 	return out, nil
 }
 
+func (c *queryClient) StakeDrops(ctx context.Context, in *QueryStakeDropsRequest, opts ...grpc.CallOption) (*QueryStakeDropsResponse, error) {
+	out := new(QueryStakeDropsResponse)
+	err := c.cc.Invoke(ctx, "/osmosis.tokenfactory.v1beta1.Query/StakeDrops", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) StakeDropsFromDenom(ctx context.Context, in *QueryStakeDropFromDenomRequest, opts ...grpc.CallOption) (*QueryStakeDropFromDenomResponse, error) {
+	out := new(QueryStakeDropFromDenomResponse)
+	err := c.cc.Invoke(ctx, "/osmosis.tokenfactory.v1beta1.Query/StakeDropsFromDenom", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Params defines a gRPC query method that returns the tokenfactory module's
@@ -420,6 +651,8 @@ type QueryServer interface {
 	// DenomsFromCreator defines a gRPC query method for fetching all
 	// denominations created by a specific admin/creator.
 	DenomsFromCreator(context.Context, *QueryDenomsFromCreatorRequest) (*QueryDenomsFromCreatorResponse, error)
+	StakeDrops(context.Context, *QueryStakeDropsRequest) (*QueryStakeDropsResponse, error)
+	StakeDropsFromDenom(context.Context, *QueryStakeDropFromDenomRequest) (*QueryStakeDropFromDenomResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -434,6 +667,12 @@ func (*UnimplementedQueryServer) DenomAuthorityMetadata(ctx context.Context, req
 }
 func (*UnimplementedQueryServer) DenomsFromCreator(ctx context.Context, req *QueryDenomsFromCreatorRequest) (*QueryDenomsFromCreatorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DenomsFromCreator not implemented")
+}
+func (*UnimplementedQueryServer) StakeDrops(ctx context.Context, req *QueryStakeDropsRequest) (*QueryStakeDropsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StakeDrops not implemented")
+}
+func (*UnimplementedQueryServer) StakeDropsFromDenom(ctx context.Context, req *QueryStakeDropFromDenomRequest) (*QueryStakeDropFromDenomResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StakeDropsFromDenom not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -494,6 +733,42 @@ func _Query_DenomsFromCreator_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_StakeDrops_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryStakeDropsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).StakeDrops(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/osmosis.tokenfactory.v1beta1.Query/StakeDrops",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).StakeDrops(ctx, req.(*QueryStakeDropsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_StakeDropsFromDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryStakeDropFromDenomRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).StakeDropsFromDenom(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/osmosis.tokenfactory.v1beta1.Query/StakeDropsFromDenom",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).StakeDropsFromDenom(ctx, req.(*QueryStakeDropFromDenomRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "osmosis.tokenfactory.v1beta1.Query",
 	HandlerType: (*QueryServer)(nil),
@@ -509,6 +784,14 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DenomsFromCreator",
 			Handler:    _Query_DenomsFromCreator_Handler,
+		},
+		{
+			MethodName: "StakeDrops",
+			Handler:    _Query_StakeDrops_Handler,
+		},
+		{
+			MethodName: "StakeDropsFromDenom",
+			Handler:    _Query_StakeDropsFromDenom_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -696,6 +979,157 @@ func (m *QueryDenomsFromCreatorResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryStakeDropsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryStakeDropsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryStakeDropsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryStakeDropsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryStakeDropsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryStakeDropsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Stakedrops) > 0 {
+		for iNdEx := len(m.Stakedrops) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Stakedrops[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryStakeDropFromDenomRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryStakeDropFromDenomRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryStakeDropFromDenomRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Denom) > 0 {
+		i -= len(m.Denom)
+		copy(dAtA[i:], m.Denom)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Denom)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryStakeDropFromDenomResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryStakeDropFromDenomResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryStakeDropFromDenomResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Stakedrops) > 0 {
+		for iNdEx := len(m.Stakedrops) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Stakedrops[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -773,6 +1207,66 @@ func (m *QueryDenomsFromCreatorResponse) Size() (n int) {
 	if len(m.Denoms) > 0 {
 		for _, s := range m.Denoms {
 			l = len(s)
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *QueryStakeDropsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryStakeDropsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Stakedrops) > 0 {
+		for _, e := range m.Stakedrops {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryStakeDropFromDenomRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Denom)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryStakeDropFromDenomResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Stakedrops) > 0 {
+		for _, e := range m.Stakedrops {
+			l = e.Size()
 			n += 1 + l + sovQuery(uint64(l))
 		}
 	}
@@ -1225,6 +1719,378 @@ func (m *QueryDenomsFromCreatorResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Denoms = append(m.Denoms, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryStakeDropsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryStakeDropsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryStakeDropsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryStakeDropsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryStakeDropsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryStakeDropsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stakedrops", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Stakedrops = append(m.Stakedrops, Stakedrop{})
+			if err := m.Stakedrops[len(m.Stakedrops)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryStakeDropFromDenomRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryStakeDropFromDenomRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryStakeDropFromDenomRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Denom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Denom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryStakeDropFromDenomResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryStakeDropFromDenomResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryStakeDropFromDenomResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stakedrops", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Stakedrops = append(m.Stakedrops, Stakedrop{})
+			if err := m.Stakedrops[len(m.Stakedrops)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

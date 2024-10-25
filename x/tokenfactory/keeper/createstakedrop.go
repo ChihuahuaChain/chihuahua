@@ -41,6 +41,10 @@ func (k Keeper) createStakedropAfterValidation(ctx sdk.Context, amount sdk.Coin,
 }
 
 func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
+	// params := k.GetParams(ctx)
+	// if !isWhitelistedAddress(creatorAddr, params) {
+	// 	return types.ErrUnauthorized
+	// }
 	//verify sender has created a subdenom (amount.Denom)
 	creator, _, err := types.DeconstructDenom(amount.Denom)
 	if err != nil {

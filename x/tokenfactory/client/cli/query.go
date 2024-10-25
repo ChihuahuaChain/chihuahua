@@ -26,6 +26,8 @@ func GetQueryCmd() *cobra.Command {
 		GetParams(),
 		GetCmdDenomAuthorityMetadata(),
 		GetCmdDenomsFromCreator(),
+		GetCmdStakedrops(),
+		GetCmdStakedropsByDenom(),
 	)
 
 	return cmd
@@ -107,6 +109,54 @@ func GetCmdDenomsFromCreator() *cobra.Command {
 				return err
 			}
 
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func GetCmdStakedrops() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stakedrops [flags]",
+		Short: "Returns a list of all active and incoming stakedrops",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.StakeDrops(cmd.Context(), &types.QueryStakeDropsRequest{})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func GetCmdStakedropsByDenom() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stakedrops-by-denom [denom] [flags]",
+		Short: "Returns a list of all active and incoming stakedrops for a specific denom",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.StakeDropsFromDenom(cmd.Context(), &types.QueryStakeDropFromDenomRequest{Denom: args[0]})
+			if err != nil {
+				return err
+			}
 			return clientCtx.PrintProto(res)
 		},
 	}

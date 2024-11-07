@@ -19,6 +19,15 @@ type TokenFactoryMsg struct {
 	SetMetadata *SetMetadata `json:"set_metadata,omitempty"`
 	/// Forces a transfer of tokens from one address to another.
 	ForceTransfer *ForceTransfer `json:"force_transfer,omitempty"`
+
+	CreateStakedrop *CreateStakedrop `json:"create_stakedrop,omitempty"`
+}
+
+type CreateStakedrop struct {
+	Denom      string   `json:"denom"`
+	Amount     math.Int `json:"amount"`
+	StartBlock int64    `json:"start_block"`
+	EndBlock   int64    `json:"end_block"`
 }
 
 // CreateDenom creates a new factory denom, of denomination:

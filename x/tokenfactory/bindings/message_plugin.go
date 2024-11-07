@@ -64,8 +64,47 @@ func (m *CustomMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddre
 		if contractMsg.ForceTransfer != nil {
 			return m.forceTransfer(ctx, contractAddr, contractMsg.ForceTransfer)
 		}
+		if contractMsg.CreateStakedrop != nil {
+			return m.createStakedrop(ctx, contractAddr, contractMsg.CreateStakedrop)
+		}
 	}
 	return m.wrapped.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
+}
+
+// createDenom creates a new token denom
+func (m *CustomMessenger) createStakedrop(ctx sdk.Context, contractAddr sdk.AccAddress, createStakedrop *bindingstypes.CreateStakedrop) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+	bz, err := PerformCreateStakedrop(m.tokenFactory, m.bank, ctx, contractAddr, createStakedrop)
+	if err != nil {
+		return nil, nil, nil, errorsmod.Wrap(err, "perform create stakedrop")
+	}
+	// TODO: double check how this is all encoded to the contract
+	return nil, [][]byte{bz}, nil, nil
+}
+
+// PerformCreateStakedrop is used with createStakedrop to create a stakedrop; validates the msgCreateStakedrop.
+func PerformCreateStakedrop(f *tokenfactorykeeper.Keeper, b bankkeeper.Keeper, ctx sdk.Context, contractAddr sdk.AccAddress, createStakedrop *bindingstypes.CreateStakedrop) ([]byte, error) {
+	if createStakedrop == nil {
+		return nil, wasmvmtypes.InvalidRequest{Err: "create stakedrop null create stakedrop"}
+	}
+
+	msgServer := tokenfactorykeeper.NewMsgServerImpl(*f)
+
+	msgCreateStakedrop := tokenfactorytypes.NewMsgCreateStakeDrop(contractAddr.String(), sdk.NewCoin(createStakedrop.Denom, createStakedrop.Amount), createStakedrop.StartBlock, createStakedrop.EndBlock)
+
+	if err := msgCreateStakedrop.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(err, "failed validating MsgCreateStakedrop")
+	}
+
+	// Create denom
+	resp, err := msgServer.CreateStakeDrop(
+		ctx,
+		msgCreateStakedrop,
+	)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "creating stakedrop")
+	}
+
+	return resp.Marshal()
 }
 
 // createDenom creates a new token denom

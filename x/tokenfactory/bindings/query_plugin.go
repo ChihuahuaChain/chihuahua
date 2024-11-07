@@ -8,9 +8,9 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
+	tftypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // CustomQuerier dispatches custom CosmWasm bindings queries.
@@ -88,6 +88,33 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 			}
 
 			bz, err := json.Marshal(res)
+			if err != nil {
+				return nil, fmt.Errorf("failed to JSON marshal ParamsResponse: %w", err)
+			}
+
+			return bz, nil
+		case contractQuery.Stakedrop != nil:
+			stakedropsByDenom := []tftypes.Stakedrop{}
+			iter, err := qp.tokenFactoryKeeper.ActiveStakedrop.Indexes.StakedropByDenom.MatchExact(ctx, contractQuery.Stakedrop.Denom)
+			if err != nil {
+				return nil, err
+			}
+			for ; iter.Valid(); iter.Next() {
+				key, err := iter.PrimaryKey()
+				if err != nil {
+					return nil, err
+				}
+				stakedrop, err := qp.tokenFactoryKeeper.ActiveStakedrop.Get(ctx, key)
+				if err != nil {
+					return nil, err
+				}
+				stakedropsByDenom = append(stakedropsByDenom, stakedrop)
+			}
+			if err != nil {
+				return nil, err
+			}
+
+			bz, err := json.Marshal(stakedropsByDenom)
 			if err != nil {
 				return nil, fmt.Errorf("failed to JSON marshal ParamsResponse: %w", err)
 			}

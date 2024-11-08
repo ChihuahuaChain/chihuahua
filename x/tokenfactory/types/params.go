@@ -60,7 +60,7 @@ func validateStakedropChargePerBlock(i interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
-	if v.Validate() != nil {
+	if (v != sdk.Coin{} && v.Validate() != nil) {
 		return fmt.Errorf("invalid denom stakedrop creation fee: %+v", i)
 	}
 

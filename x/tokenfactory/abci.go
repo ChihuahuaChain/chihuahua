@@ -1,8 +1,6 @@
 package tokenfactory
 
 import (
-	"fmt"
-
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
@@ -34,16 +32,12 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, bankKeeper types.BankKeeper)
 		}
 
 		if ctx.BlockHeight() >= stakeDrop.Value.StartBlock && ctx.BlockHeight() < (stakeDrop.Value.EndBlock) {
-			ctx.Logger().Error(fmt.Sprintf("Stakedrop %v %s in Block %d", stakeDrop.Value.AmountPerBlock.Amount, stakeDrop.Value.Amount.Denom, ctx.BlockHeight()))
 			coinsToSend = coinsToSend.Add(stakeDrop.Value.AmountPerBlock)
 
 		} else if ctx.BlockHeight() == stakeDrop.Value.EndBlock {
 			restAmount := stakeDrop.Value.Amount.Amount.Sub(stakeDrop.Value.AmountPerBlock.Amount.Mul(math.NewInt(stakeDrop.Value.EndBlock - stakeDrop.Value.StartBlock)))
-			ctx.Logger().Error(fmt.Sprintf("Last Stakedrop %v in Block %d", restAmount, ctx.BlockHeight()))
 			coinsToSend = coinsToSend.Add(sdk.NewCoin(stakeDrop.Value.Amount.Denom, restAmount))
-
 		} else if ctx.BlockHeight() > stakeDrop.Value.EndBlock {
-			ctx.Logger().Error(fmt.Sprintf("Remove Stakedrop in Block %d", ctx.BlockHeight()))
 			k.ActiveStakedrop.Remove(ctx, stakeDrop.Key)
 		}
 	}

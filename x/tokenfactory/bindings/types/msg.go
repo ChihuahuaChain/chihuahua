@@ -2,7 +2,7 @@ package types
 
 import "cosmossdk.io/math"
 
-type TokenFactoryMsg struct {
+type WasmMsg struct {
 	/// Contracts can create denoms, namespaced under the contract's address.
 	/// A contract may create any number of independent sub-denoms.
 	CreateDenom *CreateDenom `json:"create_denom,omitempty"`
@@ -21,6 +21,8 @@ type TokenFactoryMsg struct {
 	ForceTransfer *ForceTransfer `json:"force_transfer,omitempty"`
 
 	CreateStakedrop *CreateStakedrop `json:"create_stakedrop,omitempty"`
+
+	CreatePool *CreatePool `json:"create_pool,omitempty"`
 }
 
 type CreateStakedrop struct {
@@ -70,4 +72,15 @@ type ForceTransfer struct {
 	Amount      math.Int `json:"amount"`
 	FromAddress string   `json:"from_address"`
 	ToAddress   string   `json:"to_address"`
+}
+
+// Message for liquidity module
+// TODO binding folder should be extracted from tokenfactory module
+type CreatePool struct {
+	PoolCreatorAddress string   `json:"denom"`
+	PoolTypeId         uint32   `json:"pool_type_id"`
+	Amount1            math.Int `json:"amount1"`
+	Denom1             string   `json:"denom1"`
+	Amount2            math.Int `json:"amount2"`
+	Denom2             string   `json:"denom2"`
 }

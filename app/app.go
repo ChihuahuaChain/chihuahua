@@ -706,7 +706,7 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	tfOpts := tokenbindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper)
+	tfOpts := tokenbindings.RegisterCustomPlugins(app.GRPCQueryRouter(), appCodec, &app.BankKeeper, &app.TokenFactoryKeeper, &app.LiquidityKeeper)
 	wasmOpts = append(wasmOpts, tfOpts...)
 
 	wasmDir := filepath.Join(homePath, "data")

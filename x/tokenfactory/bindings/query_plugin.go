@@ -7,15 +7,22 @@ import (
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 
 	errorsmod "cosmossdk.io/errors"
-
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
 	tftypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 )
 
 // CustomQuerier dispatches custom CosmWasm bindings queries.
 func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
 	return func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
+		ctx.Logger().Error("CustomQuerier ***************************************")
 		var contractQuery bindingstypes.TokenFactoryQuery
 		if err := json.Unmarshal(request, &contractQuery); err != nil {
 			return nil, errorsmod.Wrap(err, "osmosis query")
@@ -82,6 +89,7 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 			return bz, nil
 
 		case contractQuery.Params != nil:
+			ctx.Logger().Error("CustomQuerier : PARAMS***************************************")
 			res, err := qp.GetParams(ctx)
 			if err != nil {
 				return nil, err
@@ -91,7 +99,8 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 			if err != nil {
 				return nil, fmt.Errorf("failed to JSON marshal ParamsResponse: %w", err)
 			}
-
+			ctx.Logger().Error(fmt.Sprintf("EVERYTHING IS OK IN PARAMS  ***************************************  %+v	", res))
+			ctx.Logger().Error(fmt.Sprintf("Serialized JSON: %s", string(bz)))
 			return bz, nil
 		case contractQuery.Stakedrop != nil:
 			stakedropsByDenom := []tftypes.Stakedrop{}
@@ -143,5 +152,34 @@ func ConvertSdkCoinToWasmCoin(coin sdk.Coin) wasmvmtypes.Coin {
 		Denom: coin.Denom,
 		// Note: tokenfactory tokens have 18 decimal places, so 10^22 is common, no longer in u64 range
 		Amount: coin.Amount.String(),
+	}
+}
+
+func AcceptedStargateQueries() wasmkeeper.AcceptedQueries {
+	return wasmkeeper.AcceptedQueries{
+		// ibc
+		"/ibc.core.client.v1.Query/ClientState":         &ibcclienttypes.QueryClientStateResponse{},
+		"/ibc.core.client.v1.Query/ConsensusState":      &ibcclienttypes.QueryConsensusStateResponse{},
+		"/ibc.core.connection.v1.Query/Connection":      &ibcconnectiontypes.QueryConnectionResponse{},
+		"/ibc.core.channel.v1.Query/ChannelClientState": &ibcchanneltypes.QueryChannelClientStateResponse{},
+
+		// token factory
+		"/osmosis.tokenfactory.v1beta1.Query/Params":                 &tftypes.QueryParamsResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": &tftypes.QueryDenomAuthorityMetadataResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      &tftypes.QueryDenomsFromCreatorResponse{},
+
+		// transfer
+		"/ibc.applications.transfer.v1.Query/DenomTrace":    &ibctransfertypes.QueryDenomTraceResponse{},
+		"/ibc.applications.transfer.v1.Query/EscrowAddress": &ibctransfertypes.QueryEscrowAddressResponse{},
+
+		// auth
+		"/cosmos.auth.v1beta1.Query/Account": &authtypes.QueryAccountResponse{},
+		"/cosmos.auth.v1beta1.Query/Params":  &authtypes.QueryParamsResponse{},
+
+		// bank
+		"/cosmos.bank.v1beta1.Query/Balance":       &banktypes.QueryBalanceResponse{},
+		"/cosmos.bank.v1beta1.Query/DenomMetadata": &banktypes.QueryDenomsMetadataResponse{},
+		"/cosmos.bank.v1beta1.Query/Params":        &banktypes.QueryParamsResponse{},
+		"/cosmos.bank.v1beta1.Query/SupplyOf":      &banktypes.QuerySupplyOfResponse{},
 	}
 }

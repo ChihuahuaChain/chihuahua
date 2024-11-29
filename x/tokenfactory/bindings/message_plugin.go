@@ -74,6 +74,9 @@ func (m *CustomMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddre
 		if contractMsg.CreatePool != nil {
 			return m.createPool(ctx, contractAddr, contractMsg.CreatePool)
 		}
+		if contractMsg.DirectSwap != nil {
+			return m.directSwap(ctx, contractAddr, contractMsg.DirectSwap)
+		}
 	}
 	return m.wrapped.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
 }
@@ -106,6 +109,42 @@ func PerformCreateStakedrop(f *tokenfactorykeeper.Keeper, b bankkeeper.Keeper, c
 	resp, err := msgServer.CreateStakeDrop(
 		ctx,
 		msgCreateStakedrop,
+	)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "creating stakedrop")
+	}
+
+	return resp.Marshal()
+}
+
+// createDenom creates a new token denom
+func (m *CustomMessenger) directSwap(ctx sdk.Context, contractAddr sdk.AccAddress, directSwap *bindingstypes.DirectSwap) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+	bz, err := PerformDirectSwap(m.liquidity, m.bank, ctx, contractAddr, directSwap)
+	if err != nil {
+		return nil, nil, nil, errorsmod.Wrap(err, "perform create pool")
+	}
+	// TODO: double check how this is all encoded to the contract
+	return nil, [][]byte{bz}, nil, nil
+}
+
+// PerformCreateStakedrop is used with createStakedrop to create a stakedrop; validates the msgCreateStakedrop.
+func PerformDirectSwap(f *liquiditykeeper.Keeper, b bankkeeper.Keeper, ctx sdk.Context, contractAddr sdk.AccAddress, directSwap *bindingstypes.DirectSwap) ([]byte, error) {
+	if directSwap == nil {
+		return nil, wasmvmtypes.InvalidRequest{Err: "direct swap null direct swap"}
+	}
+
+	msgServer := liquiditykeeper.NewMsgServerImpl(*f)
+
+	msgDirectSwap := liquiditytypes.NewMsgDirectSwap(contractAddr, directSwap.PoolId, 1, directSwap.OfferCoin, directSwap.DemandCoinDenom, directSwap.OrderPrice)
+
+	if err := msgDirectSwap.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(err, "failed validating MsgCreateStakedrop")
+	}
+
+	// Create denom
+	resp, err := msgServer.DirectSwap(
+		ctx,
+		msgDirectSwap,
 	)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "creating stakedrop")

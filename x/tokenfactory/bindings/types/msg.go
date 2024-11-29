@@ -1,6 +1,9 @@
 package types
 
-import "cosmossdk.io/math"
+import (
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/types"
+)
 
 type WasmMsg struct {
 	/// Contracts can create denoms, namespaced under the contract's address.
@@ -23,6 +26,8 @@ type WasmMsg struct {
 	CreateStakedrop *CreateStakedrop `json:"create_stakedrop,omitempty"`
 
 	CreatePool *CreatePool `json:"create_pool,omitempty"`
+
+	DirectSwap *DirectSwap `json:"direct_swap,omitempty"`
 }
 
 type CreateStakedrop struct {
@@ -83,4 +88,14 @@ type CreatePool struct {
 	Denom1             string   `json:"denom1"`
 	Amount2            math.Int `json:"amount2"`
 	Denom2             string   `json:"denom2"`
+}
+
+type DirectSwap struct {
+	SwapRequesterAddress string         `json:"swap_requester_address"`
+	PoolId               uint64         `json:"pool_id"`
+	SwapTypeId           uint32         `json:"swap_type_id"`
+	OfferCoin            types.Coin     `json:"offer_coin"`
+	DemandCoinDenom      string         `json:"demand_coin_denom"`
+	OfferCoinFee         types.Coin     `json:"offer_coin_fee"`
+	OrderPrice           math.LegacyDec `json:"order_price"`
 }

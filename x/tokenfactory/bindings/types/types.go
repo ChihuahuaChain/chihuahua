@@ -17,6 +17,7 @@ type Metadata struct {
 	// Symbol is the token symbol usually shown on exchanges (eg: ATOM).
 	// This can be the same as the display.
 	Symbol string `json:"symbol"`
+	Uri    string `json:"uri"`
 }
 
 type DenomUnit struct {

@@ -4,6 +4,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
+	"github.com/ChihuahuaChain/chihuahua/app/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -83,9 +84,13 @@ func (m MsgCreateStakeDrop) ValidateBasic() error {
 		return ErrBadBlockParameters
 	}
 
-	_, _, err = DeconstructDenom(m.Amount.Denom)
-	if err != nil {
-		return errorsmod.Wrap(ErrInvalidDenom, err.Error())
+	if m.Amount.Denom == params.BondDenom {
+		return nil
+	} else {
+		_, _, err = DeconstructDenom(m.Amount.Denom)
+		if err != nil {
+			return errorsmod.Wrap(ErrInvalidDenom, err.Error())
+		}
 	}
 
 	return nil

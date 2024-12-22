@@ -3,6 +3,7 @@ package keeper
 import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
+	"github.com/ChihuahuaChain/chihuahua/app/params"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -18,15 +19,20 @@ func (k Keeper) CreateStakedropByDenom(ctx sdk.Context, creatorAddr string, amou
 		return err
 	}
 
-	err = k.createStakedropAfterValidation(ctx, amount, startBlock, endBlock)
+	err = k.createStakedropAfterValidation(ctx, amount, creatorAddr, startBlock, endBlock)
 	return err
 }
 
-func (k Keeper) createStakedropAfterValidation(ctx sdk.Context, amount sdk.Coin, startBlock uint64, endBlock uint64) error {
+func (k Keeper) createStakedropAfterValidation(ctx sdk.Context, amount sdk.Coin, creatorAddr string, startBlock uint64, endBlock uint64) error {
 
 	seq, err := k.getNextStakedropSequence(ctx)
 	if err != nil {
 		return err
+	}
+	if amount.Denom == params.BondDenom {
+		//native token, we can mint it so sender need to send it to module account
+		sender := sdk.MustAccAddressFromBech32(creatorAddr)
+		k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, sdk.NewCoins(amount))
 	}
 	amountPerBlock := amount.Amount.Quo(math.NewInt(int64(endBlock - startBlock)))
 	newStakedrop := types.Stakedrop{
@@ -46,6 +52,9 @@ func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amo
 	// 	return types.ErrUnauthorized
 	// }
 	//verify sender has created a subdenom (amount.Denom)
+	if params.BondDenom == amount.Denom {
+		return nil
+	}
 	creator, _, err := types.DeconstructDenom(amount.Denom)
 	if err != nil {
 		return err

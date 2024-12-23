@@ -44,17 +44,24 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, bankKeeper types.BankKeeper)
 		} else if ctx.BlockHeight() == stakeDrop.Value.EndBlock {
 			restAmount := stakeDrop.Value.Amount.Amount.Sub(stakeDrop.Value.AmountPerBlock.Amount.Mul(math.NewInt(stakeDrop.Value.EndBlock - stakeDrop.Value.StartBlock)))
 			if stakeDrop.Value.Amount.Denom == params.BondDenom {
-
+				nativeCoinToSend = nativeCoinToSend.Add(sdk.NewCoin(stakeDrop.Value.Amount.Denom, restAmount))
 			} else {
 				coinsToSend = coinsToSend.Add(sdk.NewCoin(stakeDrop.Value.Amount.Denom, restAmount))
 			}
 
 		} else if ctx.BlockHeight() > stakeDrop.Value.EndBlock {
-			k.ActiveStakedrop.Remove(ctx, stakeDrop.Key)
+			err = k.ActiveStakedrop.Remove(ctx, stakeDrop.Key)
+			if err != nil {
+
+				ctx.Logger().Error("failed to remove stakedrop", "error", err)
+			}
 		}
 	}
 	if !coinsToSend.Empty() {
-		bankKeeper.MintCoins(ctx, types.ModuleName, coinsToSend)
+		err = bankKeeper.MintCoins(ctx, types.ModuleName, coinsToSend)
+		if err != nil {
+			return err
+		}
 		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.FeeCollectorName, sdk.NewCoins(coinsToSend...))
 		if err != nil {
 			return err

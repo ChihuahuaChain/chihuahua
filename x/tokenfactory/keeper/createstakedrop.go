@@ -32,7 +32,10 @@ func (k Keeper) createStakedropAfterValidation(ctx sdk.Context, amount sdk.Coin,
 	if amount.Denom == params.BondDenom {
 		//native token, we can mint it so sender need to send it to module account
 		sender := sdk.MustAccAddressFromBech32(creatorAddr)
-		k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, sdk.NewCoins(amount))
+		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, sender, types.ModuleName, sdk.NewCoins(amount))
+		if err != nil {
+			return err
+		}
 	}
 	amountPerBlock := amount.Amount.Quo(math.NewInt(int64(endBlock - startBlock)))
 	newStakedrop := types.Stakedrop{

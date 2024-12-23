@@ -187,7 +187,11 @@ func (AppModule) ConsensusVersion() uint64 {
 }
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the tokenfactory module.
-func (am AppModule) BeginBlock(_ sdk.Context) {}
+// BeginBlock returns the begin blocker for the mint module.
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	return BeginBlocker(sdkCtx, am.keeper, am.bankKeeper)
+}
 
 // EndBlock executes all ABCI EndBlock logic respective to the tokenfactory module. It
 // returns no validator updates.

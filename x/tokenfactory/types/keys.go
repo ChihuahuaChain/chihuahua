@@ -2,9 +2,17 @@ package types
 
 import (
 	"strings"
+
+	"cosmossdk.io/collections"
 )
 
 var ParamsKey = []byte{0x00}
+
+var (
+	ActiveStakedropPrefix = collections.NewPrefix(10)
+	AirdropSequenceKey    = collections.NewPrefix(11)
+	StakedropIndexKey     = collections.NewPrefix(12)
+)
 
 const (
 	// ModuleName defines the module name

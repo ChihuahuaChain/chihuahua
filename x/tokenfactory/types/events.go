@@ -15,4 +15,6 @@ const (
 	AttributeDenom               = "denom"
 	AttributeNewAdmin            = "new_admin"
 	AttributeDenomMetadata       = "denom_metadata"
+	AttributeStakedropStartBlock = "starting block"
+	AttributeStakedropEndBlock   = "ending block"
 )

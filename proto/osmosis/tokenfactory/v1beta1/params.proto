@@ -52,4 +52,10 @@ message Params {
   ];
 
   repeated string free_mint_whitelist_addresses = 5;
+
+  cosmos.base.v1beta1.Coin stakedrop_charge_per_block = 6 [
+    (gogoproto.moretags) = "yaml:\"stakedrop_charge_per_block\"",
+    (gogoproto.nullable) = false
+  ];
+
 }

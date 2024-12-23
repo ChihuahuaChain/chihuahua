@@ -1,8 +1,11 @@
 package types
 
-import "cosmossdk.io/math"
+import (
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/types"
+)
 
-type TokenFactoryMsg struct {
+type WasmMsg struct {
 	/// Contracts can create denoms, namespaced under the contract's address.
 	/// A contract may create any number of independent sub-denoms.
 	CreateDenom *CreateDenom `json:"create_denom,omitempty"`
@@ -19,6 +22,19 @@ type TokenFactoryMsg struct {
 	SetMetadata *SetMetadata `json:"set_metadata,omitempty"`
 	/// Forces a transfer of tokens from one address to another.
 	ForceTransfer *ForceTransfer `json:"force_transfer,omitempty"`
+
+	CreateStakedrop *CreateStakedrop `json:"create_stakedrop,omitempty"`
+
+	CreatePool *CreatePool `json:"create_pool,omitempty"`
+
+	DirectSwap *DirectSwap `json:"direct_swap,omitempty"`
+}
+
+type CreateStakedrop struct {
+	Denom      string   `json:"denom"`
+	Amount     math.Int `json:"amount"`
+	StartBlock int64    `json:"start_block"`
+	EndBlock   int64    `json:"end_block"`
 }
 
 // CreateDenom creates a new factory denom, of denomination:
@@ -61,4 +77,25 @@ type ForceTransfer struct {
 	Amount      math.Int `json:"amount"`
 	FromAddress string   `json:"from_address"`
 	ToAddress   string   `json:"to_address"`
+}
+
+// Message for liquidity module
+// TODO binding folder should be extracted from tokenfactory module
+type CreatePool struct {
+	PoolCreatorAddress string   `json:"denom"`
+	PoolTypeId         uint32   `json:"pool_type_id"`
+	Amount1            math.Int `json:"amount1"`
+	Denom1             string   `json:"denom1"`
+	Amount2            math.Int `json:"amount2"`
+	Denom2             string   `json:"denom2"`
+}
+
+type DirectSwap struct {
+	SwapRequesterAddress string         `json:"swap_requester_address"`
+	PoolId               uint64         `json:"pool_id"`
+	SwapTypeId           uint32         `json:"swap_type_id"`
+	OfferCoin            types.Coin     `json:"offer_coin"`
+	DemandCoinDenom      string         `json:"demand_coin_denom"`
+	OfferCoinFee         types.Coin     `json:"offer_coin_fee"`
+	OrderPrice           math.LegacyDec `json:"order_price"`
 }

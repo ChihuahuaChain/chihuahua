@@ -22,4 +22,6 @@ var (
 	ErrBurnOrForceTransferFromModuleAccount  = errorsmod.Register(ModuleName, 11, "burning or force transfer from Module Account is not allowed")
 	ErrBurnOrForceTransferFromBuilderAccount = errorsmod.Register(ModuleName, 12, "burning or force transfer from Builder Account is not allowed")
 	ErrCapabilityNotEnabled                  = errorsmod.Register(ModuleName, 13, "this capability is not enabled on chain")
+	ErrBadBlockParameters                    = errorsmod.Register(ModuleName, 14, "Bad block range, end block should be greater than start block")
+	ErrBadBlockHeight                        = errorsmod.Register(ModuleName, 15, "Bad block range, chain height is greater than start block")
 )

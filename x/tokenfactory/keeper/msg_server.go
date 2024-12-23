@@ -195,7 +195,6 @@ func (server msgServer) ChangeAdmin(goCtx context.Context, msg *types.MsgChangeA
 func (server msgServer) CreateStakeDrop(goCtx context.Context, msg *types.MsgCreateStakeDrop) (*types.MsgCreateStakeDropResponse, error) {
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	ctx.Logger().Error("CreateStakeDrop", "msg", msg)
 	if msg.Amount.Denom != params.BondDenom {
 		authorityMetadata, err := server.Keeper.GetAuthorityMetadata(ctx, msg.Amount.Denom)
 		if err != nil {

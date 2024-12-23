@@ -22,7 +22,6 @@ import (
 // CustomQuerier dispatches custom CosmWasm bindings queries.
 func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
 	return func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
-		ctx.Logger().Error("CustomQuerier ***************************************")
 		var contractQuery bindingstypes.TokenFactoryQuery
 		if err := json.Unmarshal(request, &contractQuery); err != nil {
 			return nil, errorsmod.Wrap(err, "osmosis query")
@@ -89,7 +88,7 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 			return bz, nil
 
 		case contractQuery.Params != nil:
-			ctx.Logger().Error("CustomQuerier : PARAMS***************************************")
+
 			res, err := qp.GetParams(ctx)
 			if err != nil {
 				return nil, err
@@ -99,8 +98,6 @@ func CustomQuerier(qp *QueryPlugin) func(ctx sdk.Context, request json.RawMessag
 			if err != nil {
 				return nil, fmt.Errorf("failed to JSON marshal ParamsResponse: %w", err)
 			}
-			ctx.Logger().Error(fmt.Sprintf("EVERYTHING IS OK IN PARAMS  ***************************************  %+v	", res))
-			ctx.Logger().Error(fmt.Sprintf("Serialized JSON: %s", string(bz)))
 			return bz, nil
 		case contractQuery.Stakedrop != nil:
 			stakedropsByDenom := []tftypes.Stakedrop{}

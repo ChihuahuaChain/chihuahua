@@ -112,9 +112,9 @@ message MsgChangeAdmin {
 
 ### CreateStakeDrop
 
-A stakedrop is a way to drop tokenfactory's token or uhuahua to huahua stakers
-It will distribute an amount of tokens between start_block and end_block
-If it's a token from tokenfactory only creator will be able to create a stakedrop, amount of token will be minted
+A stakedrop is a way to drop tokenfactory's token or uhuahua to huahua stakers  
+It will distribute an amount of tokens between start_block and end_block  
+If it's a token from tokenfactory only creator will be able to create a stakedrop, amount of token will be minted  
 If it's huahua token, stakedrop creator huahua amount will be sent to module to be distributed then to stakers
 
 Only whitelisted address will be able to create stakedrop

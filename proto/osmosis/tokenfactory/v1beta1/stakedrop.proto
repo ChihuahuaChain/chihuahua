@@ -1,0 +1,23 @@
+syntax = "proto3";
+package osmosis.tokenfactory.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
+
+
+message Stakedrop {
+
+  cosmos.base.v1beta1.Coin amount = 1 [
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.nullable) = false
+  ];
+  cosmos.base.v1beta1.Coin amount_per_block = 2 [
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.nullable) = false
+  ];
+
+  int64 start_block = 3;
+  int64 end_block = 4;
+}

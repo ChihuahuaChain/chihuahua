@@ -697,14 +697,16 @@ func New(
 	app.TokenFactoryKeeper = tokenfactorykeeper.NewKeeper(
 		appCodec,
 		app.keys[tokenfactorytypes.StoreKey],
+		runtime.NewKVStoreService(keys[tokenfactorytypes.StoreKey]),
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.DistrKeeper,
 		tokenFactoryCapabilities,
+		authtypes.FeeCollectorName,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	tfOpts := tokenbindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper)
+	tfOpts := tokenbindings.RegisterCustomPlugins(app.GRPCQueryRouter(), appCodec, &app.BankKeeper, &app.TokenFactoryKeeper, &app.LiquidityKeeper)
 	wasmOpts = append(wasmOpts, tfOpts...)
 
 	wasmDir := filepath.Join(homePath, "data")

@@ -13,6 +13,7 @@ option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
 // Msg defines the tokefactory module's gRPC message service.
 service Msg {
   rpc CreateDenom(MsgCreateDenom) returns (MsgCreateDenomResponse);
+  rpc CreateStakeDrop(MsgCreateStakeDrop) returns (MsgCreateStakeDropResponse);
   rpc Mint(MsgMint) returns (MsgMintResponse);
   rpc Burn(MsgBurn) returns (MsgBurnResponse);
   rpc ChangeAdmin(MsgChangeAdmin) returns (MsgChangeAdminResponse);
@@ -50,6 +51,24 @@ message MsgCreateDenomResponse {
   string new_token_denom = 1
       [ (gogoproto.moretags) = "yaml:\"new_token_denom\"" ];
 }
+// It allows the creator (sender) of a denom to launch a stakedrop to chain delegators
+//between block 'startBlock' and 'endBlock'
+message MsgCreateStakeDrop {
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
+  //amount to stakedrop
+  cosmos.base.v1beta1.Coin amount = 2 [
+    (gogoproto.moretags) = "yaml:\"amount\"",
+    (gogoproto.nullable) = false
+    ];
+
+  int64 start_block = 3;
+  int64 end_block = 4;
+}
+
+message MsgCreateStakeDropResponse {}
+
 
 // MsgMint is the sdk.Msg type for allowing an admin account to mint
 // more of a token.  For now, we only support minting to the sender account

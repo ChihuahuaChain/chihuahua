@@ -28,6 +28,7 @@ func GetTxCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		NewCreateDenomCmd(),
+		NewCreateStakedropCmd(),
 		NewMintCmd(),
 		NewMintToCmd(),
 		NewBurnCmd(),
@@ -62,6 +63,55 @@ func NewCreateDenomCmd() *cobra.Command {
 			msg := types.NewMsgCreateDenom(
 				clientCtx.GetFromAddress().String(),
 				args[0],
+			)
+
+			return tx.GenerateOrBroadcastTxWithFactory(clientCtx, txf, msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+func NewCreateStakedropCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create-stakedrop [amount] [startblock] [endblock] [flags]",
+		Short: "create a stakedrop for a token only for the token creator",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			txf, err := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			txf = txf.WithTxConfig(clientCtx.TxConfig).WithAccountRetriever(clientCtx.AccountRetriever)
+
+			amount, err := sdk.ParseCoinNormalized(args[0])
+
+			if err != nil {
+				return err
+			}
+
+			startBlock, err := strconv.ParseInt(args[1], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			endBlock, err := strconv.ParseInt(args[2], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgCreateStakeDrop(
+				clientCtx.GetFromAddress().String(),
+				amount,
+				startBlock,
+				endBlock,
 			)
 
 			return tx.GenerateOrBroadcastTxWithFactory(clientCtx, txf, msg)

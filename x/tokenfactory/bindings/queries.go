@@ -8,6 +8,7 @@ import (
 
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
+	tftypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
 )
 
 type QueryPlugin struct {
@@ -30,6 +31,27 @@ func (qp QueryPlugin) GetDenomAdmin(ctx sdk.Context, denom string) (*bindingstyp
 		return nil, fmt.Errorf("failed to get admin for denom: %s", denom)
 	}
 	return &bindingstypes.AdminResponse{Admin: metadata.Admin}, nil
+}
+
+// GetDenomAdmin is a query to get denom admin.
+func (qp QueryPlugin) GetStakedropByDenom(ctx sdk.Context, denom string) (*bindingstypes.StakedropByDenomResponse, error) {
+	stakedropsByDenom := []tftypes.Stakedrop{}
+	iter, err := qp.tokenFactoryKeeper.ActiveStakedrop.Indexes.StakedropByDenom.MatchExact(ctx, denom)
+	if err != nil {
+		return nil, err
+	}
+	for ; iter.Valid(); iter.Next() {
+		key, err := iter.PrimaryKey()
+		if err != nil {
+			return nil, err
+		}
+		stakedrop, err := qp.tokenFactoryKeeper.ActiveStakedrop.Get(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+		stakedropsByDenom = append(stakedropsByDenom, stakedrop)
+	}
+	return &bindingstypes.StakedropByDenomResponse{Stakedrops: stakedropsByDenom}, nil
 }
 
 func (qp QueryPlugin) GetDenomsByCreator(ctx sdk.Context, creator string) (*bindingstypes.DenomsByCreatorResponse, error) {

@@ -15,15 +15,18 @@ import (
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
+	liquiditytypes "github.com/Victor118/liquidity/x/liquidity/types"
 )
 
 // CustomMessageDecorator returns decorator for custom CosmWasm bindings messages
-func CustomMessageDecorator(bank bankkeeper.Keeper, tokenFactory *tokenfactorykeeper.Keeper) func(wasmkeeper.Messenger) wasmkeeper.Messenger {
+func CustomMessageDecorator(bank bankkeeper.Keeper, tokenFactory *tokenfactorykeeper.Keeper, liquidityKeeper *liquiditykeeper.Keeper) func(wasmkeeper.Messenger) wasmkeeper.Messenger {
 	return func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
 		return &CustomMessenger{
 			wrapped:      old,
 			bank:         bank,
 			tokenFactory: tokenFactory,
+			liquidity:    liquidityKeeper,
 		}
 	}
 }
@@ -32,16 +35,18 @@ type CustomMessenger struct {
 	wrapped      wasmkeeper.Messenger
 	bank         bankkeeper.Keeper
 	tokenFactory *tokenfactorykeeper.Keeper
+	liquidity    *liquiditykeeper.Keeper
 }
 
 var _ wasmkeeper.Messenger = (*CustomMessenger)(nil)
 
 // DispatchMsg executes on the contractMsg.
 func (m *CustomMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+
 	if msg.Custom != nil {
 		// only handle the happy path where this is really creating / minting / swapping ...
 		// leave everything else for the wrapped version
-		var contractMsg bindingstypes.TokenFactoryMsg
+		var contractMsg bindingstypes.WasmMsg
 		if err := json.Unmarshal(msg.Custom, &contractMsg); err != nil {
 			return nil, nil, nil, errorsmod.Wrap(err, "token factory msg")
 		}
@@ -64,8 +69,125 @@ func (m *CustomMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddre
 		if contractMsg.ForceTransfer != nil {
 			return m.forceTransfer(ctx, contractAddr, contractMsg.ForceTransfer)
 		}
+		if contractMsg.CreateStakedrop != nil {
+			return m.createStakedrop(ctx, contractAddr, contractMsg.CreateStakedrop)
+		}
+		if contractMsg.CreatePool != nil {
+			return m.createPool(ctx, contractAddr, contractMsg.CreatePool)
+		}
+		if contractMsg.DirectSwap != nil {
+			return m.directSwap(ctx, contractAddr, contractMsg.DirectSwap)
+		}
 	}
 	return m.wrapped.DispatchMsg(ctx, contractAddr, contractIBCPortID, msg)
+}
+
+// createDenom creates a stakedrop, an amount of tokens distributed to stakers over a range of block
+func (m *CustomMessenger) createStakedrop(ctx sdk.Context, contractAddr sdk.AccAddress, createStakedrop *bindingstypes.CreateStakedrop) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+	bz, err := PerformCreateStakedrop(m.tokenFactory, m.bank, ctx, contractAddr, createStakedrop)
+	if err != nil {
+		return nil, nil, nil, errorsmod.Wrap(err, "perform create stakedrop")
+	}
+	// TODO: double check how this is all encoded to the contract
+	return nil, [][]byte{bz}, nil, nil
+}
+
+// PerformCreateStakedrop is used with createStakedrop to create a stakedrop; validates the msgCreateStakedrop.
+func PerformCreateStakedrop(f *tokenfactorykeeper.Keeper, b bankkeeper.Keeper, ctx sdk.Context, contractAddr sdk.AccAddress, createStakedrop *bindingstypes.CreateStakedrop) ([]byte, error) {
+	if createStakedrop == nil {
+		return nil, wasmvmtypes.InvalidRequest{Err: "create stakedrop null create stakedrop"}
+	}
+
+	msgServer := tokenfactorykeeper.NewMsgServerImpl(*f)
+
+	msgCreateStakedrop := tokenfactorytypes.NewMsgCreateStakeDrop(contractAddr.String(), sdk.NewCoin(createStakedrop.Denom, createStakedrop.Amount), createStakedrop.StartBlock, createStakedrop.EndBlock)
+
+	if err := msgCreateStakedrop.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(err, "failed validating MsgCreateStakedrop")
+	}
+
+	// Create denom
+	resp, err := msgServer.CreateStakeDrop(
+		ctx,
+		msgCreateStakedrop,
+	)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "creating stakedrop")
+	}
+
+	return resp.Marshal()
+}
+
+// createDenom creates a new token denom
+func (m *CustomMessenger) directSwap(ctx sdk.Context, contractAddr sdk.AccAddress, directSwap *bindingstypes.DirectSwap) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+	bz, err := PerformDirectSwap(m.liquidity, m.bank, ctx, contractAddr, directSwap)
+	if err != nil {
+		return nil, nil, nil, errorsmod.Wrap(err, "perform create pool")
+	}
+	// TODO: double check how this is all encoded to the contract
+	return nil, [][]byte{bz}, nil, nil
+}
+
+// PerformCreateStakedrop is used with createStakedrop to create a stakedrop; validates the msgCreateStakedrop.
+func PerformDirectSwap(f *liquiditykeeper.Keeper, b bankkeeper.Keeper, ctx sdk.Context, contractAddr sdk.AccAddress, directSwap *bindingstypes.DirectSwap) ([]byte, error) {
+	if directSwap == nil {
+		return nil, wasmvmtypes.InvalidRequest{Err: "direct swap null direct swap"}
+	}
+
+	msgServer := liquiditykeeper.NewMsgServerImpl(*f)
+
+	msgDirectSwap := liquiditytypes.NewMsgDirectSwap(contractAddr, directSwap.PoolId, 1, directSwap.OfferCoin, directSwap.DemandCoinDenom, directSwap.OrderPrice)
+
+	if err := msgDirectSwap.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(err, "failed validating MsgCreateStakedrop")
+	}
+
+	// Create denom
+	resp, err := msgServer.DirectSwap(
+		ctx,
+		msgDirectSwap,
+	)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "creating stakedrop")
+	}
+
+	return resp.Marshal()
+}
+
+// createDenom creates a new token denom
+func (m *CustomMessenger) createPool(ctx sdk.Context, contractAddr sdk.AccAddress, createPool *bindingstypes.CreatePool) ([]sdk.Event, [][]byte, [][]*types.Any, error) {
+	bz, err := PerformCreatePool(m.liquidity, m.bank, ctx, contractAddr, createPool)
+	if err != nil {
+		return nil, nil, nil, errorsmod.Wrap(err, "perform create pool")
+	}
+	// TODO: double check how this is all encoded to the contract
+	return nil, [][]byte{bz}, nil, nil
+}
+
+// PerformCreateStakedrop is used with createStakedrop to create a stakedrop; validates the msgCreateStakedrop.
+func PerformCreatePool(f *liquiditykeeper.Keeper, b bankkeeper.Keeper, ctx sdk.Context, contractAddr sdk.AccAddress, createPool *bindingstypes.CreatePool) ([]byte, error) {
+	if createPool == nil {
+		return nil, wasmvmtypes.InvalidRequest{Err: "create stakedrop null create stakedrop"}
+	}
+
+	msgServer := liquiditykeeper.NewMsgServerImpl(*f)
+
+	msgCreatePool := liquiditytypes.NewMsgCreatePool(contractAddr, uint32(1), sdk.NewCoins(sdk.NewCoin(createPool.Denom1, createPool.Amount1), sdk.NewCoin(createPool.Denom2, createPool.Amount2)))
+
+	if err := msgCreatePool.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(err, "failed validating MsgCreateStakedrop")
+	}
+
+	// Create denom
+	resp, err := msgServer.CreatePool(
+		ctx,
+		msgCreatePool,
+	)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "creating stakedrop")
+	}
+
+	return resp.Marshal()
 }
 
 // createDenom creates a new token denom
@@ -345,6 +467,7 @@ func WasmMetadataToSdk(metadata bindingstypes.Metadata) banktypes.Metadata {
 		Name:        metadata.Name,
 		Symbol:      metadata.Symbol,
 		DenomUnits:  denoms,
+		URI:         metadata.Uri,
 	}
 }
 
@@ -364,5 +487,6 @@ func SdkMetadataToWasm(metadata banktypes.Metadata) *bindingstypes.Metadata {
 		Name:        metadata.Name,
 		Symbol:      metadata.Symbol,
 		DenomUnits:  denoms,
+		Uri:         metadata.URI,
 	}
 }

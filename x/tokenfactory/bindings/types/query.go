@@ -1,14 +1,17 @@
 package types
 
+import "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+
 // See https://github.com/CosmWasm/token-bindings/blob/main/packages/bindings/src/query.rs
 type TokenFactoryQuery struct {
 	/// Given a subdenom minted by a contract via `OsmosisMsg::MintTokens`,
 	/// returns the full denom as used by `BankMsg::Send`.
-	FullDenom       *FullDenom       `json:"full_denom,omitempty"`
-	Admin           *DenomAdmin      `json:"admin,omitempty"`
-	Metadata        *GetMetadata     `json:"metadata,omitempty"`
-	DenomsByCreator *DenomsByCreator `json:"denoms_by_creator,omitempty"`
-	Params          *GetParams       `json:"params,omitempty"`
+	FullDenom       *FullDenom        `json:"full_denom,omitempty"`
+	Admin           *DenomAdmin       `json:"admin,omitempty"`
+	Metadata        *GetMetadata      `json:"metadata,omitempty"`
+	DenomsByCreator *DenomsByCreator  `json:"denoms_by_creator,omitempty"`
+	Params          *GetParams        `json:"params,omitempty"`
+	Stakedrop       *StakedropByDenom `json:"stakedrop,omitempty"`
 }
 
 // query types
@@ -19,6 +22,10 @@ type FullDenom struct {
 }
 
 type GetMetadata struct {
+	Denom string `json:"denom"`
+}
+
+type StakedropByDenom struct {
 	Denom string `json:"denom"`
 }
 
@@ -36,6 +43,10 @@ type GetParams struct{}
 
 type FullDenomResponse struct {
 	Denom string `json:"denom"`
+}
+
+type StakedropByDenomResponse struct {
+	Stakedrops []types.Stakedrop `json:"stakedrops"`
 }
 
 type AdminResponse struct {

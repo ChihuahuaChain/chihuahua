@@ -4,6 +4,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
+	"github.com/ChihuahuaChain/chihuahua/app/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -16,6 +17,7 @@ const (
 	TypeMsgForceTransfer    = "force_transfer"
 	TypeMsgChangeAdmin      = "change_admin"
 	TypeMsgSetDenomMetadata = "set_denom_metadata"
+	TypeMsgCreateStakeDrop  = "create_stakedrop"
 )
 
 var _ sdk.Msg = &MsgCreateDenom{}
@@ -49,6 +51,56 @@ func (m MsgCreateDenom) GetSignBytes() []byte {
 }
 
 func (m MsgCreateDenom) GetSigners() []sdk.AccAddress {
+	sender, _ := sdk.AccAddressFromBech32(m.Sender)
+	return []sdk.AccAddress{sender}
+}
+
+var _ sdk.Msg = &MsgCreateStakeDrop{}
+
+// NewMsgCreateDenom creates a msg to create a new denom
+func NewMsgCreateStakeDrop(sender string, amount sdk.Coin, startBlock int64, endBlock int64) *MsgCreateStakeDrop {
+	return &MsgCreateStakeDrop{
+		Sender:     sender,
+		Amount:     amount,
+		StartBlock: startBlock,
+		EndBlock:   endBlock,
+	}
+}
+
+func (m MsgCreateStakeDrop) Route() string { return RouterKey }
+func (m MsgCreateStakeDrop) Type() string  { return TypeMsgCreateStakeDrop }
+func (m MsgCreateStakeDrop) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(m.Sender)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "Invalid sender address (%s)", err)
+	}
+
+	err = m.Amount.Validate()
+	if err != nil {
+		return err
+	}
+
+	if m.StartBlock <= 0 || m.EndBlock <= 0 || m.StartBlock > m.EndBlock {
+		return ErrBadBlockParameters
+	}
+
+	if m.Amount.Denom == params.BondDenom {
+		return nil
+	} else {
+		_, _, err = DeconstructDenom(m.Amount.Denom)
+		if err != nil {
+			return errorsmod.Wrap(ErrInvalidDenom, err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (m MsgCreateStakeDrop) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+func (m MsgCreateStakeDrop) GetSigners() []sdk.AccAddress {
 	sender, _ := sdk.AccAddressFromBech32(m.Sender)
 	return []sdk.AccAddress{sender}
 }

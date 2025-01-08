@@ -5,7 +5,9 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "osmosis/tokenfactory/v1beta1/authorityMetadata.proto";
+import "osmosis/tokenfactory/v1beta1/stakedrop.proto";
 import "osmosis/tokenfactory/v1beta1/params.proto";
+import "amino/amino.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
 
@@ -31,6 +33,18 @@ service Query {
       returns (QueryDenomsFromCreatorResponse) {
     option (google.api.http).get =
         "/osmosis/tokenfactory/v1beta1/denoms_from_creator/{creator}";
+  }
+
+  rpc StakeDrops(QueryStakeDropsRequest)
+      returns (QueryStakeDropsResponse) {
+    option (google.api.http).get =
+        "/osmosis/tokenfactory/v1beta1/stakedrops";
+  }
+
+  rpc StakeDropsFromDenom(QueryStakeDropFromDenomRequest)
+      returns (QueryStakeDropFromDenomResponse) {
+    option (google.api.http).get =
+      "/osmosis/tokenfactory/v1beta1/stakedrops_from_denom/{denom}";
   }
 }
 
@@ -69,3 +83,32 @@ message QueryDenomsFromCreatorRequest {
 message QueryDenomsFromCreatorResponse {
   repeated string denoms = 1 [ (gogoproto.moretags) = "yaml:\"denoms\"" ];
 }
+
+// QueryDenomsMetadataRequest is the request type for the Query/DenomsMetadata RPC method.
+message QueryStakeDropsRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryDenomsMetadataResponse is the response type for the Query/DenomsMetadata RPC
+// method.
+message QueryStakeDropsResponse {
+  // metadata provides the client information for all the registered tokens.
+  repeated Stakedrop stakedrops = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryDenomsFromCreatorRequest defines the request structure for the
+// DenomsFromCreator gRPC query.
+message QueryStakeDropFromDenomRequest {
+  string denom = 1 [ (gogoproto.moretags) = "yaml:\"denom\"" ];
+}
+
+// QueryDenomsFromCreatorRequest defines the response structure for the
+// DenomsFromCreator gRPC query.
+message QueryStakeDropFromDenomResponse {
+  repeated Stakedrop stakedrops = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+

@@ -24,6 +24,7 @@ var (
 const (
 	// Amino names
 	createTFDenom        = "osmosis/tokenfactory/create-denom"
+	createTFStakedrop    = "osmosis/tokenfactory/create-stakedrop"
 	mintTFDenom          = "osmosis/tokenfactory/mint"
 	burnTFDenom          = "osmosis/tokenfactory/burn"
 	forceTransferTFDenom = "osmosis/tokenfactory/force-transfer"
@@ -56,6 +57,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgForceTransfer{},
 		&MsgChangeAdmin{},
 		&MsgUpdateParams{},
+		&MsgCreateStakeDrop{},
 	)
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
@@ -67,4 +69,5 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgForceTransfer{}, forceTransferTFDenom, nil)
 	cdc.RegisterConcrete(&MsgChangeAdmin{}, changeAdminTFDenom, nil)
 	cdc.RegisterConcrete(&MsgUpdateParams{}, updateTFparams, nil)
+	cdc.RegisterConcrete(&MsgCreateStakeDrop{}, createTFStakedrop, nil)
 }

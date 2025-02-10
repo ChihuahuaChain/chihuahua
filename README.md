@@ -24,13 +24,13 @@ sudo apt-get install make build-essential gcc git jq chrony -y
 
 ```bash
 # download the latest version
-wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
 
 # remove old version (if any)
 sudo rm -rf /usr/local/go
 
 # install the new version
-sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
 ```
 
 - #### Configure Environmental Variables
@@ -56,11 +56,11 @@ The output should be `go version go1.22.0 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v9.0.0
+git checkout v9.0.1
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v9.0.0`
+To verify the installation you can run `chihuahuad version` and it should return `v9.0.1`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahuachain-8782014494216
 
 # Chain Upgrades
 
+- **v9.0.1** - Block 16623000 - (2025-02-11 01:49:00)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.1)
 - **v9.0.0** - Block 16529000 - (2025-02-03 13:11:00)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.0)
 - **v8.0.2** - Block 15103000 - (2024-10-22 13:50:00)

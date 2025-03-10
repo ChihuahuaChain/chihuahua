@@ -217,6 +217,8 @@ _Make sure to join our [Discord](https://discord.gg/chihuahuachain-8782014494216
 
 # Chain Upgrades
 
+- **v9.0.2** - Block 17073000 - (2025-03-12 13:56:00)
+  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.2)
 - **v9.0.1** - Block 16623000 - (2025-02-11 01:49:00)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.1)
 - **v9.0.0** - Block 16529000 - (2025-02-03 13:11:00)

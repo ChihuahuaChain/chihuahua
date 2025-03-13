@@ -56,11 +56,11 @@ The output should be `go version go1.22.0 linux/amd64`
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
 git fetch --tags
-git checkout v9.0.1
+git checkout v9.0.3
 make install
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v9.0.1`
+To verify the installation you can run `chihuahuad version` and it should return `v9.0.3`
 
 - #### Initialize the Chain
 Replace `$MONIKERNAME` with your choosen node name
@@ -217,6 +217,7 @@ _Make sure to join our [Discord](https://discord.gg/chihuahuachain-8782014494216
 
 # Chain Upgrades
 
+- **v9.0.3** - Non state breaking, upgrade after v9.0.2
 - **v9.0.2** - Block 17073000 - (2025-03-12 13:56:00)
   - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.2)
 - **v9.0.1** - Block 16623000 - (2025-02-11 01:49:00)

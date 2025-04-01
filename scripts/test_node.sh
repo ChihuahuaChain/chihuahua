@@ -58,7 +58,10 @@ from_scratch () {
   update_test_genesis '.consensus_params["block"]["max_gas"]="100000000"'
   # Gov
   update_test_genesis '.app_state["gov"]["params"]["min_deposit"]=[{"denom": "uhuahua","amount": "1000000"}]'
-  update_test_genesis '.app_state["gov"]["voting_params"]["voting_period"]="15s"'
+  update_test_genesis '.app_state["gov"]["params"]["max_deposit_period"]="5s"'
+  update_test_genesis '.app_state["gov"]["params"]["voting_period"]="20s"'
+  update_test_genesis '.app_state["gov"]["params"]["expedited_voting_period"]="15s"'
+  update_test_genesis '.app_state["gov"]["voting_params"]["voting_period"]="20s"'
   # staking
   update_test_genesis '.app_state["staking"]["params"]["bond_denom"]="uhuahua"'
   update_test_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'

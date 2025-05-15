@@ -173,7 +173,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v9.0.2"
+	UpgradeName  = "v9.0.3"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -576,6 +576,7 @@ func New(
 	app.LiquidityKeeper = liquiditykeeper.NewKeeper(
 		appCodec, keys[liquiditytypes.StoreKey],
 		app.BankKeeper, app.AccountKeeper, app.DistrKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName),
 	)
 
 	// ... other modules keepers
@@ -1397,6 +1398,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 	})
 
+	app.UpgradeKeeper.SetUpgradeHandler("v9.0.3", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return app.mm.RunMigrations(ctx, cfg, vm)
+
+	})
 }
 
 // SimulationManager implements the SimulationApp interface

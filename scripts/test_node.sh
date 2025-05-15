@@ -32,8 +32,8 @@ alias BINARY="$BINARY --home=$HOME_DIR"
 command -v $BINARY > /dev/null 2>&1 || { echo >&2 "$BINARY command not found. Ensure this is setup / properly installed in your GOPATH (make install)."; exit 1; }
 command -v jq > /dev/null 2>&1 || { echo >&2 "jq not installed. More info: https://stedolan.github.io/jq/download/"; exit 1; }
 
-$BINARY config keyring-backend $KEYRING
-$BINARY config chain-id $CHAIN_ID
+$BINARY config set client keyring-backend $KEYRING
+$BINARY config set client chain-id $CHAIN_ID
 
 from_scratch () {
   # Fresh install on current branch
@@ -55,10 +55,13 @@ from_scratch () {
   }
 
   # Block
-  update_test_genesis '.consensus_params["block"]["max_gas"]="100000000"'
+  update_test_genesis '.consensus["params"]["block"]["max_gas"]="100000000"'
   # Gov
   update_test_genesis '.app_state["gov"]["params"]["min_deposit"]=[{"denom": "uhuahua","amount": "1000000"}]'
-  update_test_genesis '.app_state["gov"]["voting_params"]["voting_period"]="15s"'
+  update_test_genesis '.app_state["gov"]["params"]["max_deposit_period"]="5s"'
+  update_test_genesis '.app_state["gov"]["params"]["voting_period"]="20s"'
+  update_test_genesis '.app_state["gov"]["params"]["expedited_voting_period"]="15s"'
+  update_test_genesis '.app_state["gov"]["voting_params"]["voting_period"]="20s"'
   # staking
   update_test_genesis '.app_state["staking"]["params"]["bond_denom"]="uhuahua"'
   update_test_genesis '.app_state["staking"]["params"]["min_commission_rate"]="0.050000000000000000"'

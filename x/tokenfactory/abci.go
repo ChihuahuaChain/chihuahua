@@ -58,10 +58,6 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, bankKeeper types.BankKeeper)
 		}
 	}
 	if !coinsToSend.Empty() {
-		err = bankKeeper.MintCoins(ctx, types.ModuleName, coinsToSend)
-		if err != nil {
-			return err
-		}
 		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.FeeCollectorName, sdk.NewCoins(coinsToSend...))
 		if err != nil {
 			return err

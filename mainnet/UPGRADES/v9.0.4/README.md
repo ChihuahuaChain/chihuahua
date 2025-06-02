@@ -1,4 +1,4 @@
-# Chihuahua v9.0.3 Upgrade
+# Chihuahua v9.0.4 Upgrade
 
 The Upgrade is scheduled for block `18385000`. A countdown clock is [here](https://www.mintscan.io/chihuahua/blocks/18385000)
 

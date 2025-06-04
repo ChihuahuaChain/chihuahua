@@ -173,7 +173,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v9.0.4"
+	UpgradeName  = "v9.0.5"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -1399,6 +1399,11 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	})
 
 	app.UpgradeKeeper.SetUpgradeHandler("v9.0.4", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return app.mm.RunMigrations(ctx, cfg, vm)
+
+	})
+
+	app.UpgradeKeeper.SetUpgradeHandler("v9.0.5", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		return app.mm.RunMigrations(ctx, cfg, vm)
 
 	})

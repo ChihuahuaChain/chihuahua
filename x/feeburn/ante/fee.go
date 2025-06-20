@@ -152,6 +152,11 @@ func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees s
 	if err2 != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
 	}
-
+	ctx.Logger().Info(
+    	"Burned transaction fees",
+ 	   "burned_amount", burningFees.String(),
+    	"from_account", acc.GetAddress().String(),
+    	"module", "x/feeburn",
+	)
 	return nil
 }

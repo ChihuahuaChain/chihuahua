@@ -1,18 +1,18 @@
 package ante
 
 import (
-	"bytes"
-	"fmt"
+        "bytes"
+        "fmt"
 
-	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
+        errorsmod "cosmossdk.io/errors"
+        "cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+        sdk "github.com/cosmos/cosmos-sdk/types"
+        sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+        "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	feeburnkeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+        feeburnkeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
+        "github.com/cosmos/cosmos-sdk/x/auth/ante"
 )
 
 // DeductFeeDecorator deducts fees from the first signer of the tx
@@ -20,143 +20,145 @@ import (
 // Call next AnteHandler if fees successfully deducted
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 type DeductFeeDecorator struct {
-	accountKeeper  ante.AccountKeeper
-	bankKeeper     BankKeeper
-	feegrantKeeper ante.FeegrantKeeper
-	txFeeChecker   ante.TxFeeChecker
-	feeburnKeeper  feeburnkeeper.Keeper
+        accountKeeper  ante.AccountKeeper
+        bankKeeper     BankKeeper
+        feegrantKeeper ante.FeegrantKeeper
+        txFeeChecker   ante.TxFeeChecker
+        feeburnKeeper  feeburnkeeper.Keeper
 }
 
 func NewDeductFeeDecorator(ak ante.AccountKeeper, bk BankKeeper, fk ante.FeegrantKeeper, tfc ante.TxFeeChecker, fbk feeburnkeeper.Keeper) DeductFeeDecorator {
-	if tfc == nil {
-		tfc = checkTxFeeWithValidatorMinGasPrices
-	}
+        if tfc == nil {
+                tfc = checkTxFeeWithValidatorMinGasPrices
+        }
 
-	return DeductFeeDecorator{
-		accountKeeper:  ak,
-		bankKeeper:     bk,
-		feegrantKeeper: fk,
-		txFeeChecker:   tfc,
-		feeburnKeeper:  fbk,
-	}
+        return DeductFeeDecorator{
+                accountKeeper:  ak,
+                bankKeeper:     bk,
+                feegrantKeeper: fk,
+                txFeeChecker:   tfc,
+                feeburnKeeper:  fbk,
+        }
 }
 
 func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	feeTx, ok := tx.(sdk.FeeTx)
-	if !ok {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
-	}
+        feeTx, ok := tx.(sdk.FeeTx)
+        if !ok {
+                return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+        }
 
-	if !simulate && ctx.BlockHeight() > 0 && feeTx.GetGas() == 0 {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidGasLimit, "must provide positive gas")
-	}
+        if !simulate && ctx.BlockHeight() > 0 && feeTx.GetGas() == 0 {
+                return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidGasLimit, "must provide positive gas")
+        }
 
-	var (
-		priority int64
-		err      error
-	)
+        var (
+                priority int64
+                err      error
+        )
 
-	fee := feeTx.GetFee()
-	if !simulate {
-		fee, priority, err = dfd.txFeeChecker(ctx, tx)
-		if err != nil {
-			return ctx, err
-		}
-	}
-	if err := dfd.checkDeductFee(ctx, tx, fee); err != nil {
-		return ctx, err
-	}
+        fee := feeTx.GetFee()
+        if !simulate {
+                fee, priority, err = dfd.txFeeChecker(ctx, tx)
+                if err != nil {
+                        return ctx, err
+                }
+        }
+        if err := dfd.checkDeductFee(ctx, tx, fee); err != nil {
+                return ctx, err
+        }
 
-	newCtx := ctx.WithPriority(priority)
+        newCtx := ctx.WithPriority(priority)
 
-	return next(newCtx, tx, simulate)
+        return next(newCtx, tx, simulate)
 }
 
 func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee sdk.Coins) error {
-	feeTx, ok := sdkTx.(sdk.FeeTx)
-	if !ok {
-		return errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
-	}
+        feeTx, ok := sdkTx.(sdk.FeeTx)
+        if !ok {
+                return errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+        }
 
-	if addr := dfd.accountKeeper.GetModuleAddress(types.FeeCollectorName); addr == nil {
-		return fmt.Errorf("fee collector module account (%s) has not been set", types.FeeCollectorName)
-	}
+        if addr := dfd.accountKeeper.GetModuleAddress(types.FeeCollectorName); addr == nil {
+                return fmt.Errorf("fee collector module account (%s) has not been set", types.FeeCollectorName)
+        }
 
-	feePayer := feeTx.FeePayer()
-	feeGranter := feeTx.FeeGranter()
-	deductFeesFrom := feePayer
+        feePayer := feeTx.FeePayer()
+        feeGranter := feeTx.FeeGranter()
+        deductFeesFrom := feePayer
 
-	// if feegranter set deduct fee from feegranter account.
-	// this works with only when feegrant enabled.
-	if feeGranter != nil {
-		if dfd.feegrantKeeper == nil {
-			return sdkerrors.ErrInvalidRequest.Wrap("fee grants are not enabled")
-		} else if !bytes.Equal(feeGranter, feePayer) {
-			err := dfd.feegrantKeeper.UseGrantedFees(ctx, feeGranter, feePayer, fee, sdkTx.GetMsgs())
-			if err != nil {
-				return errorsmod.Wrapf(err, "%s does not allow to pay fees for %s", feeGranter, feePayer)
-			}
-		}
+        // if feegranter set deduct fee from feegranter account.
+        // this works with only when feegrant enabled.
+        if feeGranter != nil {
+                if dfd.feegrantKeeper == nil {
+                        return sdkerrors.ErrInvalidRequest.Wrap("fee grants are not enabled")
+                } else if !bytes.Equal(feeGranter, feePayer) {
+                        err := dfd.feegrantKeeper.UseGrantedFees(ctx, feeGranter, feePayer, fee, sdkTx.GetMsgs())
+                        if err != nil {
+                                return errorsmod.Wrapf(err, "%s does not allow to pay fees for %s", feeGranter, feePayer)
+                        }
+                }
 
-		deductFeesFrom = feeGranter
-	}
+                deductFeesFrom = feeGranter
+        }
 
-	deductFeesFromAcc := dfd.accountKeeper.GetAccount(ctx, deductFeesFrom)
-	if deductFeesFromAcc == nil {
-		return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFeesFrom)
-	}
+        deductFeesFromAcc := dfd.accountKeeper.GetAccount(ctx, deductFeesFrom)
+        if deductFeesFromAcc == nil {
+                return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFeesFrom)
+        }
 
-	// deduct the fees
-	if !fee.IsZero() {
-		feeBurnPercent, ok := math.NewIntFromString(dfd.feeburnKeeper.GetTxFeeBurnPercent(ctx))
-		if !ok {
-			return sdkerrors.ErrInvalidType
-		}
-		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee, feeBurnPercent)
-		if err != nil {
-			return err
-		}
-	}
+        // deduct the fees
+        if !fee.IsZero() {
+                feeBurnPercent, ok := math.NewIntFromString(dfd.feeburnKeeper.GetTxFeeBurnPercent(ctx))
+                if !ok {
+                        return sdkerrors.ErrInvalidType
+                }
+                err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee, feeBurnPercent)
+                if err != nil {
+                        return err
+                }
+        }
 
-	events := sdk.Events{
-		sdk.NewEvent(
-			sdk.EventTypeTx,
-			sdk.NewAttribute(sdk.AttributeKeyFee, fee.String()),
-			sdk.NewAttribute(sdk.AttributeKeyFeePayer, string(deductFeesFrom)),
-		),
-	}
-	ctx.EventManager().EmitEvents(events)
+        events := sdk.Events{
+                sdk.NewEvent(
+                        sdk.EventTypeTx,
+                        sdk.NewAttribute(sdk.AttributeKeyFee, fee.String()),
+                        sdk.NewAttribute(sdk.AttributeKeyFeePayer, string(deductFeesFrom)),
+                ),
+        }
+        ctx.EventManager().EmitEvents(events)
 
-	return nil
+        return nil
 }
 
 // DeductFees deducts fees from the given account.
 func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees sdk.Coins, bp math.Int) error {
-	if !fees.IsValid() {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
-	}
+        if !fees.IsValid() {
+                return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
+        }
 
-	// Calculate burning amounts by given percentage and fee amounts
-	burningFees := sdk.Coins{}
-	for _, fee := range fees {
-		burningAmount := fee.Amount.Mul(bp).Quo(math.NewInt(100))
-		burningFees = burningFees.Add(sdk.NewCoin(fee.Denom, burningAmount))
-	}
+        // Calculate burning amounts by given percentage and fee amounts
+        burningFees := sdk.Coins{}
+        for _, fee := range fees {
+                burningAmount := fee.Amount.Mul(bp).Quo(math.NewInt(100))
+                burningFees = burningFees.Add(sdk.NewCoin(fee.Denom, burningAmount))
+        }
 
-	err1 := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
-	if err1 != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err1.Error())
-	}
+        err1 := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
+        if err1 != nil {
+                return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err1.Error())
+        }
 
-	err2 := bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
-	if err2 != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
-	}
-	ctx.Logger().Info(
-    	"Burned transaction fees",
- 	   "burned_amount", burningFees.String(),
-    	"from_account", acc.GetAddress().String(),
-    	"module", "x/feeburn",
-	)
-	return nil
+        err2 := bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
+        if err2 != nil {
+                return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
+        }
+        if !ctx.IsCheckTx() {
+                ctx.Logger().Info(
+                "Burned transaction fees",
+                "burned_amount", burningFees.String(),
+                "from_account", acc.GetAddress().String(),
+                "module", "x/feeburn",
+                )
+        }
+        return nil
 }

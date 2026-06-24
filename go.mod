@@ -7,7 +7,7 @@ toolchain go1.23.9
 require (
 	github.com/CosmWasm/wasmd v0.53.4
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
-	github.com/cosmos/cosmos-sdk v0.50.14
+	github.com/cosmos/cosmos-sdk v0.50.15
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/iavl v1.2.4 // indirect
@@ -49,7 +49,7 @@ require (
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/CosmWasm/wasmvm/v2 v2.2.4
 	github.com/Victor118/liquidity v1.8.3
-	github.com/cometbft/cometbft v0.38.19
+	github.com/cometbft/cometbft v0.38.23
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0
 	github.com/cosmos/ibc-go/modules/capability v1.0.1
@@ -163,12 +163,12 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
+	github.com/lib/pq v1.12.0 // indirect
 	github.com/linxGnu/grocksdb v1.9.8 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/minio/highwayhash v1.0.3 // indirect
+	github.com/minio/highwayhash v1.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
@@ -177,7 +177,7 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
+	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -188,7 +188,7 @@ require (
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
-	github.com/sasha-s/go-deadlock v0.3.5 // indirect
+	github.com/sasha-s/go-deadlock v0.3.9 // indirect
 	github.com/shamaton/msgpack/v2 v2.2.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
@@ -244,4 +244,11 @@ replace (
 
 	// pin version! 126854af5e6d has issues with the store so that queries fail
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+
+	// Patched liquidity module: hardens BuildersAddresses param validation and
+	// removes a panic (MustAccAddressFromBech32) on the builder-commission
+	// payout path that runs in the liquidity batch EndBlocker. See ./liquidity.
+	// For production, publish this as a tagged fork (e.g. v1.8.4) and replace
+	// this local directive with a normal version bump.
+	github.com/Victor118/liquidity => ./liquidity
 )

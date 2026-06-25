@@ -47,8 +47,8 @@ require (
 	cosmossdk.io/x/nft v0.1.1
 	cosmossdk.io/x/tx v0.14.0
 	cosmossdk.io/x/upgrade v0.1.4
+	github.com/ChihuahuaChain/liquidity v1.8.4
 	github.com/CosmWasm/wasmvm/v2 v2.2.4
-	github.com/Victor118/liquidity v1.8.3
 	github.com/cometbft/cometbft v0.38.23
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0
@@ -244,11 +244,4 @@ replace (
 
 	// pin version! 126854af5e6d has issues with the store so that queries fail
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-
-	// Patched liquidity module: hardens BuildersAddresses param validation and
-	// removes a panic (MustAccAddressFromBech32) on the builder-commission
-	// payout path that runs in the liquidity batch EndBlocker. See ./liquidity.
-	// For production, publish this as a tagged fork (e.g. v1.8.4) and replace
-	// this local directive with a normal version bump.
-	github.com/Victor118/liquidity => ./liquidity
 )

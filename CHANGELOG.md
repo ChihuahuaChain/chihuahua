@@ -55,8 +55,8 @@ governance-set height (not a rolling binary swap).
   which made `cosmos.tx.v1beta1.Service/Simulate` responses undecodable by
   strict clients (e.g. Hermes) and blocked IBC relaying (`MsgCreateClient` /
   `MsgRecvPacket` gas estimation failed before broadcast).
-- (liquidity) Pin a patched `Victor118/liquidity` fork: reject invalid
-  `BuildersAddresses` at param validation and remove the
+- (liquidity) Bump to `github.com/ChihuahuaChain/liquidity` v1.8.4: reject
+  invalid `BuildersAddresses` at param validation and remove the
   `MustAccAddressFromBech32` panic on the builder-commission payout path that
   runs in the liquidity batch `EndBlocker` (a misconfigured param could
   otherwise halt the chain).

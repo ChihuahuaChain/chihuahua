@@ -659,6 +659,8 @@ github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/ChihuahuaChain/liquidity v1.8.4 h1:TQwTZ4Lhy2XVfTKULcFwhNiWauTG2jTQnxdMkRiqSRU=
+github.com/ChihuahuaChain/liquidity v1.8.4/go.mod h1:TVBLgZtqMs7M9eL0JaYqX/B7DxFJD+YscjLJDWJXPsI=
 github.com/CosmWasm/wasmd v0.53.4 h1:yZq7xuWMxY9q5niD0HxOSyYSfHvATXgV3KI1IqkALKg=
 github.com/CosmWasm/wasmd v0.53.4/go.mod h1:zk6V7X9VPYAosyD6VMC+VaVsG33aTnmqDoIIFNkD31E=
 github.com/CosmWasm/wasmvm/v2 v2.2.4 h1:V3UwXJMA8TNOuQETppDQkaXAevF7gOWLYpKvrThPv7o=
@@ -684,8 +686,6 @@ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/Victor118/liquidity v1.8.3 h1:rgelGB9+/idUhDmfWC3GcbPooScGIumbIKO/A4FWZ8I=
-github.com/Victor118/liquidity v1.8.3/go.mod h1:i71bR2vmPmev+ZpO7BqYuHkvBTyB2az/uqddGQjrET4=
 github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrdtl/UvroE=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/adlio/schema v1.3.6 h1:k1/zc2jNfeiZBA5aFTRy37jlBIuCkXCm0XmvpzCKI9I=

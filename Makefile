@@ -4,6 +4,12 @@ BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
 GO_VERSION := "1.23"
 
+# Pin the exact Go toolchain for all `go` invocations made by this Makefile.
+# The `toolchain` directive in go.mod only upgrades, never downgrades, so a
+# machine with a newer Go (>=1.25) would otherwise fail to compile the
+# transitive bytedance/sonic dependency. Overridable via the environment.
+export GOTOOLCHAIN ?= go1.23.9
+
 # don't override user values
 ifeq (,$(VERSION))
   VERSION := $(shell git describe --tags)

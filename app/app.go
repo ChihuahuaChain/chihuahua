@@ -84,9 +84,9 @@ import (
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/CosmWasm/wasmd/x/wasm"
-	"github.com/Victor118/liquidity/x/liquidity"
-	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
-	liquiditytypes "github.com/Victor118/liquidity/x/liquidity/types"
+	"github.com/ChihuahuaChain/liquidity/x/liquidity"
+	liquiditykeeper "github.com/ChihuahuaChain/liquidity/x/liquidity/keeper"
+	liquiditytypes "github.com/ChihuahuaChain/liquidity/x/liquidity/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -173,7 +173,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v9.0.6"
+	UpgradeName  = "v10.0.0"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -971,6 +971,7 @@ func New(
 			},
 			BankKeeper:    app.BankKeeper,
 			FeeburnKeeper: &app.FeeburnKeeper,
+			IBCKeeper:     app.IBCKeeper,
 		},
 	)
 	if err != nil {
@@ -1411,6 +1412,28 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	app.UpgradeKeeper.SetUpgradeHandler("v9.0.6", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
         return app.mm.RunMigrations(ctx, cfg, vm)
 
+	})
+
+	// v10.0.0 bundles several state-machine-breaking changes that must all be
+	// activated at a single governance-coordinated height (never via a rolling
+	// binary swap), so every validator transitions on the same app state and we
+	// avoid an AppHash divergence / consensus halt:
+	//
+	//   - Bumps cosmos-sdk to v0.50.15 (state-machine-breaking x/feegrant fix:
+	//     revocation now deletes expiration entries under the correct
+	//     prefix|granter|grantee store key) and cometbft to v0.38.23.
+	//   - x/feeburn ante: the `fee_payer` event attribute is now emitted as the
+	//     bech32 address string instead of raw address bytes. The raw-bytes form
+	//     was not valid UTF-8 and made cosmos.tx.v1beta1.Service/Simulate
+	//     responses undecodable by strict clients (e.g. Hermes), which blocked
+	//     IBC relaying. Changing emitted events is state-machine-breaking.
+	//   - Adds the IBC RedundantRelayDecorator to the ante chain.
+	//   - Pins a patched liquidity module (hardened BuildersAddresses validation
+	//     and a non-panicking builder-commission payout path).
+	//
+	// No manual migration scripts are required; RunMigrations is sufficient.
+	app.UpgradeKeeper.SetUpgradeHandler("v10.0.0", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }
 

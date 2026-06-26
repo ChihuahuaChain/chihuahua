@@ -8,6 +8,14 @@ on: [push, pull_request, workflow_dispatch]
 
 # This workflow makes x86_64 binaries for mac, windows, and linux.
 
+# Force the exact pinned Go toolchain. The `toolchain` directive in go.mod only
+# ever upgrades the toolchain, never downgrades it, so a runner with a newer Go
+# (>=1.25) would otherwise be used and fail to compile the transitive
+# bytedance/sonic dependency. GOTOOLCHAIN=go1.23.9 pins it precisely (Go
+# downloads that toolchain on demand).
+env:
+  GOTOOLCHAIN: "go1.23.9"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,10 +28,15 @@ jobs:
             arch: amd64
     name: chihuahua ${{ matrix.arch }} for ${{ matrix.targetos }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: "^1.22"
+          # Read the Go version from go.mod so CI honors the pinned
+          # `toolchain go1.23.9`. Do NOT hardcode a floating version like
+          # "^1.22": newer Go (>=1.25) fails to compile the transitive
+          # bytedance/sonic dependency used by this SDK/CometBFT line.
+          go-version-file: "go.mod"
+          check-latest: false
         env:
           GOOS: ${{ matrix.targetos }}
           GOARCH: ${{ matrix.arch }}

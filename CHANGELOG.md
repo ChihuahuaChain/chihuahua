@@ -43,6 +43,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#16] Add [authz module](https://github.com/cosmos/cosmos-sdk/tree/master/x/authz/spec)
 
+## [v10.0.0](https://github.com/ChihuahuaChain/chihuahua/releases/tag/v10.0.0)
+
+Coordinated, state-machine-breaking upgrade. Must be activated at a single
+governance-set height (not a rolling binary swap).
+
+### Bug Fixes
+
+- (x/feeburn) Emit the `fee_payer` ante event attribute as the bech32 address
+  string instead of raw address bytes. The raw-bytes value was not valid UTF-8,
+  which made `cosmos.tx.v1beta1.Service/Simulate` responses undecodable by
+  strict clients (e.g. Hermes) and blocked IBC relaying (`MsgCreateClient` /
+  `MsgRecvPacket` gas estimation failed before broadcast).
+- (liquidity) Bump to `github.com/ChihuahuaChain/liquidity` v1.8.4: reject
+  invalid `BuildersAddresses` at param validation and remove the
+  `MustAccAddressFromBech32` panic on the builder-commission payout path that
+  runs in the liquidity batch `EndBlocker` (a misconfigured param could
+  otherwise halt the chain).
+
+### Improvements
+
+- (ante) Add the IBC `RedundantRelayDecorator` so relayers are not charged for
+  already-relayed packets and the mempool is protected from redundant-relay spam.
+- (deps) Bump cosmos-sdk to v0.50.15 (includes a state-machine-breaking
+  `x/feegrant` revocation store-key fix) and cometbft to v0.38.23. Registered a
+  `v10.0.0` upgrade handler as the coordinated activation point.
+
 ## [v1.1.0]((https://github.com/ChihuahuaChain/chihuahua/releases/tag/v1.1.0) - 2022-01-02
 - [#1](https://github.com/ChihuahuaChain/chihuahua/pull/2) Version bumps, add mainnet files, many improvements and fixes
 - [#2](https://github.com/pomifer/chihuahua/pull/1) Add a minimum validator commission of 5% based on proposal [#1](https://omniflix.chihuahua.wtf/proposals)

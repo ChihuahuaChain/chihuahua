@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -72,13 +73,13 @@ func setup(t testing.TB, chainID string, withGenesis bool, invCheckPeriod uint, 
 	app := New(log.NewNopLogger(),
 		db,
 		nil,
-		false,
+		true,
 		map[int64]bool{},
-		DefaultNodeHome,
-		simcli.FlagPeriodValue,
-		simtestutil.EmptyAppOptions{},
-		[]wasmkeeper.Option{},
-		baseapp.SetChainID("chihuahua-testnet-1"), bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}),
+		nodeHome,
+		invCheckPeriod,
+		appOptions,
+		opts,
+		baseapp.SetChainID(chainID), bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}),
 	)
 	if withGenesis {
 		return app, app.DefaultGenesis()
@@ -137,9 +138,23 @@ func NewWasmAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 	return app
 }
 
+var setPrefixesOnce sync.Once
+
+// SetTestAddressPrefixes sets the chihuahua bech32 prefixes on the global sdk config,
+// as the chihuahuad root command does. Safe to call multiple times.
+func SetTestAddressPrefixes() {
+	setPrefixesOnce.Do(func() {
+		cfg := sdk.GetConfig()
+		cfg.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
+		cfg.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
+		cfg.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
+	})
+}
+
 // Setup initializes a new WasmApp. A Nop logger is set in WasmApp.
 func Setup(t *testing.T, opts ...wasmkeeper.Option) *App {
 	t.Helper()
+	SetTestAddressPrefixes()
 
 	privVal := mock.NewPV()
 	pubKey, err := privVal.GetPubKey()

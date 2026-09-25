@@ -54,6 +54,12 @@ func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amo
 		return types.ErrUnauthorized
 	}
 
+	// startBlock must be in the future: the BeginBlocker of the current height
+	// already ran, so a stakedrop starting now would never pay its first block.
+	if ctx.BlockHeight() >= int64(startBlock) || startBlock >= endBlock {
+		return types.ErrBadBlockParameters
+	}
+
 	if params.BondDenom == amount.Denom {
 		return nil
 	}
@@ -68,10 +74,6 @@ func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amo
 	_, found := k.bankKeeper.GetDenomMetaData(ctx, amount.Denom)
 	if !found {
 		return types.ErrDenomDoesNotExist
-	}
-
-	if ctx.BlockHeight() > int64(startBlock) || startBlock >= endBlock {
-		return types.ErrBadBlockParameters
 	}
 
 	return nil

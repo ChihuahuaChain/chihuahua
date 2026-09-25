@@ -215,6 +215,21 @@ _Make sure to join our [Discord](https://discord.gg/chihuahuachain-8782014494216
 
 ---
 
+
+# Public RPC Endpoints
+
+The following public endpoints are available to query the Chihuahua mainnet without running your own node:
+
+| Provider | RPC Endpoint |
+|---|---|
+| Chihuahua official | `https://rpc.chihuahua.wtf` |
+| Polkachu | `https://chihuahua-rpc.polkachu.com` |
+| Validatus | `https://rpc.chihuahua.validatus.com` |
+
+[OpenChainBench](https://openchainbench.com/benchmarks/chihuahua-rpc) continuously measures p50/p90/p99 latency for these endpoints from 3 global probe regions (US-East, EU-West, Singapore).
+
+---
+
 # Chain Upgrades
 
 

@@ -1,0 +1,275 @@
+package ibc_hooks
+
+import (
+	// external libraries
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
+	// ibc-go
+	channeltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v11/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+)
+
+var (
+	_ porttypes.IBCModule   = (*IBCMiddleware)(nil)
+	_ porttypes.ICS4Wrapper = (*IBCMiddleware)(nil)
+)
+
+type IBCMiddleware struct {
+	App            porttypes.IBCModule
+	ICS4Middleware *ICS4Middleware
+}
+
+func NewIBCMiddleware(app porttypes.IBCModule, ics4 *ICS4Middleware) IBCMiddleware {
+	return IBCMiddleware{
+		App:            app,
+		ICS4Middleware: ics4,
+	}
+}
+
+// SetICS4Wrapper satisfies the porttypes.Middleware interface.
+func (im *IBCMiddleware) SetICS4Wrapper(wrapper porttypes.ICS4Wrapper) {
+	if im.ICS4Middleware == nil {
+		panic("ICS4Middleware is nil")
+	}
+	im.ICS4Middleware.channel = wrapper
+}
+
+// SetUnderlyingApplication satisfies the porttypes.Middleware interface.
+func (im *IBCMiddleware) SetUnderlyingApplication(app porttypes.IBCModule) {
+	im.App = app
+}
+
+// OnChanOpenInit implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanOpenInit(
+	ctx sdk.Context,
+	order channeltypes.Order,
+	connectionHops []string,
+	portID string,
+	channelID string,
+	counterparty channeltypes.Counterparty,
+	version string,
+) (string, error) {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenInitOverrideHooks); ok {
+		return hook.OnChanOpenInitOverride(im, ctx, order, connectionHops, portID, channelID, counterparty, version)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenInitBeforeHooks); ok {
+		hook.OnChanOpenInitBeforeHook(ctx, order, connectionHops, portID, channelID, counterparty, version)
+	}
+
+	finalVersion, err := im.App.OnChanOpenInit(ctx, order, connectionHops, portID, channelID, counterparty, version)
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenInitAfterHooks); ok {
+		hook.OnChanOpenInitAfterHook(ctx, order, connectionHops, portID, channelID, counterparty, version, finalVersion, err)
+	}
+	return version, err
+}
+
+// OnChanOpenTry implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanOpenTry(
+	ctx sdk.Context,
+	order channeltypes.Order,
+	connectionHops []string,
+	portID,
+	channelID string,
+	counterparty channeltypes.Counterparty,
+	counterpartyVersion string,
+) (string, error) {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenTryOverrideHooks); ok {
+		return hook.OnChanOpenTryOverride(im, ctx, order, connectionHops, portID, channelID, counterparty, counterpartyVersion)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenTryBeforeHooks); ok {
+		hook.OnChanOpenTryBeforeHook(ctx, order, connectionHops, portID, channelID, counterparty, counterpartyVersion)
+	}
+
+	version, err := im.App.OnChanOpenTry(ctx, order, connectionHops, portID, channelID, counterparty, counterpartyVersion)
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenTryAfterHooks); ok {
+		hook.OnChanOpenTryAfterHook(ctx, order, connectionHops, portID, channelID, counterparty, counterpartyVersion, version, err)
+	}
+	return version, err
+}
+
+// OnChanOpenAck implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanOpenAck(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+	counterpartyChannelID string,
+	counterpartyVersion string,
+) error {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenAckOverrideHooks); ok {
+		return hook.OnChanOpenAckOverride(im, ctx, portID, channelID, counterpartyChannelID, counterpartyVersion)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenAckBeforeHooks); ok {
+		hook.OnChanOpenAckBeforeHook(ctx, portID, channelID, counterpartyChannelID, counterpartyVersion)
+	}
+	err := im.App.OnChanOpenAck(ctx, portID, channelID, counterpartyChannelID, counterpartyVersion)
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenAckAfterHooks); ok {
+		hook.OnChanOpenAckAfterHook(ctx, portID, channelID, counterpartyChannelID, counterpartyVersion, err)
+	}
+
+	return err
+}
+
+// OnChanOpenConfirm implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanOpenConfirm(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenConfirmOverrideHooks); ok {
+		return hook.OnChanOpenConfirmOverride(im, ctx, portID, channelID)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenConfirmBeforeHooks); ok {
+		hook.OnChanOpenConfirmBeforeHook(ctx, portID, channelID)
+	}
+	err := im.App.OnChanOpenConfirm(ctx, portID, channelID)
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanOpenConfirmAfterHooks); ok {
+		hook.OnChanOpenConfirmAfterHook(ctx, portID, channelID, err)
+	}
+	return err
+}
+
+// OnChanCloseInit implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanCloseInit(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	// Here we can remove the limits when a new channel is closed. For now, they can remove them  manually on the contract
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseInitOverrideHooks); ok {
+		return hook.OnChanCloseInitOverride(im, ctx, portID, channelID)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseInitBeforeHooks); ok {
+		hook.OnChanCloseInitBeforeHook(ctx, portID, channelID)
+	}
+	err := im.App.OnChanCloseInit(ctx, portID, channelID)
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseInitAfterHooks); ok {
+		hook.OnChanCloseInitAfterHook(ctx, portID, channelID, err)
+	}
+
+	return err
+}
+
+// OnChanCloseConfirm implements the IBCMiddleware interface
+func (im IBCMiddleware) OnChanCloseConfirm(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	// Here we can remove the limits when a new channel is closed. For now, they can remove them  manually on the contract
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseConfirmOverrideHooks); ok {
+		return hook.OnChanCloseConfirmOverride(im, ctx, portID, channelID)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseConfirmBeforeHooks); ok {
+		hook.OnChanCloseConfirmBeforeHook(ctx, portID, channelID)
+	}
+	err := im.App.OnChanCloseConfirm(ctx, portID, channelID)
+	if hook, ok := im.ICS4Middleware.Hooks.(OnChanCloseConfirmAfterHooks); ok {
+		hook.OnChanCloseConfirmAfterHook(ctx, portID, channelID, err)
+	}
+
+	return err
+}
+
+// OnRecvPacket implements the IBCMiddleware interface
+func (im IBCMiddleware) OnRecvPacket(
+	ctx sdk.Context,
+	channelVersion string,
+	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
+) ibcexported.Acknowledgement {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnRecvPacketOverrideHooks); ok {
+		return hook.OnRecvPacketOverride(im, ctx, channelVersion, packet, relayer)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnRecvPacketBeforeHooks); ok {
+		hook.OnRecvPacketBeforeHook(ctx, channelVersion, packet, relayer)
+	}
+
+	ack := im.App.OnRecvPacket(ctx, channelVersion, packet, relayer)
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnRecvPacketAfterHooks); ok {
+		hook.OnRecvPacketAfterHook(ctx, channelVersion, packet, relayer, ack)
+	}
+
+	return ack
+}
+
+// OnAcknowledgementPacket implements the IBCMiddleware interface
+func (im IBCMiddleware) OnAcknowledgementPacket(
+	ctx sdk.Context,
+	channelVersion string,
+	packet channeltypes.Packet,
+	acknowledgement []byte,
+	relayer sdk.AccAddress,
+) error {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnAcknowledgementPacketOverrideHooks); ok {
+		return hook.OnAcknowledgementPacketOverride(im, ctx, channelVersion, packet, acknowledgement, relayer)
+	}
+	if hook, ok := im.ICS4Middleware.Hooks.(OnAcknowledgementPacketBeforeHooks); ok {
+		hook.OnAcknowledgementPacketBeforeHook(ctx, channelVersion, packet, acknowledgement, relayer)
+	}
+
+	err := im.App.OnAcknowledgementPacket(ctx, channelVersion, packet, acknowledgement, relayer)
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnAcknowledgementPacketAfterHooks); ok {
+		hook.OnAcknowledgementPacketAfterHook(ctx, channelVersion, packet, acknowledgement, relayer, err)
+	}
+
+	return err
+}
+
+// OnTimeoutPacket implements the IBCMiddleware interface
+func (im IBCMiddleware) OnTimeoutPacket(
+	ctx sdk.Context,
+	channelVersion string,
+	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
+) error {
+	if hook, ok := im.ICS4Middleware.Hooks.(OnTimeoutPacketOverrideHooks); ok {
+		return hook.OnTimeoutPacketOverride(im, ctx, channelVersion, packet, relayer)
+	}
+
+	if hook, ok := im.ICS4Middleware.Hooks.(OnTimeoutPacketBeforeHooks); ok {
+		hook.OnTimeoutPacketBeforeHook(ctx, channelVersion, packet, relayer)
+	}
+	err := im.App.OnTimeoutPacket(ctx, channelVersion, packet, relayer)
+	if hook, ok := im.ICS4Middleware.Hooks.(OnTimeoutPacketAfterHooks); ok {
+		hook.OnTimeoutPacketAfterHook(ctx, channelVersion, packet, relayer, err)
+	}
+
+	return err
+}
+
+// SendPacket implements the ICS4 Wrapper interface
+func (im IBCMiddleware) SendPacket(
+	ctx sdk.Context,
+	sourcePort string,
+	sourceChannel string,
+	timeoutHeight ibcclienttypes.Height,
+	timeoutTimestamp uint64,
+	data []byte,
+) (sequence uint64, err error) {
+	return im.ICS4Middleware.SendPacket(ctx, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
+}
+
+// WriteAcknowledgement implements the ICS4 Wrapper interface
+func (im IBCMiddleware) WriteAcknowledgement(
+	ctx sdk.Context,
+	packet ibcexported.PacketI,
+	ack ibcexported.Acknowledgement,
+) error {
+	return im.ICS4Middleware.WriteAcknowledgement(ctx, packet, ack)
+}
+
+func (im IBCMiddleware) GetAppVersion(ctx sdk.Context, portID, channelID string) (string, bool) {
+	return im.ICS4Middleware.GetAppVersion(ctx, portID, channelID)
+}

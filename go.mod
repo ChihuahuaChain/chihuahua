@@ -11,7 +11,6 @@ require (
 	cosmossdk.io/log/v2 v2.1.0
 	github.com/CosmWasm/wasmvm/v3 v3.0.7
 	github.com/cosmos/cosmos-sdk/store/v2 v2.0.0
-	github.com/cosmos/ibc-apps/modules/ibc-hooks/v11 v11.0.0
 	github.com/cosmos/ibc-go/v11 v11.2.0
 )
 
@@ -68,9 +67,7 @@ require (
 	cloud.google.com/go/iam v1.11.0 // indirect
 	cloud.google.com/go/monitoring v1.29.0 // indirect
 	cloud.google.com/go/storage v1.62.1 // indirect
-	cosmossdk.io/log v1.5.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
-	cosmossdk.io/store v1.1.2 // indirect
 	filippo.io/bigmod v0.1.1-0.20260103110540-f8a47775ebe5 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/keygen v0.0.0-20260114151900-8e2790ea4c5b // indirect

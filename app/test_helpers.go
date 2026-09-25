@@ -111,7 +111,7 @@ func NewWasmAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOpti
 		nil,
 		false,
 		map[int64]bool{},
-		DefaultNodeHome,
+		t.TempDir(),
 		simcli.FlagPeriodValue,
 		simtestutil.EmptyAppOptions{},
 		[]wasmkeeper.Option{},
@@ -303,13 +303,14 @@ func NewTestNetworkFixture() network.TestFixture {
 
 	app := New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, map[int64]bool{}, dir, simcli.FlagPeriodValue, simtestutil.EmptyAppOptions{}, emptyWasmOptions)
 	appCtr := func(val network.ValidatorI) servertypes.Application {
+		home := val.GetCtx().Config.RootDir
 		return New(
 			log.NewNopLogger(),
 			dbm.NewMemDB(), nil, true,
 			map[int64]bool{},
-			DefaultNodeHome,
+			home,
 			simcli.FlagPeriodValue,
-			simtestutil.EmptyAppOptions{},
+			simtestutil.NewAppOptionsWithFlagHome(home),
 			emptyWasmOptions,
 			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
 			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),

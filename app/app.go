@@ -116,6 +116,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	legacyalliance "github.com/ChihuahuaChain/chihuahua/app/legacy/alliance"
 	_ "github.com/ChihuahuaChain/chihuahua/client/docs/statik"
 	feeburnmodule "github.com/ChihuahuaChain/chihuahua/x/feeburn"
 	feeburnmodulekeeper "github.com/ChihuahuaChain/chihuahua/x/feeburn/keeper"
@@ -130,6 +131,7 @@ import (
 	tokenbindings "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	paramsproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 )
 
 const (
@@ -280,6 +282,9 @@ func New(
 
 	std.RegisterLegacyAminoCodec(legacyAmino)
 	std.RegisterInterfaces(interfaceRegistry)
+	// types of removed modules found in the historical governance proposals
+	paramsproposal.RegisterInterfaces(interfaceRegistry)
+	legacyalliance.RegisterInterfaces(interfaceRegistry)
 
 	bApp := baseapp.NewBaseApp(Name, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetVersion(version.Version)

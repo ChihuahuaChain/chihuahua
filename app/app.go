@@ -83,10 +83,10 @@ import (
 	"cosmossdk.io/x/upgrade"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity"
 	liquiditykeeper "github.com/ChihuahuaChain/chihuahua/x/liquidity/keeper"
 	liquiditytypes "github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
+	"github.com/CosmWasm/wasmd/x/wasm"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sigtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -173,7 +173,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v9.0.6"
+	UpgradeName  = "v9.1.0"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -929,7 +929,15 @@ func New(
 		circuittypes.ModuleName,
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
-	app.mm.SetOrderExportGenesis(genesisModuleOrder...)
+	// ibchooks is not registered in the module manager: exporting it fails with
+	// "module ibchooks does not exist"
+	exportModuleOrder := make([]string, 0, len(genesisModuleOrder))
+	for _, m := range genesisModuleOrder {
+		if m != ibchookstypes.ModuleName {
+			exportModuleOrder = append(exportModuleOrder, m)
+		}
+	}
+	app.mm.SetOrderExportGenesis(exportModuleOrder...)
 
 	app.mm.RegisterInvariants(app.CrisisKeeper)
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
@@ -1409,8 +1417,16 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	})
 
 	app.UpgradeKeeper.SetUpgradeHandler("v9.0.6", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-        return app.mm.RunMigrations(ctx, cfg, vm)
+		return app.mm.RunMigrations(ctx, cfg, vm)
 
+	})
+
+	app.UpgradeKeeper.SetUpgradeHandler("v9.1.0", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// close every alliance position, see governance proposal 99
+		if err := app.SunsetAlliance(sdk.UnwrapSDKContext(ctx)); err != nil {
+			return nil, err
+		}
+		return app.mm.RunMigrations(ctx, cfg, vm)
 	})
 }
 

@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 
+	liquiditykeeper "github.com/ChihuahuaChain/chihuahua/x/liquidity/keeper"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
-	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
 )
 
 func RegisterCustomPlugins(

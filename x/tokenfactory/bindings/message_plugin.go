@@ -12,11 +12,11 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	liquiditykeeper "github.com/ChihuahuaChain/chihuahua/x/liquidity/keeper"
+	liquiditytypes "github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
 	tokenfactorykeeper "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	tokenfactorytypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
-	liquiditykeeper "github.com/Victor118/liquidity/x/liquidity/keeper"
-	liquiditytypes "github.com/Victor118/liquidity/x/liquidity/types"
 )
 
 // CustomMessageDecorator returns decorator for custom CosmWasm bindings messages

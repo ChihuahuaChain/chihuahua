@@ -2,11 +2,18 @@ package cli_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
+
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govcli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
+
+	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+
+	liquidityapp "github.com/ChihuahuaChain/chihuahua/x/liquidity/testutil/app"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 
 	"cosmossdk.io/math"
 	"github.com/gogo/protobuf/proto"
@@ -25,9 +32,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	genutiltest "github.com/cosmos/cosmos-sdk/x/genutil/client/testutil"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	v1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	paramscutils "github.com/cosmos/cosmos-sdk/x/params/client/utils"
 
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/client/cli"
@@ -52,6 +57,8 @@ type IntegrationTestSuite struct {
 // network for each test because there are some state modifications that are
 // needed to be made in order to make useful queries. However, we don't want
 // these state changes to be present in other tests.
+const testValidatorMnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
 func (s *IntegrationTestSuite) SetupTest() {
 
 	s.T().Helper()
@@ -82,8 +89,20 @@ func (s *IntegrationTestSuite) SetupTest() {
 
 	//cfg := liquiditytestutil.NewConfig(db)
 	//cfg.NumValidators = 1
-	cfg, err := network.DefaultConfigWithAppConfig(network.MinimumAppConfig())
-	s.NoError(err)
+	// run on the chihuahua app, with a validator derived from a fixed mnemonic
+	// so that it can be allowed to create pools in the genesis
+	cfg := network.DefaultConfig(liquidityapp.NewTestNetworkFixture)
+	cfg.NumValidators = 1
+	cfg.Mnemonics = []string{testValidatorMnemonic}
+	cfg.AccountTokens = math.NewInt(1_000_000_000_000)
+	cfg.StakingTokens = math.NewInt(1_000_000_000_000)
+	valKey, err := hd.Secp256k1.Derive()(testValidatorMnemonic, "", sdk.GetConfig().GetFullBIP44Path())
+	s.Require().NoError(err)
+	valAddr := sdk.AccAddress(hd.Secp256k1.Generate()(valKey).PubKey().Address())
+	var liquidityGenesis liquiditytypes.GenesisState
+	s.Require().NoError(cfg.Codec.UnmarshalJSON(cfg.GenesisState[liquiditytypes.ModuleName], &liquidityGenesis))
+	liquidityGenesis.Params.PoolPermissionedCreatorAddresses = []string{valAddr.String()}
+	cfg.GenesisState[liquiditytypes.ModuleName] = cfg.Codec.MustMarshalJSON(&liquidityGenesis)
 	//genesisState, err := simtestutil.GenesisStateWithValSet(cfg.Codec, cfg.GenesisState, valSet, []authtypes.GenesisAccount{acc}, balance, balanceVal)
 	//s.Require().NoError(err)
 	//cfg.GenesisState = genesisState
@@ -150,6 +169,7 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -162,6 +182,7 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -174,6 +195,7 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -186,6 +208,7 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 9,
@@ -198,6 +221,7 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 0,
@@ -219,8 +243,8 @@ func (s *IntegrationTestSuite) TestNewCreatePoolCmd() {
 				s.Require().NoError(err, out.String())
 				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
-				txResp := tc.respType.(*sdk.TxResponse)
-				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
+				txResp := s.txResult(clientCtx, out.Bytes())
+				s.Require().Equal(tc.expectedCode, txResp.Code, txResp.RawLog)
 			}
 		})
 	}
@@ -259,6 +283,7 @@ func (s *IntegrationTestSuite) TestNewDepositWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -271,6 +296,7 @@ func (s *IntegrationTestSuite) TestNewDepositWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -283,6 +309,7 @@ func (s *IntegrationTestSuite) TestNewDepositWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 0,
@@ -304,8 +331,8 @@ func (s *IntegrationTestSuite) TestNewDepositWithinBatchCmd() {
 				s.Require().NoError(err, out.String())
 				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
-				txResp := tc.respType.(*sdk.TxResponse)
-				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
+				txResp := s.txResult(clientCtx, out.Bytes())
+				s.Require().Equal(tc.expectedCode, txResp.Code, txResp.RawLog)
 			}
 		})
 	}
@@ -344,6 +371,7 @@ func (s *IntegrationTestSuite) TestNewWithdrawWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -356,6 +384,7 @@ func (s *IntegrationTestSuite) TestNewWithdrawWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 29,
@@ -368,6 +397,7 @@ func (s *IntegrationTestSuite) TestNewWithdrawWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 0,
@@ -389,8 +419,8 @@ func (s *IntegrationTestSuite) TestNewWithdrawWithinBatchCmd() {
 				s.Require().NoError(err, out.String())
 				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
-				txResp := tc.respType.(*sdk.TxResponse)
-				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
+				txResp := s.txResult(clientCtx, out.Bytes())
+				s.Require().Equal(tc.expectedCode, txResp.Code, txResp.RawLog)
 			}
 		})
 	}
@@ -434,6 +464,7 @@ func (s *IntegrationTestSuite) TestNewSwapWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -450,6 +481,7 @@ func (s *IntegrationTestSuite) TestNewSwapWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			true, nil, 0,
@@ -466,6 +498,7 @@ func (s *IntegrationTestSuite) TestNewSwapWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 35,
@@ -482,6 +515,7 @@ func (s *IntegrationTestSuite) TestNewSwapWithinBatchCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastAsync),
+				fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, math.NewInt(10))).String()),
 			},
 			false, &sdk.TxResponse{}, 0,
@@ -503,8 +537,8 @@ func (s *IntegrationTestSuite) TestNewSwapWithinBatchCmd() {
 				s.Require().NoError(err, out.String())
 				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
-				txResp := tc.respType.(*sdk.TxResponse)
-				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
+				txResp := s.txResult(clientCtx, out.Bytes())
+				s.Require().Equal(tc.expectedCode, txResp.Code, txResp.RawLog)
 			}
 		})
 	}
@@ -522,12 +556,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryParams() {
 		{
 			"json output",
 			[]string{fmt.Sprintf("--%s=json", tmcli.OutputFlag)},
-			`{"pool_types":[{"id":1,"name":"StandardLiquidityPool","min_reserve_coin_num":2,"max_reserve_coin_num":2,"description":"Standard liquidity pool with pool price function X/Y, ESPM constraint, and two kinds of reserve coins"}],"min_init_deposit_amount":"1000000","init_pool_coin_mint_amount":"1000000","max_reserve_coin_amount":"0","pool_creation_fee":[{"denom":"stake","amount":"40000000"}],"swap_fee_rate":"0.003000000000000000","withdraw_fee_rate":"0.000000000000000000","max_order_amount_ratio":"0.100000000000000000","unit_batch_height":1,"circuit_breaker_enabled":false}`,
+			`{"pool_types":[{"id":1,"name":"StandardLiquidityPool","min_reserve_coin_num":2,"max_reserve_coin_num":2,"description":"Standard liquidity pool with pool price function X/Y, ESPM constraint, and two kinds of reserve coins"}],"min_init_deposit_amount":"1000000","init_pool_coin_mint_amount":"1000000","max_reserve_coin_amount":"0","pool_creation_fee":[{"denom":"stake","amount":"40000000"}],"swap_fee_rate":"0.003000000000000000","withdraw_fee_rate":"0.000000000000000000","max_order_amount_ratio":"0.100000000000000000","unit_batch_height":1,"circuit_breaker_enabled":false,"builders_addresses":[],"builders_commission":"0.200000000000000000","pool_permissioned_creator_addresses":["VALADDR"]}`,
 		},
 		{
 			"text output",
 			[]string{fmt.Sprintf("--%s=text", tmcli.OutputFlag)},
-			`circuit_breaker_enabled: false
+			`builders_addresses: []
+builders_commission: "0.200000000000000000"
+circuit_breaker_enabled: false
 init_pool_coin_mint_amount: "1000000"
 max_order_amount_ratio: "0.100000000000000000"
 max_reserve_coin_amount: "0"
@@ -535,6 +571,8 @@ min_init_deposit_amount: "1000000"
 pool_creation_fee:
 - amount: "40000000"
   denom: stake
+pool_permissioned_creator_addresses:
+- VALADDR
 pool_types:
 - description: Standard liquidity pool with pool price function X/Y, ESPM constraint,
     and two kinds of reserve coins
@@ -557,7 +595,7 @@ withdraw_fee_rate: "0.000000000000000000"`,
 
 			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
 			s.Require().NoError(err)
-			s.Require().Equal(tc.expectedOutput, strings.TrimSpace(out.String()))
+			s.Require().Equal(strings.ReplaceAll(tc.expectedOutput, "VALADDR", val.Address.String()), strings.TrimSpace(out.String()))
 		})
 	}
 }
@@ -653,7 +691,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryLiquidityPool() {
 		{
 			"valid case with reserve acc",
 			[]string{
-				fmt.Sprintf("--%s=%s", cli.FlagReserveAcc, "chihuahua1cva80e6jcxpezd3k5dl7zwy2eg30u7ldj3znmu"),
+				fmt.Sprintf("--%s=%s", cli.FlagReserveAcc, liquiditytypes.GetPoolReserveAcc(liquiditytypes.PoolName([]string{denomX, denomY}, liquiditytypes.DefaultPoolTypeID)).String()),
 				fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 			},
 			false,
@@ -750,13 +788,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryLiquidityPoolBatch() {
 	denomX, denomY := liquiditytypes.AlphabeticalDenomPair("node0token", s.network.Config.BondDenom)
 
 	// liquidity pool should be created prior to test this integration test
-	_, err := liquiditytestutil.MsgCreatePoolExec(
+	createOut, err := liquiditytestutil.MsgCreatePoolExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
 		sdk.NewCoins(sdk.NewCoin(denomX, math.NewInt(100_000_000)), sdk.NewCoin(denomY, math.NewInt(100_000_000))).String(),
 	)
 	s.Require().NoError(err)
+	s.Require().Zero(s.txResult(val.ClientCtx, createOut.Bytes()).Code)
 
 	testCases := []struct {
 		name      string
@@ -831,13 +870,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchDepositMsg() {
 	s.Require().NoError(err)
 
 	// create new deposit
-	_, err = liquiditytestutil.MsgDepositWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgDepositWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
 		sdk.NewCoins(sdk.NewCoin(denomX, math.NewInt(10_000_000)), sdk.NewCoin(denomY, math.NewInt(10_000_000))).String(),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -880,7 +920,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchDepositMsg() {
 			cmd := cli.GetCmdQueryPoolBatchDepositMsg()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -917,13 +957,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchDepositMsgs() {
 	s.Require().NoError(err)
 
 	// create new deposit
-	_, err = liquiditytestutil.MsgDepositWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgDepositWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
 		sdk.NewCoins(sdk.NewCoin(denomX, math.NewInt(10_000_000)), sdk.NewCoin(denomY, math.NewInt(10_000_000))).String(),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -964,7 +1005,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchDepositMsgs() {
 			cmd := cli.GetCmdQueryPoolBatchDepositMsgs()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -1004,13 +1045,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchWithdrawMsg() {
 
 	// withdraw pool coin from the pool
 	poolCoinDenom := "poolC33A77E752C183913636A37FE1388ACA22FE7BED792BEB2E72EF2DA857703D8D"
-	_, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgWithdrawWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", uint32(1)),
 		sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(10_000))).String(),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -1053,7 +1095,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchWithdrawMsg() {
 			cmd := cli.GetCmdQueryPoolBatchWithdrawMsg()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -1091,13 +1133,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchWithdrawMsgs() {
 	s.Require().NoError(err)
 
 	// withdraw pool coin from the pool
-	_, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgWithdrawWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", uint32(1)),
 		sdk.NewCoins(sdk.NewCoin("poolC33A77E752C183913636A37FE1388ACA22FE7BED792BEB2E72EF2DA857703D8D", math.NewInt(10_000))).String(),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -1137,7 +1180,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchWithdrawMsgs() {
 			cmd := cli.GetCmdQueryPoolBatchWithdrawMsgs()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -1180,7 +1223,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsg() {
 
 	// swap coins from the pool
 	offerCoin := sdk.NewCoin(denomY, math.NewInt(50_000_000))
-	_, err = liquiditytestutil.MsgSwapWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgSwapWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", uint32(1)),
@@ -1191,6 +1234,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsg() {
 		fmt.Sprintf("%.3f", 0.003),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -1233,7 +1277,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsg() {
 			cmd := cli.GetCmdQueryPoolBatchSwapMsg()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -1251,169 +1295,84 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsg() {
 }
 
 func (s *IntegrationTestSuite) TestGetCircuitBreaker() {
-
 	val := s.network.Validators[0]
+	clientCtx := val.ClientCtx
 
 	// use two different tokens that are minted to the test account
 	denomX, denomY := liquiditytypes.AlphabeticalDenomPair("node0token", s.network.Config.BondDenom)
 	X := sdk.NewCoin(denomX, math.NewInt(1_000_000_000))
 	Y := sdk.NewCoin(denomY, math.NewInt(5_000_000_000))
+	requireCode := func(out testutil.BufferWriter, err error, code uint32, log string) {
+		s.T().Helper()
+		s.Require().NoError(err)
+		res := s.txResult(clientCtx, out.Bytes())
+		s.Require().Equal(code, res.Code, res.RawLog)
+		if log != "" {
+			s.Require().Contains(res.RawLog, log)
+		}
+	}
 
 	// liquidity pool should be created prior to test this integration test
-	_, err := liquiditytestutil.MsgCreatePoolExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
-		sdk.NewCoins(X, Y).String(),
-	)
-	s.Require().NoError(err)
-
-	err = s.network.WaitForNextBlock()
-	s.Require().NoError(err)
+	out, err := liquiditytestutil.MsgCreatePoolExec(clientCtx, val.Address.String(),
+		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID), sdk.NewCoins(X, Y).String())
+	requireCode(out, err, 0, "")
 
 	// swap coins from the pool
 	offerCoin := sdk.NewCoin(denomY, math.NewInt(50_000_000))
-	output, err := liquiditytestutil.MsgSwapWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		fmt.Sprintf("%d", liquiditytypes.DefaultSwapTypeID),
-		offerCoin.String(),
-		denomX,
-		fmt.Sprintf("%.3f", 0.019),
-		fmt.Sprintf("%.3f", 0.003),
-	)
-	var txRes sdk.TxResponse
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().NoError(err)
-
-	s.Require().Equal(uint32(0), txRes.Code)
-	circuitBreakerEnabled := true
-	circuitBreakerEnabledStr, err := json.Marshal(&circuitBreakerEnabled)
-	if err != nil {
-		panic(err)
+	swap := func() (testutil.BufferWriter, error) {
+		return liquiditytestutil.MsgSwapWithinBatchExec(clientCtx, val.Address.String(), "1",
+			fmt.Sprintf("%d", liquiditytypes.DefaultSwapTypeID), offerCoin.String(), denomX,
+			fmt.Sprintf("%.3f", 0.019), fmt.Sprintf("%.3f", 0.003))
 	}
+	out, err = swap()
+	requireCode(out, err, 0, "")
 
-	paramChange := paramscutils.ParamChangeProposalJSON{
-		Title:       "enable-circuit-breaker",
-		Description: "enable circuit breaker",
-		Changes: []paramscutils.ParamChangeJSON{{
-			Subspace: liquiditytypes.ModuleName,
-			Key:      "CircuitBreakerEnabled",
-			Value:    circuitBreakerEnabledStr,
-		},
-		},
-		Deposit: sdk.NewCoin(s.cfg.BondDenom, govtypes.DefaultMinDepositTokens).String(),
-	}
-	paramChangeProp, err := json.Marshal(&paramChange)
-	if err != nil {
-		panic(err)
-	}
-
-	//create a param change proposal with deposit
-	_, err = liquiditytestutil.MsgParamChangeProposalExec(
-		val.ClientCtx,
-		val.Address.String(),
-		testutil.WriteToNewTempFile(s.T(), string(paramChangeProp)).Name(),
-	)
-	err = s.network.WaitForNextBlock()
+	// enable the circuit breaker through governance
+	paramsOut, err := clitestutil.ExecTestCLICmd(clientCtx, cli.GetCmdQueryParams(), []string{fmt.Sprintf("--%s=json", tmcli.OutputFlag)})
 	s.Require().NoError(err)
-
-	_, err = liquiditytestutil.MsgVote(val.ClientCtx, val.Address.String(), "1", "yes")
+	var params liquiditytypes.Params
+	s.Require().NoError(clientCtx.Codec.UnmarshalJSON(paramsOut.Bytes(), &params))
+	params.CircuitBreakerEnabled = true
+	msgBz, err := clientCtx.Codec.MarshalInterfaceJSON(&liquiditytypes.MsgUpdateParams{
+		Authority: authtypes.NewModuleAddress("gov").String(),
+		Params:    params,
+	})
 	s.Require().NoError(err)
-	err = s.network.WaitForNextBlock()
-	s.Require().NoError(err)
+	proposal := fmt.Sprintf(`{"messages":[%s],"metadata":"","deposit":"%s","title":"enable circuit breaker","summary":"enable circuit breaker"}`,
+		msgBz, sdk.NewCoin(s.cfg.BondDenom, v1.DefaultMinDepositTokens))
+	out, err = clitestutil.ExecTestCLICmd(clientCtx, govcli.NewCmdSubmitProposal(),
+		append([]string{testutil.WriteToNewTempFile(s.T(), proposal).Name(), fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String())}, liquiditytestutil.CommonArgs()...))
+	requireCode(out, err, 0, "")
+	out, err = liquiditytestutil.MsgVote(clientCtx, val.Address.String(), "1", "yes")
+	requireCode(out, err, 0, "")
+	s.Require().Eventually(func() bool {
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.GetCmdQueryParams(), []string{fmt.Sprintf("--%s=json", tmcli.OutputFlag)})
+		return err == nil && strings.Contains(out.String(), `"circuit_breaker_enabled":true`)
+	}, 30*time.Second, time.Second, "the circuit breaker was not enabled")
 
-	// check if circuit breaker is enabled
-	expectedOutput := `{"pool_types":[{"id":1,"name":"StandardLiquidityPool","min_reserve_coin_num":2,"max_reserve_coin_num":2,"description":"Standard liquidity pool with pool price function X/Y, ESPM constraint, and two kinds of reserve coins"}],"min_init_deposit_amount":"1000000","init_pool_coin_mint_amount":"1000000","max_reserve_coin_amount":"0","pool_creation_fee":[{"denom":"stake","amount":"40000000"}],"swap_fee_rate":"0.003000000000000000","withdraw_fee_rate":"0.000000000000000000","max_order_amount_ratio":"0.100000000000000000","unit_batch_height":1,"circuit_breaker_enabled":true}`
-	out, err := clitestutil.ExecTestCLICmd(val.ClientCtx, cli.GetCmdQueryParams(), []string{fmt.Sprintf("--%s=json", tmcli.OutputFlag)})
-	s.Require().NoError(err)
-	s.Require().Equal(expectedOutput, strings.TrimSpace(out.String()))
-
-	// fail swap coins because of circuit breaker
-	output, err = liquiditytestutil.MsgSwapWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		fmt.Sprintf("%d", liquiditytypes.DefaultSwapTypeID),
-		offerCoin.String(),
-		denomX,
-		fmt.Sprintf("%.3f", 0.019),
-		fmt.Sprintf("%.3f", 0.003),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(40))
-	s.Require().Equal(txRes.RawLog, "failed to execute message; message index: 0: circuit breaker is triggered")
-
-	// fail create new pool because of circuit breaker
-	output, err = liquiditytestutil.MsgCreatePoolExec(
-		val.ClientCtx,
-		val.Address.String(),
+	// swaps, new pools and deposits fail because of the circuit breaker
+	out, err = swap()
+	requireCode(out, err, 40, "circuit breaker is triggered")
+	out, err = liquiditytestutil.MsgCreatePoolExec(clientCtx, val.Address.String(),
+		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID), sdk.NewCoins(X, Y).String())
+	requireCode(out, err, 40, "circuit breaker is triggered")
+	out, err = liquiditytestutil.MsgDepositWithinBatchExec(clientCtx, val.Address.String(),
 		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
-		sdk.NewCoins(X, Y).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(40))
-	s.Require().Equal(txRes.RawLog, "failed to execute message; message index: 0: circuit breaker is triggered")
+		sdk.NewCoins(sdk.NewCoin(denomX, math.NewInt(10_000_000)), sdk.NewCoin(denomY, math.NewInt(10_000_000))).String())
+	requireCode(out, err, 40, "circuit breaker is triggered")
 
-	// fail create new deposit because of circuit breaker
-	_, err = liquiditytestutil.MsgDepositWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", liquiditytypes.DefaultPoolTypeID),
-		sdk.NewCoins(sdk.NewCoin(denomX, math.NewInt(10_000_000)), sdk.NewCoin(denomY, math.NewInt(10_000_000))).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(40))
-	s.Require().Equal(txRes.RawLog, "failed to execute message; message index: 0: circuit breaker is triggered")
-
-	// success withdraw pool coin from the pool even though circuit breaker is true
-	poolCoinDenom := "poolC33A77E752C183913636A37FE1388ACA22FE7BED792BEB2E72EF2DA857703D8D"
-	output, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(500000))).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(0))
-
-	output, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(499999))).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(0))
-
-	// withdraw last pool coin
-	output, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(1))).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(0))
-
-	// fail withdraw because of the pool is depleted
-	output, err = liquiditytestutil.MsgWithdrawWithinBatchExec(
-		val.ClientCtx,
-		val.Address.String(),
-		fmt.Sprintf("%d", uint32(1)),
-		sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(1))).String(),
-	)
-	s.Require().NoError(err)
-	s.Require().NoError(val.ClientCtx.Codec.UnmarshalJSON(output.Bytes(), &txRes))
-	s.Require().Equal(txRes.Code, uint32(39))
-	s.Require().Equal(txRes.RawLog, "failed to execute message; message index: 0: the pool is depleted of reserve coin, reinitializing is required by deposit")
+	// withdrawing the pool coins still works, until the pool is depleted
+	poolCoinDenom := liquiditytypes.GetPoolCoinDenom(liquiditytypes.PoolName([]string{denomX, denomY}, liquiditytypes.DefaultPoolTypeID))
+	withdraw := func(amount int64) (testutil.BufferWriter, error) {
+		return liquiditytestutil.MsgWithdrawWithinBatchExec(clientCtx, val.Address.String(), "1",
+			sdk.NewCoins(sdk.NewCoin(poolCoinDenom, math.NewInt(amount))).String())
+	}
+	for _, amount := range []int64{500000, 499999, 1} {
+		out, err = withdraw(amount)
+		requireCode(out, err, 0, "")
+	}
+	out, err = withdraw(1)
+	requireCode(out, err, 39, "the pool is depleted of reserve coin")
 }
 
 func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsgs() {
@@ -1439,7 +1398,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsgs() {
 
 	// swap coins from the pool
 	offerCoin := sdk.NewCoin(denomY, math.NewInt(50_000_000))
-	_, err = liquiditytestutil.MsgSwapWithinBatchExec(
+	batchOut, err := liquiditytestutil.MsgSwapWithinBatchExec(
 		val.ClientCtx,
 		val.Address.String(),
 		fmt.Sprintf("%d", uint32(1)),
@@ -1450,6 +1409,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsgs() {
 		fmt.Sprintf("%.3f", 0.003),
 	)
 	s.Require().NoError(err)
+	batchHeight := s.txResult(val.ClientCtx, batchOut.Bytes()).Height
 
 	testCases := []struct {
 		name      string
@@ -1489,7 +1449,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryPoolBatchSwapMsgs() {
 			cmd := cli.GetCmdQueryPoolBatchSwapMsgs()
 			clientCtx := val.ClientCtx
 
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, append(tc.args, fmt.Sprintf("--%s=%d", flags.FlagHeight, batchHeight)))
 
 			if tc.expectErr {
 				s.Require().Error(err)
@@ -1562,4 +1522,25 @@ func (s *IntegrationTestSuite) TestInitGenesis() {
 			}
 		})
 	}
+}
+
+// txResult waits for the tx in out to be executed and returns its result.
+func (s *IntegrationTestSuite) txResult(clientCtx client.Context, out []byte) *sdk.TxResponse {
+	var resp sdk.TxResponse
+	s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out, &resp), string(out))
+	if resp.Code != 0 {
+		return &resp // refused by CheckTx
+	}
+	for i := 0; i < 10; i++ {
+		s.Require().NoError(s.network.WaitForNextBlock())
+		res, err := clitestutil.ExecTestCLICmd(clientCtx, authcmd.QueryTxCmd(), []string{resp.TxHash, "--output=json"})
+		if err != nil {
+			continue
+		}
+		var result sdk.TxResponse
+		s.Require().NoError(clientCtx.Codec.UnmarshalJSON(res.Bytes(), &result))
+		return &result
+	}
+	s.FailNow("tx not found: " + resp.TxHash)
+	return nil
 }

@@ -17,6 +17,7 @@ import (
 )
 
 var commonArgs = []string{
+	fmt.Sprintf("--%s=%d", flags.FlagGas, 1_000_000),
 	fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 	fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 	fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(10))).String()),
@@ -111,4 +112,9 @@ func MsgVote(clientCtx client.Context, from, id, vote string, extraArgs ...strin
 	args = append(args, extraArgs...)
 
 	return clitestutil.ExecTestCLICmd(clientCtx, govcli.NewCmdWeightedVote(), args)
+}
+
+// CommonArgs returns the flags used by the tx helpers.
+func CommonArgs() []string {
+	return append([]string{}, commonArgs...)
 }

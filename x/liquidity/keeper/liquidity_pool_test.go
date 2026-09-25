@@ -154,7 +154,7 @@ func TestPoolCreationFeeWithBuilders(t *testing.T) {
 	params := types.DefaultParams()
 	initialFeePoolAmount := feePool.CommunityPool
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDec(1),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1}
@@ -229,7 +229,7 @@ func TestSendAmountToOneBuilder(t *testing.T) {
 	simapp, ctx := createTestInput(t)
 	params := types.DefaultParams()
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDec(1),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1}
@@ -270,11 +270,11 @@ func TestSendAmountToTwoBuilder(t *testing.T) {
 	simapp, ctx := createTestInput(t)
 	params := types.DefaultParams()
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDecWithPrec(5, 1),
 	}
 	builderAddr2 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzwk37gt",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzdrusff",
 		Weight:  math.LegacyNewDecWithPrec(5, 1),
 	}
 
@@ -321,15 +321,15 @@ func TestSendAmountToThreeBuilder(t *testing.T) {
 	params := types.DefaultParams()
 
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDecWithPrec(33, 2),
 	}
 	builderAddr2 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzwk37gt",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzdrusff",
 		Weight:  math.LegacyNewDecWithPrec(33, 2),
 	}
 	builderAddr3 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfhft040s",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfh27zmwj",
 		Weight:  math.LegacyNewDecWithPrec(34, 2),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1, builderAddr2, builderAddr3}
@@ -378,15 +378,15 @@ func TestSendAmountToThreeBuilderWithRemainingCoin(t *testing.T) {
 	params := types.DefaultParams()
 
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDecWithPrec(3333, 4),
 	}
 	builderAddr2 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzwk37gt",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzdrusff",
 		Weight:  math.LegacyNewDecWithPrec(3333, 4),
 	}
 	builderAddr3 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfhft040s",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfh27zmwj",
 		Weight:  math.LegacyNewDecWithPrec(3334, 4),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1, builderAddr2, builderAddr3}
@@ -441,15 +441,15 @@ func TestSendAmountToThreeBuilderDifferentWeight(t *testing.T) {
 	params := types.DefaultParams()
 
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDecWithPrec(20, 2),
 	}
 	builderAddr2 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzwk37gt",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfzdrusff",
 		Weight:  math.LegacyNewDecWithPrec(20, 2),
 	}
 	builderAddr3 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfhft040s",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfh27zmwj",
 		Weight:  math.LegacyNewDecWithPrec(59, 2),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1, builderAddr2, builderAddr3}
@@ -457,7 +457,7 @@ func TestSendAmountToThreeBuilderDifferentWeight(t *testing.T) {
 	err := simapp.LiquidityKeeper.SetParams(ctx, params)
 	require.Error(t, err)
 	builderAddr3 = types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cfhft040s",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cfh27zmwj",
 		Weight:  math.LegacyNewDecWithPrec(60, 2),
 	}
 	buildersAddresses = []types.WeightedAddress{builderAddr1, builderAddr2, builderAddr3}

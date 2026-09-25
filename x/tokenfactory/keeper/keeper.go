@@ -6,10 +6,10 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/collections/indexes"
 	"cosmossdk.io/core/store"
-	"cosmossdk.io/log"
-	"cosmossdk.io/store/prefix"
-	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/log/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 

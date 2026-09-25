@@ -27,7 +27,6 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/client/cli"
-	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/exported"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/keeper"
 	simulation "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/simulation"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
@@ -111,24 +110,18 @@ type AppModule struct {
 	keeper        keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
-
-	legacySubspace exported.Subspace
 }
 
 func NewAppModule(
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-
-	// legacySubspace is used solely for migration of x/params managed parameters
-	legacySubspace exported.Subspace,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(),
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
-		legacySubspace: legacySubspace,
 	}
 }
 
@@ -153,11 +146,6 @@ func (AppModule) QuerierRoute() string { return types.QuerierRoute }
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
-
-	m := keeper.NewMigrator(am.keeper, am.legacySubspace)
-	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
-	}
 }
 
 // RegisterInvariants registers the x/tokenfactory module's invariants.

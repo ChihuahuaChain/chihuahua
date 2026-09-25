@@ -16,12 +16,11 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	sdkmath "cosmossdk.io/math"
-	pruningtypes "cosmossdk.io/store/pruning/types"
-	"cosmossdk.io/store/snapshots"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/v2/pruning/types"
+	"github.com/cosmos/cosmos-sdk/store/v2/snapshots"
 
-	snapshottypes "cosmossdk.io/store/snapshots/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -33,6 +32,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	snapshottypes "github.com/cosmos/cosmos-sdk/store/v2/snapshots/types"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"

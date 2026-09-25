@@ -12,9 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
 	"cosmossdk.io/math"
-	storetypes "cosmossdk.io/store/types"
 	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 )
 
 // Simulation operation weights constants

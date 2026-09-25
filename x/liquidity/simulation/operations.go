@@ -1,7 +1,6 @@
 package simulation
 
 import (
-	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"math/rand"
 	"time"
 
@@ -89,6 +88,8 @@ func SimulateMsgCreatePool(ak types.AccountKeeper, bk types.BankKeeper, k keeper
 
 		params := k.GetParams(ctx)
 		params.MaxReserveCoinAmount = GenMaxReserveCoinAmount(r)
+		// pool creation is permissioned: allow the simulated creator
+		params.PoolPermissionedCreatorAddresses = append(params.PoolPermissionedCreatorAddresses, simAccount.Address.String())
 		k.SetParams(ctx, params)
 
 		// get randomized two denoms to create liquidity pool
@@ -149,7 +150,7 @@ func SimulateMsgCreatePool(ak types.AccountKeeper, bk types.BankKeeper, k keeper
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgCreatePool, "unable to generate fees"), nil, err
 		}
 
-		txGen := moduletestutil.MakeTestEncodingConfig().TxConfig
+		txGen := simTxConfig()
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(time.Now().UnixNano())),
 			txGen,
@@ -226,7 +227,7 @@ func SimulateMsgDepositWithinBatch(ak types.AccountKeeper, bk types.BankKeeper, 
 
 		msg := types.NewMsgDepositWithinBatch(depositor, pool.Id, depositCoins)
 
-		txGen := moduletestutil.MakeTestEncodingConfig().TxConfig
+		txGen := simTxConfig()
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(time.Now().UnixNano())),
 			txGen,
@@ -294,7 +295,7 @@ func SimulateMsgWithdrawWithinBatch(ak types.AccountKeeper, bk types.BankKeeper,
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawWithinBatch, "unable to generate fees"), nil, err
 		}
 
-		txGen := moduletestutil.MakeTestEncodingConfig().TxConfig
+		txGen := simTxConfig()
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(time.Now().UnixNano())),
 			txGen,
@@ -365,7 +366,7 @@ func SimulateMsgSwapWithinBatch(ak types.AccountKeeper, bk types.BankKeeper, k k
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgSwapWithinBatch, "unable to generate fees"), nil, err
 		}
 
-		txGen := moduletestutil.MakeTestEncodingConfig().TxConfig
+		txGen := simTxConfig()
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(time.Now().UnixNano())),
 			txGen,

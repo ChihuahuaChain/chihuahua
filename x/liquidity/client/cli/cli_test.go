@@ -34,7 +34,7 @@ import (
 	liquiditytestutil "github.com/ChihuahuaChain/chihuahua/x/liquidity/client/testutil"
 	liquiditytypes "github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
 
-	"cosmossdk.io/log"
+	"cosmossdk.io/log/v2"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 )
@@ -653,7 +653,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryLiquidityPool() {
 		{
 			"valid case with reserve acc",
 			[]string{
-				fmt.Sprintf("--%s=%s", cli.FlagReserveAcc, "cosmos1cva80e6jcxpezd3k5dl7zwy2eg30u7ld3y0a67"),
+				fmt.Sprintf("--%s=%s", cli.FlagReserveAcc, "chihuahua1cva80e6jcxpezd3k5dl7zwy2eg30u7ldj3znmu"),
 				fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 			},
 			false,

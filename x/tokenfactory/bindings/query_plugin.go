@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
+	"github.com/cosmos/gogoproto/proto"
+
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 
 	errorsmod "cosmossdk.io/errors"
 	bindingstypes "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/bindings/types"
@@ -13,10 +15,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck
-	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types" //nolint:staticcheck
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v11/modules/core/03-connection/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
 )
 
 // CustomQuerier dispatches custom CosmWasm bindings queries.
@@ -155,28 +157,28 @@ func ConvertSdkCoinToWasmCoin(coin sdk.Coin) wasmvmtypes.Coin {
 func AcceptedStargateQueries() wasmkeeper.AcceptedQueries {
 	return wasmkeeper.AcceptedQueries{
 		// ibc
-		"/ibc.core.client.v1.Query/ClientState":         &ibcclienttypes.QueryClientStateResponse{},
-		"/ibc.core.client.v1.Query/ConsensusState":      &ibcclienttypes.QueryConsensusStateResponse{},
-		"/ibc.core.connection.v1.Query/Connection":      &ibcconnectiontypes.QueryConnectionResponse{},
-		"/ibc.core.channel.v1.Query/ChannelClientState": &ibcchanneltypes.QueryChannelClientStateResponse{},
+		"/ibc.core.client.v1.Query/ClientState":         func() proto.Message { return &ibcclienttypes.QueryClientStateResponse{} },
+		"/ibc.core.client.v1.Query/ConsensusState":      func() proto.Message { return &ibcclienttypes.QueryConsensusStateResponse{} },
+		"/ibc.core.connection.v1.Query/Connection":      func() proto.Message { return &ibcconnectiontypes.QueryConnectionResponse{} },
+		"/ibc.core.channel.v1.Query/ChannelClientState": func() proto.Message { return &ibcchanneltypes.QueryChannelClientStateResponse{} },
 
 		// token factory
-		"/osmosis.tokenfactory.v1beta1.Query/Params":                 &tftypes.QueryParamsResponse{},
-		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": &tftypes.QueryDenomAuthorityMetadataResponse{},
-		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      &tftypes.QueryDenomsFromCreatorResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/Params":                 func() proto.Message { return &tftypes.QueryParamsResponse{} },
+		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": func() proto.Message { return &tftypes.QueryDenomAuthorityMetadataResponse{} },
+		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      func() proto.Message { return &tftypes.QueryDenomsFromCreatorResponse{} },
 
 		// transfer
-		"/ibc.applications.transfer.v1.Query/DenomTrace":    &ibctransfertypes.QueryDenomTraceResponse{},
-		"/ibc.applications.transfer.v1.Query/EscrowAddress": &ibctransfertypes.QueryEscrowAddressResponse{},
+		"/ibc.applications.transfer.v1.Query/Denom":         func() proto.Message { return &ibctransfertypes.QueryDenomResponse{} },
+		"/ibc.applications.transfer.v1.Query/EscrowAddress": func() proto.Message { return &ibctransfertypes.QueryEscrowAddressResponse{} },
 
 		// auth
-		"/cosmos.auth.v1beta1.Query/Account": &authtypes.QueryAccountResponse{},
-		"/cosmos.auth.v1beta1.Query/Params":  &authtypes.QueryParamsResponse{},
+		"/cosmos.auth.v1beta1.Query/Account": func() proto.Message { return &authtypes.QueryAccountResponse{} },
+		"/cosmos.auth.v1beta1.Query/Params":  func() proto.Message { return &authtypes.QueryParamsResponse{} },
 
 		// bank
-		"/cosmos.bank.v1beta1.Query/Balance":       &banktypes.QueryBalanceResponse{},
-		"/cosmos.bank.v1beta1.Query/DenomMetadata": &banktypes.QueryDenomsMetadataResponse{},
-		"/cosmos.bank.v1beta1.Query/Params":        &banktypes.QueryParamsResponse{},
-		"/cosmos.bank.v1beta1.Query/SupplyOf":      &banktypes.QuerySupplyOfResponse{},
+		"/cosmos.bank.v1beta1.Query/Balance":       func() proto.Message { return &banktypes.QueryBalanceResponse{} },
+		"/cosmos.bank.v1beta1.Query/DenomMetadata": func() proto.Message { return &banktypes.QueryDenomsMetadataResponse{} },
+		"/cosmos.bank.v1beta1.Query/Params":        func() proto.Message { return &banktypes.QueryParamsResponse{} },
+		"/cosmos.bank.v1beta1.Query/SupplyOf":      func() proto.Message { return &banktypes.QuerySupplyOfResponse{} },
 	}
 }

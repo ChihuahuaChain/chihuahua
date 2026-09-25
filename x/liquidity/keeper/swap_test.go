@@ -395,7 +395,7 @@ func TestDirectSwapWithBuilders(t *testing.T) {
 	simapp.LiquidityKeeper.SetParams(ctx, types.DefaultParams())
 	params := simapp.LiquidityKeeper.GetParams(ctx)
 	builderAddr1 := types.WeightedAddress{
-		Address: "cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp",
+		Address: "chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer",
 		Weight:  math.LegacyNewDec(1),
 	}
 	buildersAddresses := []types.WeightedAddress{builderAddr1}
@@ -431,7 +431,7 @@ func TestDirectSwapWithBuilders(t *testing.T) {
 	reserveCoins = simapp.LiquidityKeeper.GetReserveCoins(ctx, pool)
 	newX := reserveCoins[0].Amount.ToLegacyDec()
 	newY := reserveCoins[1].Amount.ToLegacyDec()
-	builderBalanceB := simapp.BankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32("cosmos15ky9du8a2wlstz6fpx3p4mqpjyrm5cg36er2cp"), denomB)
+	builderBalanceB := simapp.BankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32("chihuahua15ky9du8a2wlstz6fpx3p4mqpjyrm5cg3evwyer"), denomB)
 	t.Logf("builderBalanceB %v", builderBalanceB)
 	require.True(t, builderBalanceB.Amount.Equal(math.NewInt(11881)))
 	require.True(t, builderBalanceB.Amount.GT(math.NewInt(0)))

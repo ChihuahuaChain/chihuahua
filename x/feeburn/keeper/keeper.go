@@ -3,9 +3,9 @@ package keeper
 import (
 	"fmt"
 
-	"cosmossdk.io/log"
-	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/log/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
@@ -15,7 +15,6 @@ type (
 	Keeper struct {
 		cdc      codec.BinaryCodec
 		storeKey storetypes.StoreKey
-		memKey   storetypes.StoreKey
 		// the address capable of executing a MsgUpdateParams message. Typically, this should be the x/gov module account.
 		authority sdk.AccAddress
 	}
@@ -23,8 +22,7 @@ type (
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	storeKey,
-	memKey storetypes.StoreKey,
+	storeKey storetypes.StoreKey,
 	authority sdk.AccAddress,
 ) *Keeper {
 	// ensure gov module account is set and is not nil
@@ -35,7 +33,6 @@ func NewKeeper(
 	return &Keeper{
 		cdc:       cdc,
 		storeKey:  storeKey,
-		memKey:    memKey,
 		authority: authority,
 	}
 }

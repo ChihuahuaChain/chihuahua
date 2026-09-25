@@ -4,32 +4,18 @@ package app
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"testing"
-	"time"
 
-	"cosmossdk.io/log"
+	chihuahuaapp "github.com/ChihuahuaChain/chihuahua/app"
+
 	mathsdk "cosmossdk.io/math"
-	pruningtypes "cosmossdk.io/store/pruning/types"
-	abci "github.com/cometbft/cometbft/abci/types"
-	tmjson "github.com/cometbft/cometbft/libs/json"
-	tmtypes "github.com/cometbft/cometbft/types"
-	dbm "github.com/cosmos/cosmos-db"
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/server"
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -39,113 +25,14 @@ import (
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/keeper"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 )
 
-// DefaultConsensusParams defines the default Tendermint consensus params used in
-// LiquidityApp testing.
-var DefaultConsensusParams = tmtypes.ConsensusParams{
-	Block: tmtypes.BlockParams{
-		MaxBytes: 200000,
-		MaxGas:   2000000,
-	},
-	Evidence: tmtypes.EvidenceParams{
-		MaxAgeNumBlocks: 302400,
-		MaxAgeDuration:  504 * time.Hour, // 3 weeks is the max duration
-	},
-	Validator: tmtypes.ValidatorParams{
-		PubKeyTypes: []string{
-			tmtypes.ABCIPubKeyTypeEd25519,
-		},
-	},
-}
-
-// SetupOptions defines arguments that are passed into `Simapp` constructor.
-type SetupOptions struct {
-	LoadLatest bool
-	Logger     log.Logger
-	DB         *dbm.MemDB
-	AppOpts    servertypes.AppOptions
-}
-
-func setup(withGenesis bool, invCheckPeriod uint) (*LiquidityApp, GenesisState) {
-	db := dbm.NewMemDB()
-	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = DefaultNodeHome
-	appOptions[server.FlagInvCheckPeriod] = invCheckPeriod
-	app := NewLiquidityApp(log.NewNopLogger(), db, nil, true, appOptions)
-	if withGenesis {
-		return app, NewDefaultGenesisState()
-	}
-	return app, GenesisState{}
-}
-
-// Setup initializes a new SimApp. A Nop logger is set in SimApp.
-func Setup(t *testing.T, isCheckTx bool) *LiquidityApp {
+// Setup initializes a new chihuahua app for the liquidity tests.
+func Setup(t *testing.T, _ bool) *LiquidityApp {
 	t.Helper()
-
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-
-	// create validator set with single validator
-	validator := tmtypes.NewValidator(pubKey, 1)
-	valSet := tmtypes.NewValidatorSet([]*tmtypes.Validator{validator})
-
-	// generate genesis account
-	senderPrivKey := secp256k1.GenPrivKey()
-	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, mathsdk.NewInt(100000000000000))),
-	}
-
-	app := SetupWithGenesisValSet(t, valSet, []authtypes.GenesisAccount{acc}, balance)
-	_, err = app.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: app.LastBlockHeight() + 1,
-		Hash:   app.LastCommitID().Hash,
-	})
-	require.NoError(t, err)
-	return app
-}
-
-// SetupWithGenesisValSet initializes a new SimApp with a validator set and genesis accounts
-// that also act as delegators. For simplicity, each validator is bonded with a delegation
-// of one consensus engine unit in the default token of the simapp from first genesis
-// account. A Nop logger is set in SimApp.
-func SetupWithGenesisValSet(t *testing.T, valSet *tmtypes.ValidatorSet, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *LiquidityApp {
-	t.Helper()
-
-	app, genesisState := setup(true, 5)
-	genesisState, err := simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, genAccs, balances...)
-	require.NoError(t, err)
-
-	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
-	require.NoError(t, err)
-
-	// init chain will set the validator set and initialize the genesis accounts
-	_, err = app.InitChain(
-		&abci.RequestInitChain{
-			Validators:      []abci.ValidatorUpdate{},
-			ConsensusParams: simtestutil.DefaultConsensusParams,
-			AppStateBytes:   stateBytes,
-		},
-	)
-	require.NoError(t, err)
-
-	// commit genesis changes
-	_, err = app.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height:             app.LastBlockHeight() + 1,
-		Hash:               app.LastCommitID().Hash,
-		NextValidatorsHash: valSet.Hash(),
-	})
-	require.NoError(t, err)
-	_, err = app.Commit()
-	require.NoError(t, err)
-
-	return app
+	return chihuahuaapp.Setup(t)
 }
 
 type GenerateAccountStrategy func(int) []sdk.AccAddress
@@ -225,47 +112,6 @@ func SaveAccount(app *LiquidityApp, ctx sdk.Context, addr sdk.AccAddress, initCo
 			panic(err)
 		}
 	}
-}
-
-// NewSimappWithCustomOptions initializes a new SimApp with custom options.
-func NewLiquidityAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *LiquidityApp {
-	t.Helper()
-
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	// create validator set with single validator
-	validator := tmtypes.NewValidator(pubKey, 1)
-	valSet := tmtypes.NewValidatorSet([]*tmtypes.Validator{validator})
-
-	// generate genesis account
-	senderPrivKey := secp256k1.GenPrivKey()
-	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, mathsdk.NewInt(100000000000000))),
-	}
-
-	app := NewLiquidityApp(options.Logger, options.DB, nil, options.LoadLatest, options.AppOpts)
-	genesisState := app.DefaultGenesis()
-	genesisState, err = simtestutil.GenesisStateWithValSet(app.AppCodec(), genesisState, valSet, []authtypes.GenesisAccount{acc}, balance)
-	require.NoError(t, err)
-
-	if !isCheckTx {
-		// init chain must be called to stop deliverState from being nil
-		stateBytes, err := tmjson.MarshalIndent(genesisState, "", " ")
-		require.NoError(t, err)
-		// Initialize the chain
-		app.InitChain(
-			&abci.RequestInitChain{
-				Validators:      []abci.ValidatorUpdate{},
-				ConsensusParams: simtestutil.DefaultConsensusParams,
-				AppStateBytes:   stateBytes,
-			},
-		)
-	}
-
-	return app
 }
 
 func SaveAccountWithFee(app *LiquidityApp, ctx sdk.Context, addr sdk.AccAddress, initCoins sdk.Coins, offerCoin sdk.Coin) {
@@ -621,42 +467,7 @@ func GetSwapMsg(t *testing.T, simapp *LiquidityApp, ctx sdk.Context, offerCoins 
 	return msgs
 }
 
-// NewTestNetworkFixture returns a new simapp AppConstructor for network simulation tests
+// NewTestNetworkFixture returns the chihuahua app fixture for network tests
 func NewTestNetworkFixture() network.TestFixture {
-	dir, err := os.MkdirTemp("", "liquidityapp")
-	if err != nil {
-		panic(fmt.Sprintf("failed creating temporary directory: %v", err))
-	}
-	defer os.RemoveAll(dir)
-
-	app := NewLiquidityApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(dir))
-
-	appCtr := func(val network.ValidatorI) servertypes.Application {
-		return NewLiquidityApp(
-			val.GetCtx().Logger, dbm.NewMemDB(), nil, true,
-			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
-			bam.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
-			bam.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
-			bam.SetChainID(val.GetCtx().Viper.GetString(flags.FlagChainID)),
-		)
-	}
-
-	return network.TestFixture{
-		AppConstructor: appCtr,
-		GenesisState:   app.DefaultGenesis(),
-		EncodingConfig: testutil.TestEncodingConfig{
-			InterfaceRegistry: app.InterfaceRegistry(),
-			Codec:             app.AppCodec(),
-			TxConfig:          app.TxConfig(),
-			Amino:             app.LegacyAmino(),
-		},
-	}
-}
-
-// EmptyAppOptions is a stub implementing AppOptions
-type EmptyAppOptions struct{}
-
-// Get implements AppOptions
-func (ao EmptyAppOptions) Get(o string) interface{} {
-	return nil
+	return chihuahuaapp.NewTestNetworkFixture()
 }

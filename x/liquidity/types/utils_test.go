@@ -122,7 +122,7 @@ func TestGetPoolInformation(t *testing.T) {
 			reserveCoinDenoms:     []string{"uatom", "usdt"},
 			poolTypeID:            uint32(3),
 			expectedPoolName:      "uatom/usdt/3",
-			expectedReserveAcc:    "cosmos1aqvez6g6wejw8hu35kplycf2taqsfkpj3ns3c5v4dhwazfdzhzastyr290",
+			expectedReserveAcc:    "chihuahua1aqvez6g6wejw8hu35kplycf2taqsfkpj3ns3c5v4dhwazfdzhzasgw6yyg",
 			expectedPoolCoinDenom: "pool93E069B333B5ECEBFE24C6E1437E814003248E0DD7FF8B9F82119F4587449BA5",
 		},
 	}

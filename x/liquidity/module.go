@@ -23,11 +23,11 @@ import (
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/depinject/appconfig"
-	storetypes "cosmossdk.io/store/types"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/client/cli"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/keeper"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/simulation"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 

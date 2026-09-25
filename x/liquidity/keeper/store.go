@@ -4,8 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	gogotypes "github.com/gogo/protobuf/types"
 
-	storetypes "cosmossdk.io/store/types"
 	"github.com/ChihuahuaChain/chihuahua/x/liquidity/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 )
 
 // GetPool reads from kvstore and returns a specific pool

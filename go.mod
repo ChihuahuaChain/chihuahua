@@ -43,9 +43,7 @@ require (
 
 require (
 	cosmossdk.io/depinject v1.2.1
-	cosmossdk.io/log v1.5.1
 	cosmossdk.io/math v1.5.3
-	cosmossdk.io/store v1.1.2
 	cosmossdk.io/tools/confix v0.1.2
 	github.com/cockroachdb/apd/v2 v2.0.2
 	github.com/cometbft/cometbft v0.39.4
@@ -70,7 +68,9 @@ require (
 	cloud.google.com/go/iam v1.11.0 // indirect
 	cloud.google.com/go/monitoring v1.29.0 // indirect
 	cloud.google.com/go/storage v1.62.1 // indirect
+	cosmossdk.io/log v1.5.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
+	cosmossdk.io/store v1.1.2 // indirect
 	filippo.io/bigmod v0.1.1-0.20260103110540-f8a47775ebe5 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	filippo.io/keygen v0.0.0-20260114151900-8e2790ea4c5b // indirect

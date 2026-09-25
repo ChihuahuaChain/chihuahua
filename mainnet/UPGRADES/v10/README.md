@@ -43,14 +43,14 @@ The historical governance proposals that used these modules can still be queried
 
 - The IBC transfer query `DenomTrace` (`/ibc.applications.transfer.v1.Query/DenomTrace`) no longer exists in ibc-go. Use `Denom` (`/ibc.applications.transfer.v1.Query/Denom`). Contracts using the `DenomTrace` stargate query must switch to `Denom`.
 - The REST and gRPC endpoints of the removed modules (`alliance`, `params`, `crisis`, `nft`, `circuit`, IBC fee) are gone.
-- CosmWasm 3 is available: contracts can use the capabilities up to `cosmwasm_3_0`.
+- The CosmWasm capabilities now go up to `cosmwasm_2_2`, plus `ibc2` for IBC v2.
 
 ## For node operators
 
 - chihuahuad is now built with Go 1.26.
 - `app.toml` and `config.toml` from v9 keep working. New options get their defaults; the experimental CometBFT features (LibP2P, AdaptiveSync) stay disabled unless enabled explicitly.
 - The `--x-crisis-skip-assert-invariants` start flag no longer exists: remove it from your service files.
-- The wasm cache stays in `data/wasm`: contracts are not recompiled.
+- wasmvm v3 uses a new compiled module cache in `data/wasm/cache/modules`: contracts are recompiled on their first execution after the upgrade, so the first calls to each contract are slower. The previous cache (the `*-wasmer7` directory, several GB) is no longer used and can be deleted once the node runs v10.
 
 ## If you are syncing from 0 you need to apply v10 at height TBD
 

@@ -170,7 +170,22 @@ func initRootCmd(rootCmd *cobra.Command, txConfig client.TxConfig, basicManager 
 		queryCommand(),
 		txCommand(),
 		keys.Commands(),
+		barkCommand(),
 	)
+}
+
+// barkCommand says hello, the chihuahua way.
+func barkCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:     "bark",
+		Aliases: []string{"woof"},
+		Short:   "Woof woof",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			cmd.Println("woof woof")
+			return nil
+		},
+	}
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {

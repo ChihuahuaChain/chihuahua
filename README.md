@@ -39,7 +39,7 @@ Chihuahua is a proof-of-stake blockchain built with the [Cosmos SDK](https://git
 | RPC | https://rpc.chihuahua.wtf |
 | REST | https://api.chihuahua.wtf |
 | Explorer | https://explorer.chihuahua.wtf |
-| Snapshots | https://snapshots.huahua.wtf |
+| Snapshots | https://snapshots.chihuahua.wtf |
 | Current release | see [Releases](https://github.com/ChihuahuaChain/chihuahua/releases) and [Chain upgrades](#chain-upgrades) |
 
 ## Run a node or a validator
@@ -105,12 +105,12 @@ Add a few live peers to `persistent_peers` in `~/.chihuahuad/config/config.toml`
 
 ### 3. Sync
 
-Syncing from genesis takes a very long time, because it replays every upgrade. Start from a snapshot instead. [snapshots.huahua.wtf](https://snapshots.huahua.wtf/latest.json) publishes one every 12 hours, with its height and sha256:
+Syncing from genesis takes a very long time, because it replays every upgrade. Start from a snapshot instead. [snapshots.chihuahua.wtf](https://snapshots.chihuahua.wtf/latest.json) publishes one every 12 hours, with its height and sha256:
 
 ```sh
-meta=$(curl -fsSL https://snapshots.huahua.wtf/latest.json)
+meta=$(curl -fsSL https://snapshots.chihuahua.wtf/latest.json)
 file=$(echo "$meta" | jq -r .file)
-curl -fLO "https://snapshots.huahua.wtf/$file"
+curl -fLO "https://snapshots.chihuahua.wtf/$file"
 echo "$(echo "$meta" | jq -r .sha256)  $file" | sha256sum -c
 cp ~/.chihuahuad/data/priv_validator_state.json /tmp/   # keep your signing state
 rm -rf ~/.chihuahuad/data ~/.chihuahuad/wasm

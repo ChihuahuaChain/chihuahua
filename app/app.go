@@ -173,7 +173,7 @@ import (
 const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
-	UpgradeName  = "v9.1.0"
+	UpgradeName  = "v9.5.0"
 	NodeDir      = ".chihuahuad"
 )
 
@@ -1421,7 +1421,7 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 	})
 
-	app.UpgradeKeeper.SetUpgradeHandler("v9.1.0", func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+	app.UpgradeKeeper.SetUpgradeHandler(UpgradeName, func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		// close every alliance position, see governance proposal 99
 		if err := app.SunsetAlliance(sdk.UnwrapSDKContext(ctx)); err != nil {
 			return nil, err

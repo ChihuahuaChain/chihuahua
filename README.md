@@ -1,273 +1,276 @@
-<img alt='ChihuahuaChain logo' src="https://github.com/ChihuahuaChain/resources/blob/main/logo/logo_transparent_notext.png?raw=true" width="150"/>
+<p align="center">
+  <img src="https://github.com/ChihuahuaChain/resources/blob/main/logo/logo_transparent_notext.png?raw=true" width="140" alt="Chihuahua">
+</p>
 
-# ChihuahuaChain
-##### _The Cosmos MEME Coin_
-Stay up to date with the latest news on our Socials
- - Join our [Telegram Community](https://t.me/chihuahua_wtf)
- - Join our [Discord](https://discord.gg/chihuahuachain-878201449421619211)
- - Follow us on [X](https://x.com/ChihuahuaChain)
- - Check out our [Medium](https://medium.com/@chihuahuachain)
+<h1 align="center">Chihuahua</h1>
 
-# Node Installation
+<p align="center">
+  The Cosmos meme coin that actually built a chain.<br>
+  <a href="https://chihuahua.wtf">chihuahua.wtf</a> ·
+  <a href="https://explorer.chihuahua.wtf">Explorer</a> ·
+  <a href="https://github.com/ChihuahuaChain/huahua-node-manager">Node Manager</a> ·
+  <a href="https://t.me/chihuahua_wtf">Telegram</a> ·
+  <a href="https://discord.gg/chihuahuachain-878201449421619211">Discord</a> ·
+  <a href="https://x.com/ChihuahuaChain">X</a>
+</p>
 
-- #### Install Prerequisites
+<p align="center">
+  <a href="https://github.com/ChihuahuaChain/chihuahua/releases/latest"><img src="https://img.shields.io/github/v/release/ChihuahuaChain/chihuahua?color=f5c518&label=release" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/chain-chihuahua--1-f5c518" alt="chihuahua-1">
+  <img src="https://img.shields.io/badge/go-1.23.9-555" alt="Go 1.23.9">
+</p>
 
-```bash
-# update the local package list and install any available upgrades 
-sudo apt-get update && sudo apt upgrade -y 
+Chihuahua is a proof-of-stake blockchain built with the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk), live since 2021. `chihuahuad` is its node. On top of the usual Cosmos modules (staking, governance, IBC) the chain has:
 
-# install toolchain and ensure accurate time synchronization 
-sudo apt-get install make build-essential gcc git jq chrony -y
+- **permissionless CosmWasm**: anyone can upload and run smart contracts;
+- **fee burn** (`x/feeburn`): a share of every transaction fee is burned;
+- **token factory** (`x/tokenfactory`): anyone can create a native token;
+- **stakedrops**: airdrops paid block by block to HUAHUA stakers;
+- **liquidity pools** (`x/liquidity`).
+
+## Network
+
+| Field | Value |
+|---|---|
+| Chain ID | `chihuahua-1` |
+| Token | HUAHUA, base denom `uhuahua` (1 HUAHUA = 1,000,000 uhuahua) |
+| Address prefix | `chihuahua` |
+| Minimum gas price | `100uhuahua` (wallets default to `1250uhuahua`) |
+| RPC | https://rpc.chihuahua.wtf |
+| REST | https://api.chihuahua.wtf |
+| Explorer | https://explorer.chihuahua.wtf |
+| Snapshots | https://snapshots.huahua.wtf |
+| Current release | see [Releases](https://github.com/ChihuahuaChain/chihuahua/releases) and [Chain upgrades](#chain-upgrades) |
+
+## Run a node or a validator
+
+The quickest way is the **[Huahua Node Manager](https://github.com/ChihuahuaChain/huahua-node-manager)**. One command sets up a full node or a validator on Linux (amd64 or arm64):
+
+```sh
+bash <(curl -fsSL https://raw.githubusercontent.com/ChihuahuaChain/huahua-node-manager/main/huahua-node.sh)
 ```
 
-- #### Install Go
+Choose **Easy**, answer three questions, and a few minutes later the node is:
 
-```bash
-# download the latest version
-wget https://go.dev/dl/go1.23.9.linux-amd64.tar.gz
+- synced from the latest snapshot, or with state sync;
+- running under cosmovisor, so it upgrades itself at each upgrade height;
+- started at boot, as a systemd service or a Docker container.
 
-# remove old version (if any)
-sudo rm -rf /usr/local/go
+It downloads the release binary and checks every download against its sha256, finds live peers, and guides you through `create-validator`. Run the same command again, or `huahua-node`, to open its live dashboard.
 
-# install the new version
-sudo tar -C /usr/local -xzf go1.23.9.linux-amd64.tar.gz
+To read the script before running it:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/ChihuahuaChain/huahua-node-manager/main/huahua-node.sh
+less huahua-node.sh
+bash huahua-node.sh
 ```
 
-- #### Configure Environmental Variables
-```bash
-# run these commands
-cat <<EOF >> ~/.profile
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export GO111MODULE=on
-export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-EOF
+The rest of this section is the manual way.
 
-source ~/.profile
+### 1. Get `chihuahuad`
 
-go version
+**Release binary.** Every [release](https://github.com/ChihuahuaChain/chihuahua/releases) has static Linux binaries for amd64 and arm64, with their sha256 in `chihuahuad_sha256.txt`:
+
+```sh
+VERSION=v9.0.7
+ARCH=amd64   # or arm64
+curl -fLO https://github.com/ChihuahuaChain/chihuahua/releases/download/$VERSION/chihuahuad_linux_$ARCH
+curl -fsSL https://github.com/ChihuahuaChain/chihuahua/releases/download/$VERSION/chihuahuad_sha256.txt | grep "chihuahuad_linux_$ARCH" | sha256sum -c
+install -m 755 chihuahuad_linux_$ARCH ~/go/bin/chihuahuad   # or any directory in your PATH
+chihuahuad version
 ```
-The output should be `go version go1.23.9 linux/amd64`
 
-- #### Install Chihuahua from sources
+**From source.** You need Go 1.23.9 and a C toolchain (`make`, `gcc`):
 
-```bash
-# run these commands
+```sh
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
-git fetch --tags
 git checkout v9.0.7
 make install
+chihuahuad version   # v9.0.7
 ```
 
-To verify the installation you can run `chihuahuad version` and it should return `v9.0.7`
+Build with the exact Go version: a different one can produce a different app hash.
 
-- #### Initialize the Chain
-Replace `$MONIKERNAME` with your choosen node name
+### 2. Configure
 
-`chihuahuad init $MONIKER_NAME --chain-id chihuahua-1`
-
-- #### Download the Genesis
-
-```bash
-wget -O ~/.chihuahuad/config/genesis.json https://raw.githubusercontent.com/ChihuahuaChain/chihuahua/main/mainnet/genesis.json
+```sh
+chihuahuad init <your-node-name> --chain-id chihuahua-1
+curl -fsSL https://raw.githubusercontent.com/ChihuahuaChain/chihuahua/main/mainnet/genesis.json -o ~/.chihuahuad/config/genesis.json
+sed -i 's/^minimum-gas-prices *=.*/minimum-gas-prices = "100uhuahua"/' ~/.chihuahuad/config/app.toml
 ```
 
-- #### Add Seeds & Persistent Peers
+Add a few live peers to `persistent_peers` in `~/.chihuahuad/config/config.toml`. Peers change over time: ask in [Discord](https://discord.gg/chihuahuachain-878201449421619211), or let the Node Manager find them.
 
-```bash
-seeds="77cbb35d1df17f48a42e9f157f12f55b691e9f5e@seeds.goldenratiostaking.net:1620,4936e377b4d4f17048f8961838a5035a4d21240c@chihuahua-seed-01.mercury-nodes.net:29540"
-peers="b140eb36b20f3d201936c4757d5a1dcbf03a42f1@216.238.79.138:26656,19900e1d2b10be9c6672dae7abd1827c8e1aad1e@161.97.96.253:26656,c382a9a0d4c0606d785d2c7c2673a0825f7c53b2@88.99.94.120:26656,a5dfb048e4ed5c3b7d246aea317ab302426b37a1@137.184.250.180:26656,3bad0326026ca4e29c64c8d206c90a968f38edbe@128.199.165.78:26656,89b576c3eb72a4f0c66dc0899bec7c21552ea2a5@23.88.7.73:29538,38547b7b6868f93af1664d9ab0e718949b8853ec@54.184.20.240:30758,a9640eb569620d1f7be018a9e1919b0357a18b8c@38.146.3.160:26656,7e2239a0d4a0176fe4daf7a3fecd15ac663a8eb6@144.91.126.23:26656"
-sed -i.bak -e "s/^seeds *=.*/seeds = \"$seeds\"/; s/^persistent_peers *=.*/persistent_peers = \"$peers\"/" ~/.chihuahuad/config/config.toml
+### 3. Sync
+
+Syncing from genesis takes a very long time, because it replays every upgrade. Start from a snapshot instead. [snapshots.huahua.wtf](https://snapshots.huahua.wtf/latest.json) publishes one every 12 hours, with its height and sha256:
+
+```sh
+meta=$(curl -fsSL https://snapshots.huahua.wtf/latest.json)
+file=$(echo "$meta" | jq -r .file)
+curl -fLO "https://snapshots.huahua.wtf/$file"
+echo "$(echo "$meta" | jq -r .sha256)  $file" | sha256sum -c
+cp ~/.chihuahuad/data/priv_validator_state.json /tmp/   # keep your signing state
+rm -rf ~/.chihuahuad/data ~/.chihuahuad/wasm
+lz4 -dc "$file" | tar -x -C ~/.chihuahuad
+cp /tmp/priv_validator_state.json ~/.chihuahuad/data/
 ```
 
-- #### Update minimum-gas-price in app.toml
+The snapshot includes the contracts' code (`data/wasm`), which a CosmWasm node needs.
 
-```bash
-sed -i.bak 's/minimum-gas-prices =.*/minimum-gas-prices = "100uhuahua"/' $HOME/.chihuahuad/config/app.toml
+### 4. Run it with cosmovisor
+
+[Cosmovisor](https://github.com/cosmos/cosmos-sdk/tree/main/tools/cosmovisor) runs `chihuahuad` and swaps the binary when an upgrade height is reached.
+
+```sh
+go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@latest
+mkdir -p ~/.chihuahuad/cosmovisor/genesis/bin
+cp "$(which chihuahuad)" ~/.chihuahuad/cosmovisor/genesis/bin/
 ```
 
-- #### Setting up Cosmovisor
+`/etc/systemd/system/chihuahuad.service`, with your user in place of `<user>`:
 
-Install cosmovisor 
-```bash
-go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest
-
-which cosmovisor
-
-# should return 
-'/home/<your-user>/go/bin/cosmovisor'
-
-# run these commands
-cat <<EOF >> ~/.profile
-export DAEMON_NAME=chihuahuad
-export DAEMON_HOME=$HOME/.chihuahuad
-EOF
-
-source ~/.profile
-
-echo $DAEMON_NAME
-
-# should return
-'chihuahuad'
-
-# create the directories
-mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin
-mkdir -p $DAEMON_HOME/cosmovisor/upgrades
-
-# check the binary path with
-which chihuahuad
-
-# this should return
-'/home/your-user/go/bin/chihuahuad'
-
-# copy the binary into
-cp $(which chihuahuad) $DAEMON_HOME/cosmovisor/genesis/bin
-```
-Set up the service file
-
-```bash
-sudo nano /etc/systemd/system/chihuahuad.service
-
-# paste and edit <your-user> with your username
+```ini
 [Unit]
-Description=Chihuahua Daemon (cosmovisor)
+Description=Chihuahua node (cosmovisor)
 After=network-online.target
 
 [Service]
-User=<your-user>
-ExecStart=/home/<your-user>/go/bin/cosmovisor run start
+User=<user>
+ExecStart=/home/<user>/go/bin/cosmovisor run start
 Restart=always
 RestartSec=3
-LimitNOFILE=4096
+LimitNOFILE=65535
 Environment="DAEMON_NAME=chihuahuad"
-Environment="DAEMON_HOME=/home/<your-user>/.chihuahuad"
-Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
+Environment="DAEMON_HOME=/home/<user>/.chihuahuad"
+Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=true"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
-Environment="DAEMON_LOG_BUFFER_SIZE=512"
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Enable the service
-
-```bash
-sudo -S systemctl daemon-reload
-sudo -S systemctl enable chihuahuad
-```
-
-Get the latest [snapshot](https://polkachu.com/tendermint_snapshots/chihuahua) (_Thanks to [Polkachu](https://twitter.com/polka_chu)_) and follow the Pruning tips to save some GB
-
-- #### Start the node
-
-You can start the node by running
-```bash
-sudo systemctl start chihuahuad
-
-# check the logs by running
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now chihuahuad
 journalctl -u chihuahuad -f
 ```
-The node will take some time to catch-up with the blockchain.
-You can follow the blocks being indexed by rnning
 
-```bash
-journalctl -u chihuahuad -f | grep indexed
+With `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`, cosmovisor downloads the new binary from the upgrade proposal and checks its sha256 (see [Chain upgrades](#chain-upgrades)). To place it yourself instead, put it in `~/.chihuahuad/cosmovisor/upgrades/<upgrade name>/bin/` before the upgrade height.
+
+### 5. Become a validator
+
+Wait until the node has caught up (`chihuahuad status | jq .sync_info.catching_up` shows `false`), then create a key and fund it with a little HUAHUA for the transaction and your self-delegation:
+
+```sh
+chihuahuad keys add validator   # write the mnemonic down somewhere safe
 ```
 
-# Join the Validators _(mainnet)_
+`validator.json`:
 
-ChihuahuaChain Governance [voted a proposal](https://www.mintscan.io/chihuahua/proposals/3) enabling the minimum 5% Commission enforced by the blockchain.
-
-```bash
-# create a new wallet for the validator
-
-chihuahuad keys add <key-name>
-
-# save the seed phrase (mnemonic) in a safe place
-# copy the 'chihuahua...' address and send some HUAHUA
-# in order to pay for the validator creation's transaction
-
-# Make sure the Validator has fully synced before running 
-chihuahuad tx staking create-validator \
-  --from "<key-name>" \
-  --amount "1000000uhuahua" \
-  --pubkey "$(chihuahuad tendermint show-validator)" \
-  --chain-id "chihuahua-1" \
-  --moniker "<moniker>" \
-  --commission-max-change-rate 0.01 \
-  --commission-max-rate 0.20 \
-  --commission-rate 0.10 \
-  --min-self-delegation 1 \
-  --details "<details>" \
-  --security-contact "<contact>" \
-  --website "<website>" \
-  --gas-prices "1uhuahua"
-  
-# Make sure to backup the priv_validator_key.json file in your
-# /home/<your-user>/.chihuahuad/config directory
-# and store it in a safe place
+```json
+{
+  "pubkey": <the output of: chihuahuad comet show-validator>,
+  "amount": "1000000uhuahua",
+  "moniker": "<your validator name>",
+  "identity": "<keybase id, optional>",
+  "website": "<website, optional>",
+  "security": "<security contact, optional>",
+  "details": "<description, optional>",
+  "commission-rate": "0.10",
+  "commission-max-rate": "0.20",
+  "commission-max-change-rate": "0.01",
+  "min-self-delegation": "1"
+}
 ```
 
-**Congratulation!** Your Validator node should be up and running
+```sh
+chihuahuad tx staking create-validator validator.json \
+  --from validator --chain-id chihuahua-1 \
+  --gas auto --gas-adjustment 1.4 --gas-prices 1250uhuahua
+```
 
-_Make sure to join our [Discord](https://discord.gg/chihuahuachain-878201449421619211) and contact a moderator if you have a mainnet node so we can invite you to the validator's channel to follow up the latest updates and future upgrades._
+The chain enforces a minimum commission of 5% ([proposal 3](https://explorer.chihuahua.wtf/proposal/3)).
 
----
+Back up `~/.chihuahuad/config/priv_validator_key.json` offline. Never run two nodes with the same key at the same time: double signing gets the validator slashed and jailed for good.
 
-# Chain Upgrades
+Then say hello in [Discord](https://discord.gg/chihuahuachain-878201449421619211): the validators' channel is where upgrades are coordinated.
 
+## Chain upgrades
 
-- **v9.0.6** - Block 20523000 - (2025-10-29 13:40:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.6)
-- **v9.0.5** - Block 18504000 - (2025-06-16 13:20:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.5)
-- **v9.0.4** - Block 18385000 - (2025-06-08 13:00:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.4)
-- **v9.0.3** - Non state breaking, upgrade after v9.0.2
-- **v9.0.2** - Block 17073000 - (2025-03-12 13:56:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.2)
-- **v9.0.1** - Block 16623000 - (2025-02-11 01:49:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.1)
-- **v9.0.0** - Block 16529000 - (2025-02-03 13:11:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v9.0.0)
-- **v8.0.2** - Block 15103000 - (2024-10-22 13:50:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v8.0.2)
-- **v8.0.0** - Block 14762000 - (2024-09-29 13:45:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v8.0.0)
-- **v7.0.1** _(using v7.0.2 binary)_ - Block 13250000 - (2024-06-17 15:11:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v7.0.1)
-- **v7** _(v7)_ - Block 12900000 - (2024-05-24 10:12:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v7)
-- **v6** _(v6)_ - Block 10666000 - (2023-12-23 15:30:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v6)
-- **v503** _(v5.0.4)_ - Block 9430000 - (2023-09-28 16:30:00) - (Halt height 9431130 due to wrong wasmd/wasmvm - Use v5.0.4 on directory v503)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v503)
-- **v502** _(v5.0.2)_ - Block 9180000 - (2023-09-11 15:00:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v502)
-- **v501** _(v5.0.1)_ - Block 8813000 - (2023-08-17 16:03:13)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v501)
-- **v500** _(v5.0.0)_ - Block 8711111 - (2023-08-10 15:28:23)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v500)
-- **v421** _(v4.2.1)_ - Block 6376376 - (2022-03-04 12:20:37)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v421)
-- **v420** _(v4.2.0)_ - Block 6039999 - (2022-02-09 13:41:07)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v420)
-- **v410** _(v4.1.0)_ - Block 4886666 - (2022-11-22 15:25:11)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v410)
-- **v400** _(v4.0.0)_ - Block 4787878 - (2022-11-15 13:36:46)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v400)
-- **v310** _(v3.1.0)_ - Block 4673333 - (2022-11-07 15:11:26)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/v310)
-- **iavl fast node** _(v2.4.*) - block unk -  state breaking upgrade that ensures that dragonberry is fully patched, go1.19 is used, and iavl fast node is properly configured.
-- **burnmech** _(v2.3.0)_ - Block unk -  We won't be using this version, but we have it for historical purposes and for the creation of archive nodes.
-- **burnmech** _(v2.2.2)_ - Block 4488444 - (2022-10-21 14:14:37) (retracted)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/burnmech) 
-- **authz** _(v2.1.0)_ - Block 4182410 - (2022-09-30 14:54:19)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/authz)
-- **minpropdeposit** _(v2.0.2)_ - Block 3654321 - (2022-08-25 13:00:26)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/minpropdeposit)
-- **Chiwawasm** _(v2.0.1)_ - Block 3000800 - (2022-07-11 17:02:14)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/blob/main/mainnet/UPGRADES/chiwawasm)
-- **angryandy** _(v1.1.1)_ - Block 535000 - (2022-01-19 17:20:00)
-  - [Upgrade Instruction](https://github.com/ChihuahuaChain/chihuahua/tree/main/mainnet/UPGRADES/angryandy)
+Upgrades are voted on chain. Each software upgrade proposal names the upgrade, its height, and the release binaries with their sha256, so cosmovisor can install them by itself. The upgrade notes are in [`mainnet/UPGRADES`](mainnet/UPGRADES), and the explorer shows a countdown to any block (`https://explorer.chihuahua.wtf/block/<height>`).
+
+| Upgrade | Binary | Height | Date (UTC) |
+|---|---|---|---|
+| — | v9.0.7 | no upgrade height: patch release (Cosmos SDK v0.50.15, CometBFT v0.38.23) | 2026-05-13 |
+| [v9.0.6](mainnet/UPGRADES/v9.0.6) | v9.0.6 | 20,523,000 | 2025-10-29 13:40 |
+| [v9.0.5](mainnet/UPGRADES/v9.0.5) | v9.0.5 | 18,504,000 | 2025-06-16 13:20 |
+| [v9.0.4](mainnet/UPGRADES/v9.0.4) | v9.0.4 | 18,385,000 | 2025-06-08 13:00 |
+| — | v9.0.3 | no upgrade height: replaces v9.0.2 | |
+| [v9.0.2](mainnet/UPGRADES/v9.0.2) | v9.0.2 | 17,073,000 | 2025-03-12 13:56 |
+| [v9.0.1](mainnet/UPGRADES/v9.0.1) | v9.0.1 | 16,623,000 | 2025-02-11 01:49 |
+| [v9.0.0](mainnet/UPGRADES/v9.0.0) | v9.0.0 | 16,529,000 | 2025-02-03 13:11 |
+| [v8.0.2](mainnet/UPGRADES/v8.0.2) | v8.0.2 | 15,103,000 | 2024-10-22 13:50 |
+| [v8.0.0](mainnet/UPGRADES/v8.0.0) | v8.0.0 | 14,762,000 | 2024-09-29 13:45 |
+| [v7.0.1](mainnet/UPGRADES/v7.0.1) | v7.0.2 | 13,250,000 | 2024-06-17 15:11 |
+| [v7](mainnet/UPGRADES/v7) | v7 | 12,900,000 | 2024-05-24 10:12 |
+| [v6](mainnet/UPGRADES/v6) | v6 | 10,666,000 | 2023-12-23 15:30 |
+| [v503](mainnet/UPGRADES/v503) | v5.0.4 | 9,430,000 | 2023-09-28 16:30 |
+| [v502](mainnet/UPGRADES/v502) | v5.0.2 | 9,180,000 | 2023-09-11 15:00 |
+| [v501](mainnet/UPGRADES/v501) | v5.0.1 | 8,813,000 | 2023-08-17 16:03 |
+| [v500](mainnet/UPGRADES/v500) | v5.0.0 | 8,711,111 | 2023-08-10 15:28 |
+| [v421](mainnet/UPGRADES/v421) | v4.2.1 | 6,376,376 | 2023-03-04 12:20 |
+| [v420](mainnet/UPGRADES/v420) | v4.2.0 | 6,039,999 | 2023-02-09 13:41 |
+| [v410](mainnet/UPGRADES/v410) | v4.1.0 | 4,886,666 | 2022-11-22 15:25 |
+| [v400](mainnet/UPGRADES/v400) | v4.0.0 | 4,787,878 | 2022-11-15 13:36 |
+| [v310](mainnet/UPGRADES/v310) | v3.1.0 | 4,673,333 | 2022-11-07 15:11 |
+| iavl fast node | v2.4.x | | |
+| [burnmech](mainnet/UPGRADES/burnmech) | v2.2.2 (retracted) | 4,488,444 | 2022-10-21 14:14 |
+| [authz](mainnet/UPGRADES/authz) | v2.1.0 | 4,182,410 | 2022-09-30 14:54 |
+| [minpropdeposit](mainnet/UPGRADES/minpropdeposit) | v2.0.2 | 3,654,321 | 2022-08-25 13:00 |
+| [chiwawasm](mainnet/UPGRADES/chiwawasm) | v2.0.1 | 3,000,800 | 2022-07-11 17:02 |
+| [angryandy](mainnet/UPGRADES/angryandy) | v1.1.1 | 535,000 | 2022-01-19 17:20 |
+
+Notes:
+
+- **v503:** the chain halted at 9,431,130 because of a wrong wasmd/wasmvm; use the v5.0.4 binary in the `v503` directory.
+- **iavl fast node (v2.4.x):** state-breaking upgrade that completed the Dragonberry patch, moved to go1.19 and configured the iavl fast node.
+- **burnmech:** v2.3.0 was never used on chain; it is kept for archive nodes.
+
+To sync from genesis, run each binary up to its upgrade height, in order.
+
+## Development
+
+```sh
+make install          # build and install chihuahuad (needs Go 1.23.9)
+go test ./...         # unit and integration tests
+make proto-gen        # regenerate the protobuf code (needs Docker)
+scripts/test_node.sh  # single-node local chain, with funded test keys
+```
+
+### Releases
+
+Pushing a `v*` tag runs the [release workflow](.github/workflows/release.yml). It:
+
+1. builds static `chihuahuad` binaries for linux/amd64 and linux/arm64;
+2. checks that each one is static and reports the tag as its version;
+3. drafts a GitHub release with the binaries, `chihuahuad_sha256.txt` and `upgrade-info.json`.
+
+`upgrade-info.json` is the cosmovisor download info: each binary's URL with its sha256. To propose the upgrade:
+
+```sh
+scripts/upgrade-proposal.sh -n <upgrade name> -t <tag> -s summary.md -a <target UTC time>
+chihuahuad tx gov submit-proposal proposal.json --from <key> --chain-id chihuahua-1 --gas auto --gas-adjustment 1.4 --gas-prices 1250uhuahua
+```
+
+The script downloads the binaries, checks them against `upgrade-info.json`, estimates the height for the target time, and writes `proposal.json`. Publish the draft release before submitting the proposal, or cosmovisor can't download the binaries.
+
+## Community
+
+- Website: [chihuahua.wtf](https://chihuahua.wtf)
+- Telegram: [t.me/chihuahua_wtf](https://t.me/chihuahua_wtf)
+- Discord: [ChihuahuaChain](https://discord.gg/chihuahuachain-878201449421619211)
+- X: [@ChihuahuaChain](https://x.com/ChihuahuaChain)
+- Medium: [@chihuahuachain](https://medium.com/@chihuahuachain)

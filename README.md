@@ -147,6 +147,7 @@ Environment="DAEMON_NAME=chihuahuad"
 Environment="DAEMON_HOME=/home/<user>/.chihuahuad"
 Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=true"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
+Environment="DAEMON_SHUTDOWN_GRACE=30s"
 
 [Install]
 WantedBy=multi-user.target
@@ -158,7 +159,7 @@ sudo systemctl enable --now chihuahuad
 journalctl -u chihuahuad -f
 ```
 
-With `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`, cosmovisor downloads the new binary from the upgrade proposal and checks its sha256 (see [Chain upgrades](#chain-upgrades)). Before switching, cosmovisor 1.7 checks the height with `chihuahuad status`, which asks the RPC set as `node` in `~/.chihuahuad/config/client.toml`: keep it pointed at this node (`tcp://localhost:26657`, or your RPC port). To place it yourself instead, put it in `~/.chihuahuad/cosmovisor/upgrades/<upgrade name>/bin/` before the upgrade height.
+`DAEMON_SHUTDOWN_GRACE` lets the old binary stop cleanly before the new one starts. With `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`, cosmovisor downloads the new binary from the upgrade proposal and checks its sha256 (see [Chain upgrades](#chain-upgrades)). Before switching, cosmovisor 1.7 checks the height with `chihuahuad status`, which asks the RPC set as `node` in `~/.chihuahuad/config/client.toml`: keep it pointed at this node (`tcp://localhost:26657`, or your RPC port). To place it yourself instead, put it in `~/.chihuahuad/cosmovisor/upgrades/<upgrade name>/bin/` before the upgrade height.
 
 ### 5. Become a validator
 
@@ -205,6 +206,7 @@ Upgrades are voted on chain. Each software upgrade proposal names the upgrade, i
 | Upgrade | Binary | Height | Date (UTC) |
 |---|---|---|---|
 | — | v9.0.7 | no upgrade height: patch release (Cosmos SDK v0.50.15, CometBFT v0.38.23) | 2026-05-13 |
+| [v9.5.0](mainnet/UPGRADES/v9.5.0) | v9.5.0 | TBD | |
 | [v9.0.6](mainnet/UPGRADES/v9.0.6) | v9.0.6 | 20,523,000 | 2025-10-29 13:40 |
 | [v9.0.5](mainnet/UPGRADES/v9.0.5) | v9.0.5 | 18,504,000 | 2025-06-16 13:20 |
 | [v9.0.4](mainnet/UPGRADES/v9.0.4) | v9.0.4 | 18,385,000 | 2025-06-08 13:00 |

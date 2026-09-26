@@ -1,6 +1,6 @@
 # Chihuahua v9.5.0 Upgrade
 
-The upgrade is scheduled for block `TBD`. Countdown: https://explorer.chihuahua.wtf/block/TBD
+The upgrade is scheduled for block **25571500**, expected around **2026-10-02 12:37 UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/25571500
 
 **v9.5.0 is an intermediate upgrade.** It prepares the chain for **v10**, which follows a few days later: Cosmos SDK v0.54, IBC v11, CosmWasm 3.
 
@@ -63,4 +63,4 @@ cp "$(which chihuahuad)" ~/.chihuahuad/cosmovisor/upgrades/v9.5.0/bin/
 
 ## Syncing from genesis
 
-Apply v9.5.0 at the upgrade height above, after v9.0.6 (the v9.0.7 binary also runs up to it).
+Apply v9.5.0 at height 25571500, after v9.0.6 (the v9.0.7 binary also runs up to it).

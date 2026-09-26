@@ -206,7 +206,7 @@ Upgrades are voted on chain. Each software upgrade proposal names the upgrade, i
 | Upgrade | Binary | Height | Date (UTC) |
 |---|---|---|---|
 | — | v9.0.7 | no upgrade height: patch release (Cosmos SDK v0.50.15, CometBFT v0.38.23) | 2026-05-13 |
-| [v9.5.0](mainnet/UPGRADES/v9.5.0) | v9.5.0 | TBD | |
+| [v9.5.0](mainnet/UPGRADES/v9.5.0) | v9.5.0 | 25,571,500 | 2026-10-02 ~12:37 (estimated) |
 | [v9.0.6](mainnet/UPGRADES/v9.0.6) | v9.0.6 | 20,523,000 | 2025-10-29 13:40 |
 | [v9.0.5](mainnet/UPGRADES/v9.0.5) | v9.0.5 | 18,504,000 | 2025-06-16 13:20 |
 | [v9.0.4](mainnet/UPGRADES/v9.0.4) | v9.0.4 | 18,385,000 | 2025-06-08 13:00 |

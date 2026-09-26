@@ -112,10 +112,11 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 		if !ok {
 			return sdkerrors.ErrInvalidType
 		}
-		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee, feeBurnPercent)
+		burned, err := DeductAndBurnFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee, feeBurnPercent)
 		if err != nil {
 			return err
 		}
+		dfd.feeburnKeeper.AddBurned(ctx, burned)
 	}
 
 	events := sdk.Events{
@@ -132,8 +133,15 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 
 // DeductFees deducts fees from the given account.
 func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees sdk.Coins, bp math.Int) error {
+	_, err := DeductAndBurnFees(bankKeeper, ctx, acc, fees, bp)
+	return err
+}
+
+// DeductAndBurnFees deducts fees from the given account, burns bp percent of
+// them and returns the burned coins.
+func DeductAndBurnFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees sdk.Coins, bp math.Int) (sdk.Coins, error) {
 	if !fees.IsValid() {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
 
 	// Calculate burning amounts by given percentage and fee amounts
@@ -145,14 +153,17 @@ func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees s
 
 	err1 := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
 	if err1 != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err1.Error())
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err1.Error())
 	}
 
 	err2 := bankKeeper.BurnCoins(ctx, types.FeeCollectorName, burningFees)
 	if err2 != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
+		return nil, errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err2.Error())
 	}
-	if !ctx.IsCheckTx() {
+	// The ante handler also runs in PrepareProposal, ProcessProposal and
+	// simulations: log only the execution that commits, or the same burn shows
+	// up several times in the node log.
+	if ctx.ExecMode() == sdk.ExecModeFinalize {
 		ctx.Logger().Info(
 			"Burned transaction fees",
 			"burned_amount", burningFees.String(),
@@ -160,5 +171,5 @@ func DeductFees(bankKeeper BankKeeper, ctx sdk.Context, acc sdk.AccountI, fees s
 			"module", "x/feeburn",
 		)
 	}
-	return nil
+	return burningFees, nil
 }

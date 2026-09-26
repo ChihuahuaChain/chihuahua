@@ -3,8 +3,17 @@ package chihuahua.feeburn;
 
 import "gogoproto/gogo.proto";
 import "chihuahua/feeburn/params.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/feeburn/types";
 
 // GenesisState defines the feeburn module's genesis state.
-message GenesisState { Params params = 1 [ (gogoproto.nullable) = false ]; }
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+
+  // total_burned is the sum of the transaction fees burned by x/feeburn.
+  repeated cosmos.base.v1beta1.Coin total_burned = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+}

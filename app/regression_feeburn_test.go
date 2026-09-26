@@ -10,6 +10,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+
+	"github.com/ChihuahuaChain/chihuahua/x/feeburn"
 	feeburnante "github.com/ChihuahuaChain/chihuahua/x/feeburn/ante"
 	feeburntypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
 )
@@ -142,4 +145,74 @@ func TestDeductFeeDecoratorFeePayerEvent(t *testing.T) {
 		}
 	}
 	t.Fatal("fee_payer attribute not emitted")
+}
+
+func TestDeductFeeDecoratorRecordsBurnedFees(t *testing.T) {
+	app, ctx, addr := setupFeeburn(t, "50")
+
+	txBuilder := app.TxConfig().NewTxBuilder()
+	require.NoError(t, txBuilder.SetMsgs(banktypes.NewMsgSend(addr, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)))))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 10_000), sdk.NewInt64Coin("uother", 300)))
+	txBuilder.SetGasLimit(200_000)
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	require.True(t, app.FeeburnKeeper.GetTotalBurned(ctx).IsZero())
+	for i := 0; i < 2; i++ {
+		_, err := dfd.AnteHandle(ctx, txBuilder.GetTx(), false, next)
+		require.NoError(t, err)
+	}
+	want := sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 10_000), sdk.NewInt64Coin("uother", 300))
+	require.Equal(t, want, app.FeeburnKeeper.GetTotalBurned(ctx))
+
+	// the recorded total matches what left the supply
+	res, err := app.FeeburnKeeper.TotalBurned(ctx, &feeburntypes.QueryTotalBurnedRequest{})
+	require.NoError(t, err)
+	require.Equal(t, want, res.TotalBurned)
+}
+
+func TestDeductFeeDecoratorNoBurnRecordsNothing(t *testing.T) {
+	app, ctx, addr := setupFeeburn(t, "0")
+
+	txBuilder := app.TxConfig().NewTxBuilder()
+	require.NoError(t, txBuilder.SetMsgs(banktypes.NewMsgSend(addr, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)))))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 10_000)))
+	txBuilder.SetGasLimit(200_000)
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	_, err := dfd.AnteHandle(ctx, txBuilder.GetTx(), false, func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+		return ctx, nil
+	})
+	require.NoError(t, err)
+	require.True(t, app.FeeburnKeeper.GetTotalBurned(ctx).IsZero())
+}
+
+func TestRecordingBurnedFeesUsesNoGas(t *testing.T) {
+	app, ctx, _ := setupFeeburn(t, "50")
+	ctx = ctx.WithGasMeter(storetypes.NewGasMeter(1_000_000))
+
+	app.FeeburnKeeper.AddBurned(ctx, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 7)))
+	app.FeeburnKeeper.AddBurned(ctx, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 5)))
+	require.Zero(t, ctx.GasMeter().GasConsumed())
+	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 12)), app.FeeburnKeeper.GetTotalBurned(ctx))
+}
+
+func TestFeeburnGenesisKeepsTotalBurned(t *testing.T) {
+	app, ctx, _ := setupFeeburn(t, "50")
+	total := sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 123_456_789), sdk.NewInt64Coin("uother", 5))
+	require.NoError(t, app.FeeburnKeeper.SetTotalBurned(ctx, total))
+
+	gs := feeburn.ExportGenesis(ctx, app.FeeburnKeeper)
+	require.NoError(t, gs.Validate())
+	require.Equal(t, total, gs.TotalBurned)
+
+	app2 := Setup(t)
+	ctx2 := app2.BaseApp.NewContext(false)
+	feeburn.InitGenesis(ctx2, app2.FeeburnKeeper, *gs)
+	require.Equal(t, total, app2.FeeburnKeeper.GetTotalBurned(ctx2))
+
+	// SetTotalBurned replaces the total, dropping denoms that are no longer in it
+	require.NoError(t, app2.FeeburnKeeper.SetTotalBurned(ctx2, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1))))
+	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)), app2.FeeburnKeeper.GetTotalBurned(ctx2))
 }

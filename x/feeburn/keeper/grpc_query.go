@@ -19,3 +19,12 @@ func (k Keeper) Params(goCtx context.Context, req *types.QueryParamsRequest) (*t
 
 	return &types.QueryParamsResponse{Params: k.GetParams(ctx)}, nil
 }
+
+func (k Keeper) TotalBurned(goCtx context.Context, req *types.QueryTotalBurnedRequest) (*types.QueryTotalBurnedResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	return &types.QueryTotalBurnedResponse{TotalBurned: k.GetTotalBurned(ctx)}, nil
+}

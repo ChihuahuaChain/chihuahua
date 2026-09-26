@@ -158,7 +158,7 @@ sudo systemctl enable --now chihuahuad
 journalctl -u chihuahuad -f
 ```
 
-With `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`, cosmovisor downloads the new binary from the upgrade proposal and checks its sha256 (see [Chain upgrades](#chain-upgrades)). To place it yourself instead, put it in `~/.chihuahuad/cosmovisor/upgrades/<upgrade name>/bin/` before the upgrade height.
+With `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`, cosmovisor downloads the new binary from the upgrade proposal and checks its sha256 (see [Chain upgrades](#chain-upgrades)). Before switching, cosmovisor 1.7 checks the height with `chihuahuad status`, which asks the RPC set as `node` in `~/.chihuahuad/config/client.toml`: keep it pointed at this node (`tcp://localhost:26657`, or your RPC port). To place it yourself instead, put it in `~/.chihuahuad/cosmovisor/upgrades/<upgrade name>/bin/` before the upgrade height.
 
 ### 5. Become a validator
 

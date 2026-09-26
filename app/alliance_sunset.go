@@ -11,11 +11,16 @@ import (
 	alliancetypes "github.com/terra-money/alliance/x/alliance/types"
 )
 
+// EcosystemFundAddress receives the alliance virtual stake when the module is
+// shut down.
+const EcosystemFundAddress = "chihuahua14fketv99hlrlk80mkggw643spsj3yyf7qylvqn"
+
 // SunsetAlliance shuts x/alliance down so the module can be removed in a later
-// upgrade (governance proposal 99). Everything the module holds is burned:
+// upgrade (governance proposal 99):
 //
-//  1. the virtual stake minted by the module is unbonded and burned on every
-//     validator, bonded or not, together with its last distribution rewards
+//  1. the virtual stake minted by the module is unbonded on every validator,
+//     bonded or not, and sent to the ecosystem fund; its last distribution
+//     rewards are withdrawn to the module account
 //  2. every balance of the alliance and alliance_rewards module accounts is
 //     burned: the staked and unbonding ampGASH, the unclaimed rewards
 //     (HUAHUA, ampGASH and factory tokens) and any dust
@@ -26,11 +31,15 @@ import (
 func (app *App) SunsetAlliance(ctx sdk.Context) error {
 	logger := ctx.Logger().With("upgrade", "alliance-sunset")
 
-	burned, err := app.unbondAllianceVirtualStake(ctx)
+	fund, err := sdk.AccAddressFromBech32(EcosystemFundAddress)
 	if err != nil {
 		return err
 	}
-	logger.Info("burned alliance virtual stake", "amount", burned)
+	sent, err := app.unbondAllianceVirtualStake(ctx, fund)
+	if err != nil {
+		return err
+	}
+	logger.Info("sent alliance virtual stake to the ecosystem fund", "amount", sent, "fund", EcosystemFundAddress)
 
 	allianceAddr := app.AccountKeeper.GetModuleAddress(alliancetypes.ModuleName)
 	rewardsAddr := app.AccountKeeper.GetModuleAddress(alliancetypes.RewardsPoolName)
@@ -55,10 +64,11 @@ func (app *App) SunsetAlliance(ctx sdk.Context) error {
 	return nil
 }
 
-// unbondAllianceVirtualStake unbonds and burns every native delegation held by
-// the alliance module account, returning the burned amount. The pending
-// distribution rewards are withdrawn to the module account first.
-func (app *App) unbondAllianceVirtualStake(ctx sdk.Context) (sdkmath.Int, error) {
+// unbondAllianceVirtualStake unbonds every native delegation held by the
+// alliance module account and sends the tokens to fund, returning the amount
+// sent. The pending distribution rewards are withdrawn to the module account
+// first.
+func (app *App) unbondAllianceVirtualStake(ctx sdk.Context, fund sdk.AccAddress) (sdkmath.Int, error) {
 	moduleAddr := app.AccountKeeper.GetModuleAddress(alliancetypes.ModuleName)
 	bondDenom, err := app.StakingKeeper.BondDenom(ctx)
 	if err != nil {
@@ -70,7 +80,7 @@ func (app *App) unbondAllianceVirtualStake(ctx sdk.Context) (sdkmath.Int, error)
 		return sdkmath.Int{}, err
 	}
 
-	burned := sdkmath.ZeroInt()
+	sent := sdkmath.ZeroInt()
 	for _, d := range delegations {
 		valAddr, err := sdk.ValAddressFromBech32(d.ValidatorAddress)
 		if err != nil {
@@ -94,12 +104,12 @@ func (app *App) unbondAllianceVirtualStake(ctx sdk.Context) (sdkmath.Int, error)
 		if validator.IsBonded() {
 			pool = stakingtypes.BondedPoolName
 		}
-		if err := app.BankKeeper.BurnCoins(ctx, pool, sdk.NewCoins(sdk.NewCoin(bondDenom, amount))); err != nil {
+		if err := app.BankKeeper.SendCoinsFromModuleToAccount(ctx, pool, fund, sdk.NewCoins(sdk.NewCoin(bondDenom, amount))); err != nil {
 			return sdkmath.Int{}, err
 		}
-		burned = burned.Add(amount)
+		sent = sent.Add(amount)
 	}
-	return burned, nil
+	return sent, nil
 }
 
 // clearAllianceStore deletes every alliance record (assets, validator infos,

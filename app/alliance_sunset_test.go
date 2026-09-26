@@ -103,6 +103,8 @@ type sunsetBefore struct {
 	moduleAsset  sdkmath.Int
 	assetSupply  sdkmath.Int
 	bondSupply   sdkmath.Int
+	virtual      sdkmath.Int
+	fundBalance  sdkmath.Int
 	params       alliancetypes.Params
 }
 
@@ -113,6 +115,23 @@ func (f sunsetFixture) before() sunsetBefore {
 		assetSupply: f.app.BankKeeper.GetSupply(f.ctx, sunsetDenom).Amount,
 		bondSupply:  f.app.BankKeeper.GetSupply(f.ctx, f.bondDenom).Amount,
 		params:      f.app.AllianceKeeper.GetParams(f.ctx),
+		virtual:     sdkmath.ZeroInt(),
+		fundBalance: f.app.BankKeeper.GetBalance(f.ctx, sdk.MustAccAddressFromBech32(EcosystemFundAddress), f.bondDenom).Amount,
+	}
+	delegations, err := f.app.StakingKeeper.GetDelegatorDelegations(f.ctx, f.allianceAddr, 100)
+	if err != nil {
+		panic(err)
+	}
+	for _, d := range delegations {
+		valAddr, err := sdk.ValAddressFromBech32(d.ValidatorAddress)
+		if err != nil {
+			panic(err)
+		}
+		val, err := f.app.StakingKeeper.GetValidator(f.ctx, valAddr)
+		if err != nil {
+			panic(err)
+		}
+		b.virtual = b.virtual.Add(val.TokensFromShares(d.Shares).TruncateInt())
 	}
 	for _, u := range f.users {
 		b.userBalances = append(b.userBalances, f.app.BankKeeper.GetBalance(f.ctx, u, sunsetDenom).Amount)
@@ -131,11 +150,17 @@ func (f sunsetFixture) requireSunsetDone(t *testing.T, b sunsetBefore) {
 	require.True(t, b.moduleAsset.IsPositive())
 	require.Equal(t, b.assetSupply.Sub(b.moduleAsset).String(), app.BankKeeper.GetSupply(ctx, sunsetDenom).Amount.String())
 
-	// the virtual stake and the rewards were burned, the alliance accounts are empty
+	// the virtual stake went to the ecosystem fund, bonded and not bonded alike
 	delegations, err := app.StakingKeeper.GetDelegatorDelegations(ctx, f.allianceAddr, 100)
 	require.NoError(t, err)
 	require.Empty(t, delegations)
+	require.True(t, b.virtual.IsPositive())
+	fund := sdk.MustAccAddressFromBech32(EcosystemFundAddress)
+	require.Equal(t, b.fundBalance.Add(b.virtual).String(), app.BankKeeper.GetBalance(ctx, fund, f.bondDenom).Amount.String())
+
+	// the HUAHUA rewards were burned, the alliance accounts are empty
 	require.True(t, app.BankKeeper.GetSupply(ctx, f.bondDenom).Amount.LT(b.bondSupply))
+	require.True(t, app.BankKeeper.GetSupply(ctx, f.bondDenom).Amount.GT(b.bondSupply.Sub(b.virtual)))
 	require.True(t, app.BankKeeper.GetAllBalances(ctx, f.allianceAddr).IsZero())
 	require.True(t, app.BankKeeper.GetAllBalances(ctx, app.AccountKeeper.GetModuleAddress(alliancetypes.RewardsPoolName)).IsZero())
 

@@ -16,9 +16,14 @@
 # 10,000 blocks. The upgrade happens at the height, not at the time.
 #
 # Needs: bash, curl, jq, sha256sum, gh (logged in, to read draft releases).
+#
+# For a rehearsal on a local chain, RELEASE_DIR=<dir> reads the release files
+# from a directory instead of GitHub, and BASE_URL=<url> is where upgrade-info.json
+# says the binaries are.
 set -euo pipefail
 
 REPO=ChihuahuaChain/chihuahua
+RELEASE_DIR=${RELEASE_DIR:-}
 RPC=${RPC:-https://rpc.chihuahua.wtf}
 GOV_AUTHORITY=chihuahua10d07y265gmmuvt4z0w9aw880jnsr700jeh7th3
 DEPOSIT=5000000000000uhuahua
@@ -56,19 +61,24 @@ if [ -z "$HEIGHT" ]; then
   echo "block time $(echo "scale=3; $secs/10000" | bc) s, height now $now: upgrade height $HEIGHT for $AT" >&2
 fi
 
-work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT
-gh release download "$TAG" -R "$REPO" -D "$work" \
-  -p upgrade-info.json -p chihuahuad_linux_amd64 -p chihuahuad_linux_arm64
+BASE_URL=${BASE_URL:-https://github.com/$REPO/releases/download/$TAG}
+if [ -n "$RELEASE_DIR" ]; then
+  work=$RELEASE_DIR
+else
+  work=$(mktemp -d)
+  trap 'rm -rf "$work"' EXIT
+  gh release download "$TAG" -R "$REPO" -D "$work" \
+    -p upgrade-info.json -p chihuahuad_linux_amd64 -p chihuahuad_linux_arm64
+fi
 info=$(jq -c . "$work/upgrade-info.json")
 
-for platform in linux/amd64 linux/arm64; do
+for platform in $(jq -r '.binaries | keys[]' <<<"$info"); do
   url=$(jq -r --arg p "$platform" '.binaries[$p]' <<<"$info")
   want=${url##*checksum=sha256:}
   file=chihuahuad_${platform/\//_}
   got=$(sha256sum "$work/$file" | cut -d' ' -f1)
   [ "$got" = "$want" ] || { echo "$file: checksum $got, upgrade-info says $want" >&2; exit 1; }
-  case "$url" in "https://github.com/$REPO/releases/download/$TAG/$file?"*) ;; *) echo "unexpected url $url" >&2; exit 1 ;; esac
+  case "$url" in "$BASE_URL/$file?"*) ;; *) echo "unexpected url $url" >&2; exit 1 ;; esac
   echo "$platform ok: $want" >&2
 done
 

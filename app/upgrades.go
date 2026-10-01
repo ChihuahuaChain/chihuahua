@@ -21,7 +21,7 @@ import (
 
 // removedModules are the modules dropped by the v10 upgrade, together with
 // their stores:
-//   - alliance: shut down in v9.1.0
+//   - alliance: retired in v9.5.0
 //   - capability, feeibc: removed from ibc-go
 //   - crisis, nft, circuit: no longer maintained by the Cosmos SDK, unused on chain
 //   - params: every module manages its own params

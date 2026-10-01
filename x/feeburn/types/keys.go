@@ -14,7 +14,10 @@ const (
 	MemStoreKey = "mem_feeburn"
 )
 
-var ParamsKey = []byte{0x00} // Prefix for params key
+var (
+	ParamsKey            = []byte{0x00} // Prefix for params key
+	TotalBurnedKeyPrefix = []byte{0x01} // Prefix for the burned fees, one key per denom
+)
 
 func KeyPrefix(p string) []byte {
 	return []byte(p)

@@ -4,6 +4,7 @@ package chihuahua.feeburn;
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "chihuahua/feeburn/params.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/feeburn/types";
 
@@ -12,6 +13,11 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/chihuahua/feeburn/params";
+  }
+
+  // TotalBurned queries the transaction fees burned so far.
+  rpc TotalBurned(QueryTotalBurnedRequest) returns (QueryTotalBurnedResponse) {
+    option (google.api.http).get = "/chihuahua/feeburn/total_burned";
   }
 }
 
@@ -22,4 +28,16 @@ message QueryParamsRequest {}
 message QueryParamsResponse {
   // params holds all the parameters of this module.
   Params params = 1 [ (gogoproto.nullable) = false ];
+}
+
+// QueryTotalBurnedRequest is request type for the Query/TotalBurned RPC method.
+message QueryTotalBurnedRequest {}
+
+// QueryTotalBurnedResponse is response type for the Query/TotalBurned RPC method.
+message QueryTotalBurnedResponse {
+  // total_burned is the sum of the transaction fees burned by x/feeburn.
+  repeated cosmos.base.v1beta1.Coin total_burned = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
 }

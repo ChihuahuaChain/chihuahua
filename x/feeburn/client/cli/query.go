@@ -24,7 +24,7 @@ func GetQueryCmd(_ string) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(CmdQueryParams())
+	cmd.AddCommand(CmdQueryParams(), CmdQueryTotalBurned())
 
 	return cmd
 }

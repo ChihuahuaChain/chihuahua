@@ -13,12 +13,16 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	if err != nil {
 		panic(errorsmod.Wrapf(err, "error setting params"))
 	}
+	if err := k.SetTotalBurned(ctx, genState.TotalBurned); err != nil {
+		panic(errorsmod.Wrapf(err, "error setting the burned fees total"))
+	}
 }
 
 // ExportGenesis returns the module's exported genesis
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis := types.DefaultGenesis()
 	genesis.Params = k.GetParams(ctx)
+	genesis.TotalBurned = k.GetTotalBurned(ctx)
 
 	return genesis
 }

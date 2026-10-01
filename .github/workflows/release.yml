@@ -1,32 +1,94 @@
 name: "Release"
 
+# Builds the static chihuahuad binaries for a tag and drafts a GitHub release
+# with them, their checksums and upgrade-info.json: the cosmovisor download
+# info to put in the software upgrade proposal (see scripts/upgrade-proposal.sh).
+#
+# Runs on every v* tag push, or by hand for an existing tag.
+
 on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build, e.g. v9.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
-  draft-release:
-    runs-on: ubuntu-latest
-    permissions: write-all
+  build:
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Copy Binary
-        run: |
-          make build-reproducible-all
-
-      - name: Draft Release
-        uses: softprops/action-gh-release@v1
+      - uses: actions/checkout@v4
         with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          case "${{ matrix.platform }}" in
+            linux/amd64) make build-reproducible-amd64 ;;
+            linux/arm64) make build-reproducible-arm64 ;;
+          esac
+
+      - name: Check the binary
+        run: |
+          bin=chihuahuad_$(echo "${{ matrix.platform }}" | tr / _)
+          file "$bin" | grep -q "statically linked"
+          version=$(./"$bin" version)
+          echo "$bin reports $version"
+          test "$version" = "$TAG"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chihuahuad_${{ strategy.job-index }}
+          path: chihuahuad_linux_*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: chihuahuad_*
+          merge-multiple: true
+
+      - name: Checksums and upgrade-info.json
+        run: |
+          sha256sum chihuahuad_linux_amd64 chihuahuad_linux_arm64 > chihuahuad_sha256.txt
+          cat chihuahuad_sha256.txt
+          base="https://github.com/${{ github.repository }}/releases/download/$TAG"
+          jq -n --arg base "$base" \
+                --arg amd64 "$(sha256sum chihuahuad_linux_amd64 | cut -d' ' -f1)" \
+                --arg arm64 "$(sha256sum chihuahuad_linux_arm64 | cut -d' ' -f1)" \
+            '{binaries: {
+                "linux/amd64": "\($base)/chihuahuad_linux_amd64?checksum=sha256:\($amd64)",
+                "linux/arm64": "\($base)/chihuahuad_linux_arm64?checksum=sha256:\($arm64)"
+              }}' > upgrade-info.json
+          cat upgrade-info.json
+
+      - name: Draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
           draft: true
           files: |
-            chihuahuad_linux_arm64
             chihuahuad_linux_amd64
+            chihuahuad_linux_arm64
             chihuahuad_sha256.txt
+            upgrade-info.json

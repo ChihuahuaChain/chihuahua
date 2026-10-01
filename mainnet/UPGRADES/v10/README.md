@@ -12,7 +12,7 @@ v10 brings Chihuahua to the current Cosmos stack:
 |---|---|---|
 | Cosmos SDK | v0.50.15 | v0.54.4 |
 | CometBFT | v0.38.23 | v0.39.4 |
-| CosmWasm (wasmd / wasmvm) | v0.53.4 / v2 | v0.70.3 / v3 |
+| CosmWasm (wasmd / wasmvm) | v0.53.4 / v2.2.4 | v0.70.4 / v3.0.8 |
 | IBC (ibc-go) | v8 | v11 |
 | Go | 1.23 | 1.26 |
 
@@ -38,6 +38,7 @@ The historical governance proposals that used these modules can still be queried
 - IBC denom traces are migrated to the new ibc-go denom format. `ibc/...` denoms and balances do not change.
 - The ante handler adds the CosmWasm simulation gas limit, transaction counter and gas register decorators, and the IBC redundant relay decorator.
 - `chihuahuad bark`.
+- CosmWasm security fixes: wasmd v0.70.4 and wasmvm v3.0.8 include the patches for the CosmWasm advisories CWA-2026-003, CWA-2026-004, CWA-2026-005 and CWA-2026-006, which affect wasmd v0.53.4 and wasmvm v2.2.4 used by v9.
 
 ## For integrators and contract developers
 

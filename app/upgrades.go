@@ -10,6 +10,8 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	"google.golang.org/protobuf/encoding/protowire"
 
+	sdkmath "cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/runtime"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,6 +34,10 @@ var removedModules = []string{
 	"circuit",
 	"params",
 }
+
+// initialTotalBurned seeds the on-chain burned fees counter introduced in v10:
+// the burned total published on burn.chihuahua.wtf on 2026-10-01.
+var initialTotalBurned = sdk.NewCoins(sdk.NewCoin("uhuahua", sdkmath.NewInt(480_906_660_000_000)))
 
 // RegisterUpgradeHandlers registers the upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
@@ -56,6 +62,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		for _, denom := range denoms {
 			app.TransferKeeper.SetDenom(sdkCtx, denom)
 			sdkCtx.Logger().Info("migrated ambiguous denom trace", "denom", denom.Path(), "ibc_denom", denom.IBCDenom())
+		}
+
+		if err := app.FeeburnKeeper.SetTotalBurned(sdkCtx, initialTotalBurned); err != nil {
+			return nil, err
 		}
 		return vm, nil
 	})

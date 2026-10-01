@@ -38,6 +38,7 @@ The historical governance proposals that used these modules can still be queried
 - IBC denom traces are migrated to the new ibc-go denom format. `ibc/...` denoms and balances do not change.
 - The ante handler adds the CosmWasm simulation gas limit, transaction counter and gas register decorators, and the IBC redundant relay decorator.
 - `chihuahuad bark`.
+- `x/feeburn` keeps the total of burned transaction fees on chain, starting from the total published on burn.chihuahua.wtf at the upgrade: `chihuahuad query feeburn total-burned`, REST `/chihuahua/feeburn/total_burned`.
 - CosmWasm security fixes: wasmd v0.70.4 and wasmvm v3.0.8 include the patches for the CosmWasm advisories CWA-2026-003, CWA-2026-004, CWA-2026-005 and CWA-2026-006, which affect wasmd v0.53.4 and wasmvm v2.2.4 used by v9.
 
 ## For integrators and contract developers

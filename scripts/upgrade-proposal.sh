@@ -10,7 +10,10 @@
 # Usage:
 #   scripts/upgrade-proposal.sh -n <plan name> -t <release tag> -s <summary.md> \
 #     [-T <title>] [-H <height> | -a <UTC time, e.g. 2026-10-06T15:00:00Z>] \
-#     [-d <deposit>] [-o proposal.json]
+#     [-d <deposit>] [-e] [-o proposal.json]
+#
+# -e makes the proposal expedited: shorter voting period, higher deposit and
+# threshold (see the gov params). The deposit defaults to the expedited one.
 #
 # With -a the height is estimated from the average block time of the last
 # 10,000 blocks. The upgrade happens at the height, not at the time.
@@ -28,10 +31,10 @@ RPC=${RPC:-https://rpc.chihuahua.wtf}
 GOV_AUTHORITY=chihuahua10d07y265gmmuvt4z0w9aw880jnsr700jeh7th3
 DEPOSIT=5000000000000uhuahua
 OUT=proposal.json
-NAME= TAG= SUMMARY= TITLE= HEIGHT= AT=
+NAME= TAG= SUMMARY= TITLE= HEIGHT= AT= EXPEDITED=false DEPOSIT_SET=
 
-usage() { sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
-while getopts "n:t:s:T:H:a:d:o:h" opt; do
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+while getopts "n:t:s:T:H:a:d:eo:h" opt; do
   case $opt in
     n) NAME=$OPTARG ;;
     t) TAG=$OPTARG ;;
@@ -39,7 +42,8 @@ while getopts "n:t:s:T:H:a:d:o:h" opt; do
     T) TITLE=$OPTARG ;;
     H) HEIGHT=$OPTARG ;;
     a) AT=$OPTARG ;;
-    d) DEPOSIT=$OPTARG ;;
+    d) DEPOSIT=$OPTARG DEPOSIT_SET=1 ;;
+    e) EXPEDITED=true ;;
     o) OUT=$OPTARG ;;
     *) usage ;;
   esac
@@ -47,6 +51,7 @@ done
 [ -n "$NAME" ] && [ -n "$TAG" ] && [ -f "$SUMMARY" ] || usage
 [ -n "$HEIGHT" ] || [ -n "$AT" ] || usage
 TITLE=${TITLE:-"Chihuahua $TAG software upgrade"}
+[ "$EXPEDITED" = true ] && [ -z "$DEPOSIT_SET" ] && DEPOSIT=10000000000000uhuahua
 
 block() { curl -fsS "$RPC/block${1:+?height=$1}" | jq -r '.result.block.header | "\(.height) \(.time)"'; }
 
@@ -84,7 +89,7 @@ done
 
 jq -n \
   --arg authority "$GOV_AUTHORITY" --arg name "$NAME" --arg height "$HEIGHT" --arg info "$info" \
-  --arg title "$TITLE" --rawfile summary "$SUMMARY" --arg deposit "$DEPOSIT" \
+  --arg title "$TITLE" --rawfile summary "$SUMMARY" --arg deposit "$DEPOSIT" --argjson expedited "$EXPEDITED" \
   '{
     messages: [{
       "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
@@ -95,7 +100,7 @@ jq -n \
     deposit: $deposit,
     title: $title,
     summary: $summary,
-    expedited: false
+    expedited: $expedited
   }' > "$OUT"
 
-echo "wrote $OUT: upgrade $NAME at height $HEIGHT with the $TAG binaries" >&2
+echo "wrote $OUT: upgrade $NAME at height $HEIGHT with the $TAG binaries$([ "$EXPEDITED" = true ] && echo ", expedited")" >&2

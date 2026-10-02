@@ -745,10 +745,13 @@ func (k Keeper) TransactAndRefundSwapLiquidityPool(ctx sdk.Context, swapMsgState
 				}
 			}
 
-			err := sendCoin(batchEscrowAcc, poolReserveAcc, sdk.NewCoin(sms.Msg.OfferCoin.Denom, transactedAmt))
-			err = sendCoin(poolReserveAcc, sms.Msg.GetSwapRequester(), sdk.NewCoin(sms.Msg.DemandCoinDenom, receiveAmt))
-			err = sendCoin(batchEscrowAcc, poolReserveAcc, sdk.NewCoin(sms.Msg.OfferCoin.Denom, offerCoinFeeAmt))
-			if err != nil {
+			if err := sendCoin(batchEscrowAcc, poolReserveAcc, sdk.NewCoin(sms.Msg.OfferCoin.Denom, transactedAmt)); err != nil {
+				return err
+			}
+			if err := sendCoin(poolReserveAcc, sms.Msg.GetSwapRequester(), sdk.NewCoin(sms.Msg.DemandCoinDenom, receiveAmt)); err != nil {
+				return err
+			}
+			if err := sendCoin(batchEscrowAcc, poolReserveAcc, sdk.NewCoin(sms.Msg.OfferCoin.Denom, offerCoinFeeAmt)); err != nil {
 				return err
 			}
 
@@ -851,6 +854,43 @@ func (k Keeper) RefundSwaps(ctx sdk.Context, pool types.Pool, swapMsgStates []*t
 
 	k.SetPoolBatchSwapMsgStatesByPointer(ctx, pool.Id, swapMsgStates)
 	return nil
+}
+
+// RefundBatchSwaps refunds the escrowed offer coins and reserved fees of the
+// swaps of a batch whose execution failed, and marks them as failed.
+func (k Keeper) RefundBatchSwaps(ctx sdk.Context, poolBatch types.PoolBatch) (uint64, error) {
+	swapMsgStates := k.GetAllNotProcessedPoolBatchSwapMsgStates(ctx, poolBatch)
+	batchEscrowAcc := k.accountKeeper.GetModuleAddress(types.ModuleName)
+	for _, sms := range swapMsgStates {
+		coins := sdk.NewCoins(sms.RemainingOfferCoin.Add(sms.ReservedOfferCoinFee))
+		if !coins.Empty() {
+			input := banktypes.NewInput(batchEscrowAcc, coins)
+			outputs := []banktypes.Output{banktypes.NewOutput(sms.Msg.GetSwapRequester(), coins)}
+			if err := k.bankKeeper.InputOutputCoins(ctx, input, outputs); err != nil {
+				return 0, err
+			}
+		}
+		sms.Executed = true
+		sms.Succeeded = false
+		sms.ToBeDeleted = true
+
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeSwapTransacted,
+				sdk.NewAttribute(types.AttributeValuePoolId, strconv.FormatUint(poolBatch.PoolId, 10)),
+				sdk.NewAttribute(types.AttributeValueBatchIndex, strconv.FormatUint(poolBatch.Index, 10)),
+				sdk.NewAttribute(types.AttributeValueMsgIndex, strconv.FormatUint(sms.MsgIndex, 10)),
+				sdk.NewAttribute(types.AttributeValueSwapRequester, sms.Msg.GetSwapRequester().String()),
+				sdk.NewAttribute(types.AttributeValueOfferCoinDenom, sms.Msg.OfferCoin.Denom),
+				sdk.NewAttribute(types.AttributeValueOfferCoinAmount, sms.Msg.OfferCoin.Amount.String()),
+				sdk.NewAttribute(types.AttributeValueDemandCoinDenom, sms.Msg.DemandCoinDenom),
+				sdk.NewAttribute(types.AttributeValueRemainingOfferCoinAmount, sms.RemainingOfferCoin.Amount.String()),
+				sdk.NewAttribute(types.AttributeValueReservedOfferCoinFeeAmount, sms.ReservedOfferCoinFee.Amount.String()),
+				sdk.NewAttribute(types.AttributeValueSuccess, types.Failure),
+			))
+	}
+	k.SetPoolBatchSwapMsgStatesByPointer(ctx, poolBatch.PoolId, swapMsgStates)
+	return uint64(len(swapMsgStates)), nil
 }
 
 // ValidateMsgDepositWithinBatch validates MsgDepositWithinBatch

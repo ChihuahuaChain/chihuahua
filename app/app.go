@@ -138,7 +138,10 @@ const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
 	UpgradeName  = "v10.0.0"
-	NodeDir      = ".chihuahuad"
+	// PatchUpgradeName is the upgrade that follows v10.0.0 with the
+	// liquidity batch execution fixes
+	PatchUpgradeName = "v10.0.1"
+	NodeDir          = ".chihuahuad"
 )
 
 var (

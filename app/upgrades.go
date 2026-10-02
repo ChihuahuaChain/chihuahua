@@ -69,6 +69,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 		}
 		return vm, nil
 	})
+
+	app.UpgradeKeeper.SetUpgradeHandler(PatchUpgradeName, func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		return app.mm.RunMigrations(ctx, cfg, fromVM)
+	})
 }
 
 // takeAmbiguousDenomTraces removes from the transfer store the denom traces

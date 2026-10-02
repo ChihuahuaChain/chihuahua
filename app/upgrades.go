@@ -36,8 +36,8 @@ var removedModules = []string{
 }
 
 // initialTotalBurned seeds the on-chain burned fees counter introduced in v10:
-// the burned total published on burn.chihuahua.wtf on 2026-10-01.
-var initialTotalBurned = sdk.NewCoins(sdk.NewCoin("uhuahua", sdkmath.NewInt(480_906_660_000_000)))
+// the burned total published on burn.chihuahua.wtf, frozen on 2026-10-02.
+var initialTotalBurned = sdk.NewCoins(sdk.NewCoin("uhuahua", sdkmath.NewInt(482_750_566_000_000)))
 
 // RegisterUpgradeHandlers registers the upgrade handlers
 func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {

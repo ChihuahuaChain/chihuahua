@@ -1,6 +1,6 @@
 # Chihuahua v10.0.0 Upgrade
 
-The upgrade is scheduled for block **TBD**, expected around **TBD UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/TBD
+The upgrade is scheduled for block **25586332**, expected around **2026-10-03 14:07 UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/25586332
 
 The upgrade proposal is **expedited**: its voting period is 24 hours.
 
@@ -68,8 +68,8 @@ Release binaries and sha256:
 
 | Platform | sha256 |
 |---|---|
-| linux/amd64 | `TBD` |
-| linux/arm64 | `TBD` |
+| linux/amd64 | `03e1c02639463a09c67a9c4bb0f27ab9ee9e82eeabc4ec31266be096af144444` |
+| linux/arm64 | `a307b6bdd2a37414244a13ce28a048ed2f286ce753b3d4a9ac48ec01a11ee0f2` |
 
 ## Upgrade with the Huahua Node Manager
 
@@ -120,7 +120,7 @@ cp "$(which chihuahuad)" ~/.chihuahuad/cosmovisor/upgrades/v10.0.0/bin/
 
 ## Syncing from genesis
 
-Apply v10.0.0 at height TBD, after v9.5.0 at height 25571500.
+Apply v10.0.0 at height 25586332, after v9.5.0 at height 25571500.
 
 ## After the upgrade
 

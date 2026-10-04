@@ -142,6 +142,14 @@ const (
 	// batch execution fixes and the public burn address (see x/feeburn EndBlock)
 	PatchUpgradeName = "v10.0.1"
 	NodeDir          = ".chihuahuad"
+
+	// RecommendedMinGasPrices is the chain-wide minimum gas price the protocol
+	// enforces in the ante handler (set on-chain by the v10.0.1 upgrade and
+	// tunable thereafter via governance). It is also the value the node start
+	// command warns operators about when their local minimum-gas-prices is
+	// lower. Keep the migration and the startup warning in sync through this
+	// constant.
+	RecommendedMinGasPrices = "500uhuahua"
 )
 
 var (

@@ -28,10 +28,8 @@ type DeductFeeDecorator struct {
 }
 
 func NewDeductFeeDecorator(ak ante.AccountKeeper, bk BankKeeper, fk ante.FeegrantKeeper, tfc ante.TxFeeChecker, fbk feeburnkeeper.Keeper) DeductFeeDecorator {
-	if tfc == nil {
-		tfc = checkTxFeeWithValidatorMinGasPrices
-	}
-
+	// tfc may be nil: AnteHandle then falls back to the keeper-aware checkTxFee
+	// method, which enforces the on-chain min_gas_prices floor.
 	return DeductFeeDecorator{
 		accountKeeper:  ak,
 		bankKeeper:     bk,
@@ -58,7 +56,11 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	fee := feeTx.GetFee()
 	if !simulate {
-		fee, priority, err = dfd.txFeeChecker(ctx, tx)
+		feeChecker := dfd.txFeeChecker
+		if feeChecker == nil {
+			feeChecker = dfd.checkTxFee
+		}
+		fee, priority, err = feeChecker(ctx, tx)
 		if err != nil {
 			return ctx, err
 		}

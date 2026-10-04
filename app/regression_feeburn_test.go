@@ -6,6 +6,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func setupFeeburn(t *testing.T, burnPercent string) (*App, sdk.Context, sdk.AccA
 	t.Helper()
 	app := Setup(t)
 	ctx := app.BaseApp.NewContext(false)
-	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams(burnPercent)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams(burnPercent, nil)))
 
 	addr := simtestutil.CreateIncrementalAccounts(1)[0]
 	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(
@@ -108,10 +109,10 @@ func TestDeductFeeDecoratorBurnsTxFee(t *testing.T) {
 
 func TestFeeburnParamsValidation(t *testing.T) {
 	for _, v := range []string{"0", "1", "50", "100"} {
-		require.NoError(t, feeburntypes.NewParams(v).Validate(), v)
+		require.NoError(t, feeburntypes.NewParams(v, nil).Validate(), v)
 	}
 	for _, v := range []string{"-1", "101", "", "abc", "0.5"} {
-		require.Error(t, feeburntypes.NewParams(v).Validate(), v)
+		require.Error(t, feeburntypes.NewParams(v, nil).Validate(), v)
 	}
 }
 
@@ -260,6 +261,123 @@ func TestRecordingBurnedFeesUsesNoGas(t *testing.T) {
 	app.FeeburnKeeper.AddBurned(ctx, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 5)))
 	require.Zero(t, ctx.GasMeter().GasConsumed())
 	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 12)), app.FeeburnKeeper.GetTotalBurned(ctx))
+}
+
+// buildFeeTx builds a MsgSend tx with the given fee and gas limit.
+func buildFeeTx(t *testing.T, app *App, from sdk.AccAddress, fee sdk.Coins, gas uint64) sdk.Tx {
+	t.Helper()
+	txBuilder := app.TxConfig().NewTxBuilder()
+	require.NoError(t, txBuilder.SetMsgs(banktypes.NewMsgSend(from, from, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)))))
+	txBuilder.SetFeeAmount(fee)
+	txBuilder.SetGasLimit(gas)
+	return txBuilder.GetTx()
+}
+
+// TestDeductFeeDecoratorEnforcesMinGasPricesInDeliverTx pins the consensus
+// floor: in DeliverTx (not a CheckTx), a fee below the on-chain min_gas_prices
+// is rejected regardless of the node's local config.
+func TestDeductFeeDecoratorEnforcesMinGasPricesInDeliverTx(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false).WithBlockHeight(1) // DeliverTx, height > 0
+	require.False(t, ctx.IsCheckTx())
+
+	floor := sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", floor)))
+
+	addr := simtestutil.CreateIncrementalAccounts(1)[0]
+	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000_000)))
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	// required = ceil(500 * 200000) = 100_000_000 uhuahua
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 99_999_999)), 200_000), false, next)
+	require.ErrorIs(t, err, sdkerrors.ErrInsufficientFee)
+
+	_, err = dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 100_000_000)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestDeductFeeDecoratorMinGasPricesCheckTxUsesMax pins that in CheckTx the
+// effective floor is the per-denom max of the global param and the validator's
+// local minimum-gas-prices.
+func TestDeductFeeDecoratorMinGasPricesCheckTxUsesMax(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(true).WithBlockHeight(1). // CheckTx
+								WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))))
+	require.True(t, ctx.IsCheckTx())
+
+	// global floor (100) is lower than the local one (500): 500 must win.
+	floor := sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(100)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", floor)))
+
+	addr := simtestutil.CreateIncrementalAccounts(1)[0]
+	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000_000)))
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	// above the global floor (20_000_000) but below the local one (100_000_000): rejected.
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 20_000_001)), 200_000), false, next)
+	require.ErrorIs(t, err, sdkerrors.ErrInsufficientFee)
+
+	_, err = dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 100_000_000)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestDeductFeeDecoratorNoFloorWhenEmpty pins that an empty min_gas_prices means
+// no floor, so a tiny fee passes (current mainnet behaviour before the upgrade).
+func TestDeductFeeDecoratorNoFloorWhenEmpty(t *testing.T) {
+	app, ctx, addr := setupFeeburn(t, "50") // NewParams(..., nil) → empty floor
+	ctx = ctx.WithBlockHeight(1)
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestFeeburnMinGasPricesValidation covers the new min_gas_prices param validation.
+func TestFeeburnMinGasPricesValidation(t *testing.T) {
+	valid := []sdk.DecCoins{
+		nil,
+		sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))),
+	}
+	for _, v := range valid {
+		require.NoError(t, feeburntypes.NewParams("50", v).Validate())
+	}
+
+	bad := []sdk.DecCoins{
+		{sdk.DecCoin{Denom: "uhuahua", Amount: sdkmath.LegacyNewDec(-1)}},                                            // negative amount
+		{sdk.DecCoin{Denom: "1bad", Amount: sdkmath.LegacyNewDec(1)}},                                                // invalid denom
+		{{Denom: "btc", Amount: sdkmath.LegacyNewDec(1)}, {Denom: "atom", Amount: sdkmath.LegacyNewDec(1)}},          // unsorted
+		sdk.NewDecCoins(sdk.NewDecCoin("uother", sdkmath.NewInt(1))),                                                 // non-native denom
+		sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500)), sdk.NewDecCoin("uother", sdkmath.NewInt(1))), // native + non-native
+	}
+	for _, v := range bad {
+		require.Error(t, feeburntypes.NewParams("50", v).Validate())
+	}
+}
+
+// TestFeeburnMinGasPricesMigration mirrors the v10.0.1 upgrade step: it sets the
+// floor while preserving the existing TxFeeBurnPercent.
+func TestFeeburnMinGasPricesMigration(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+
+	// pre-upgrade params: only the burn percent, no floor
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", nil)))
+
+	minGasPrices, err := sdk.ParseDecCoins(RecommendedMinGasPrices)
+	require.NoError(t, err)
+	params := app.FeeburnKeeper.GetParams(ctx)
+	params.MinGasPrices = minGasPrices
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, params))
+
+	got := app.FeeburnKeeper.GetParams(ctx)
+	require.Equal(t, "50", got.TxFeeBurnPercent, "burn percent must be preserved")
+	require.Equal(t, sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))), got.MinGasPrices)
 }
 
 func TestFeeburnGenesisKeepsTotalBurned(t *testing.T) {

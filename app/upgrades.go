@@ -88,6 +88,21 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			}
 		}
 		app.AccountKeeper.GetModuleAccount(sdkCtx, feeburnmoduletypes.ModuleName)
+
+		// Set the chain-wide minimum gas price floor enforced by x/feeburn in the
+		// ante handler. GetParams preserves the existing TxFeeBurnPercent (50% on
+		// mainnet); only MinGasPrices is introduced here. Governance can tune it
+		// later via MsgUpdateParams.
+		minGasPrices, err := sdk.ParseDecCoins(RecommendedMinGasPrices)
+		if err != nil {
+			return nil, err
+		}
+		params := app.FeeburnKeeper.GetParams(sdkCtx)
+		params.MinGasPrices = minGasPrices
+		if err := app.FeeburnKeeper.SetParams(sdkCtx, params); err != nil {
+			return nil, err
+		}
+
 		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
 }

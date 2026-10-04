@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
@@ -163,6 +165,21 @@ func initRootCmd(rootCmd *cobra.Command, txConfig client.TxConfig, basicManager 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 	wasmcli.ExtendUnsafeResetAllCmd(rootCmd)
 
+	// Warn (without blocking) when the node starts with a local minimum-gas-prices
+	// below the protocol floor enforced by x/feeburn.
+	if startCmd, _, err := rootCmd.Find([]string{"start"}); err == nil && startCmd != nil {
+		orig := startCmd.PreRunE
+		startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+			if orig != nil {
+				if err := orig(cmd, args); err != nil {
+					return err
+				}
+			}
+			warnIfMinGasPricesBelowFloor(cmd)
+			return nil
+		}
+	}
+
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
@@ -190,6 +207,44 @@ func barkCommand() *cobra.Command {
 
 func addModuleInitFlags(startCmd *cobra.Command) {
 	wasm.AddModuleInitFlags(startCmd)
+}
+
+// warnIfMinGasPricesBelowFloor prints a non-blocking warning when the node's
+// local minimum-gas-prices is empty or below the protocol floor
+// (app.RecommendedMinGasPrices). The floor is enforced in consensus by
+// x/feeburn regardless of this local setting; a lower local value only makes
+// the mempool accept txs that are then rejected at block execution. The warning
+// pauses a few seconds so operators notice it, then startup continues.
+func warnIfMinGasPricesBelowFloor(cmd *cobra.Command) {
+	serverCtx := server.GetServerContextFromCmd(cmd)
+
+	floor, err := sdk.ParseDecCoins(app.RecommendedMinGasPrices)
+	if err != nil {
+		return // RecommendedMinGasPrices is a constant; this cannot happen.
+	}
+
+	local, err := sdk.ParseDecCoins(serverCtx.Viper.GetString("minimum-gas-prices"))
+	below := err != nil
+	if !below {
+		for _, f := range floor {
+			if local.AmountOf(f.Denom).LT(f.Amount) {
+				below = true
+				break
+			}
+		}
+	}
+	if !below {
+		return
+	}
+
+	out := cmd.ErrOrStderr()
+	fmt.Fprintf(out, "\n⚠️  minimum-gas-prices is below the chain floor (%s).\n", app.RecommendedMinGasPrices)
+	fmt.Fprintf(out, "    The protocol enforces this minimum in consensus: transactions under it are\n")
+	fmt.Fprintf(out, "    rejected when the block executes, on every node. A lower local value only\n")
+	fmt.Fprintf(out, "    makes this node's mempool accept txs that will then fail. Set\n")
+	fmt.Fprintf(out, "    minimum-gas-prices to at least %s in app.toml (or --minimum-gas-prices).\n", app.RecommendedMinGasPrices)
+	fmt.Fprintf(out, "    Starting anyway in 5s...\n\n")
+	time.Sleep(5 * time.Second)
 }
 
 func queryCommand() *cobra.Command {

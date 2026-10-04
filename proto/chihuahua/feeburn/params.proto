@@ -2,6 +2,7 @@ syntax = "proto3";
 package chihuahua.feeburn;
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/feeburn/types";
 
@@ -11,4 +12,13 @@ message Params {
 
   string txFeeBurnPercent = 1
       [ (gogoproto.moretags) = "yaml:\"tx_fee_burn_percent\"" ];
+
+  // min_gas_prices is the chain-wide minimum gas price enforced in the ante
+  // handler during both CheckTx and DeliverTx (a true consensus floor). An
+  // empty set means no floor. Governance tunes it via MsgUpdateParams.
+  repeated cosmos.base.v1beta1.DecCoin min_gas_prices = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+    (gogoproto.moretags) = "yaml:\"min_gas_prices\""
+  ];
 }

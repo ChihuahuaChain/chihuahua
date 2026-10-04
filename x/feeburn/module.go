@@ -18,6 +18,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 var (
@@ -151,7 +152,31 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block
 func (am AppModule) BeginBlock(_ sdk.Context) {}
 
-// EndBlock contains the logic that is automatically triggered at the end of each block
-func (am AppModule) EndBlock(_ sdk.Context) []abci.ValidatorUpdate {
+// EndBlock burns whatever the burn address has accumulated during the block.
+//
+// The feeburn module account is the chain's public burn address. Native tokens
+// sent to it, by a community-pool spend or by anyone else, are permanently
+// removed from the supply here and added to the burned total published on
+// burn.chihuahua.wtf: uhuahua and any token factory denom (see
+// types.IsBurnable). IBC vouchers and every other denom are left untouched, so
+// burning never strands an asset escrowed on another chain.
+func (am AppModule) EndBlock(ctx sdk.Context) []abci.ValidatorUpdate {
+	addr := authtypes.NewModuleAddress(types.ModuleName)
+
+	burn := sdk.NewCoins()
+	for _, coin := range am.bankKeeper.GetAllBalances(ctx, addr) {
+		if coin.IsPositive() && types.IsBurnable(coin.Denom) {
+			burn = burn.Add(coin)
+		}
+	}
+	if burn.IsZero() {
+		return []abci.ValidatorUpdate{}
+	}
+
+	if err := am.bankKeeper.BurnCoins(ctx, types.ModuleName, burn); err != nil {
+		am.keeper.Logger(ctx).Error("burn address: failed to burn accumulated balance", "error", err)
+	} else {
+		am.keeper.AddBurned(ctx, burn)
+	}
 	return []abci.ValidatorUpdate{}
 }

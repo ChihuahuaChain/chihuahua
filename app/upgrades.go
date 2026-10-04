@@ -16,7 +16,10 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	feeburnmoduletypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
 )
 
 // removedModules are the modules dropped by the v10 upgrade, together with
@@ -71,6 +74,20 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 	})
 
 	app.UpgradeKeeper.SetUpgradeHandler(PatchUpgradeName, func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		// Materialize the feeburn module account so the public burn address
+		// exists with its burner permission from the first post-upgrade block,
+		// even before it first receives funds. If a plain account already squats
+		// the address (someone sent to it pre-upgrade), drop that record first:
+		// GetModuleAccount panics on a non-module account, and x/bank keeps the
+		// balance by address, so it survives the account record being replaced.
+		burnAddr := authtypes.NewModuleAddress(feeburnmoduletypes.ModuleName)
+		if acc := app.AccountKeeper.GetAccount(sdkCtx, burnAddr); acc != nil {
+			if _, ok := acc.(authtypes.ModuleAccountI); !ok {
+				app.AccountKeeper.RemoveAccount(sdkCtx, acc)
+			}
+		}
+		app.AccountKeeper.GetModuleAccount(sdkCtx, feeburnmoduletypes.ModuleName)
 		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
 }

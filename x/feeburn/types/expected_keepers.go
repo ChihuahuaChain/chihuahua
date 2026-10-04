@@ -12,8 +12,11 @@ type AccountKeeper interface {
 	// Methods imported from account should be defined here
 }
 
-// BankKeeper defines the expected interface needed to retrieve account balances.
+// BankKeeper defines the expected interface needed to retrieve account balances
+// and burn the balance accumulated by the burn address.
 type BankKeeper interface {
 	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	// Methods imported from bank should be defined here
 }

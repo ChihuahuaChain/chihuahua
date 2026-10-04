@@ -138,8 +138,8 @@ const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
 	UpgradeName  = "v10.0.0"
-	// PatchUpgradeName is the upgrade that follows v10.0.0 with the
-	// liquidity batch execution fixes
+	// PatchUpgradeName is the upgrade that follows v10.0.0 with the liquidity
+	// batch execution fixes and the public burn address (see x/feeburn EndBlock)
 	PatchUpgradeName = "v10.0.1"
 	NodeDir          = ".chihuahuad"
 )
@@ -170,7 +170,10 @@ var (
 	// module account permissions
 	maccPerms = map[string][]string{
 		// the fee collector burns part of the fees, see x/feeburn
-		authtypes.FeeCollectorName:     {authtypes.Burner},
+		authtypes.FeeCollectorName: {authtypes.Burner},
+		// the feeburn module account is the chain's public burn address: any
+		// uhuahua it receives is burned in EndBlock, see x/feeburn
+		feeburnmoduletypes.ModuleName:  {authtypes.Burner},
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
@@ -840,6 +843,9 @@ func BlockedAddresses() map[string]bool {
 	}
 	// allow the following addresses to receive funds
 	delete(modAccAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	// the feeburn module account is the public burn address and must be able
+	// to receive funds from anyone (including community-pool spends)
+	delete(modAccAddrs, authtypes.NewModuleAddress(feeburnmoduletypes.ModuleName).String())
 	return modAccAddrs
 }
 

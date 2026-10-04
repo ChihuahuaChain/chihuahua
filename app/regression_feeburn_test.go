@@ -115,6 +115,70 @@ func TestFeeburnParamsValidation(t *testing.T) {
 	}
 }
 
+// TestBurnAddressBurnsUhuahuaInEndBlock pins the public burn address behaviour:
+// uhuahua and token factory denoms sent to the feeburn module account are
+// burned out of the supply in EndBlock and recorded in the burned total, while
+// IBC vouchers and any other denom are left alone.
+func TestBurnAddressBurnsUhuahuaInEndBlock(t *testing.T) {
+	const (
+		factoryDenom = "factory/chihuahua1kjey0s32mpsfq5sseazjshulxlc54fg7uspjac/cryptobank"
+		ibcDenom     = "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+	)
+
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+
+	// the upgrade handler materializes the module account; mirror that here so
+	// the burn address is a module account before it receives funds
+	app.AccountKeeper.GetModuleAccount(ctx, feeburntypes.ModuleName)
+
+	burnAddr := app.AccountKeeper.GetModuleAddress(feeburntypes.ModuleName)
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+		sdk.NewInt64Coin(ibcDenom, 300),
+		sdk.NewInt64Coin("uother", 500),
+	))
+
+	huahuaSupplyBefore := app.BankKeeper.GetSupply(ctx, "uhuahua")
+	factorySupplyBefore := app.BankKeeper.GetSupply(ctx, factoryDenom)
+	ibcSupplyBefore := app.BankKeeper.GetSupply(ctx, ibcDenom)
+	require.True(t, app.FeeburnKeeper.GetTotalBurned(ctx).IsZero())
+
+	module := feeburn.NewAppModule(app.AppCodec(), app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper)
+	module.EndBlock(ctx)
+
+	// uhuahua and the factory denom at the burn address are gone; the IBC
+	// voucher and uother are untouched
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero())
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, factoryDenom).IsZero())
+	require.Equal(t, int64(300), app.BankKeeper.GetBalance(ctx, burnAddr, ibcDenom).Amount.Int64())
+	require.Equal(t, int64(500), app.BankKeeper.GetBalance(ctx, burnAddr, "uother").Amount.Int64())
+
+	// only the burnable denoms left the supply, and exactly those were recorded
+	require.Equal(t, huahuaSupplyBefore.Amount.SubRaw(1_000).Int64(), app.BankKeeper.GetSupply(ctx, "uhuahua").Amount.Int64())
+	require.Equal(t, factorySupplyBefore.Amount.SubRaw(700).Int64(), app.BankKeeper.GetSupply(ctx, factoryDenom).Amount.Int64())
+	require.Equal(t, ibcSupplyBefore.Amount.Int64(), app.BankKeeper.GetSupply(ctx, ibcDenom).Amount.Int64())
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+	), app.FeeburnKeeper.GetTotalBurned(ctx))
+
+	// a second EndBlock with no burnable balance left is a no-op
+	module.EndBlock(ctx)
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+	), app.FeeburnKeeper.GetTotalBurned(ctx))
+}
+
+// TestBurnAddressIsNotBlocked ensures the public burn address can receive funds,
+// so a community-pool spend (or anyone) can send uhuahua to it.
+func TestBurnAddressIsNotBlocked(t *testing.T) {
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName).String()
+	require.False(t, BlockedAddresses()[burnAddr], "burn address must be able to receive funds")
+}
+
 func supplyOf(app *App, ctx sdk.Context, denoms sdk.Coins) sdk.Coins {
 	supply := sdk.NewCoins()
 	for _, c := range denoms {

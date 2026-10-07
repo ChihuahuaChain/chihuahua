@@ -211,6 +211,17 @@ var (
 	_ servertypes.Application = (*App)(nil)
 )
 
+// MaxWasmSize is the largest contract the chain accepts in a store-code message (wasmd's default is 800 KiB).
+// Every node must run the same value: it decides whether a store-code transaction is valid.
+const MaxWasmSize = 1600 * 1024
+
+func init() {
+	wasmtypes.MaxWasmSize = MaxWasmSize
+	if wasmtypes.MaxProposalWasmSize < MaxWasmSize {
+		wasmtypes.MaxProposalWasmSize = MaxWasmSize
+	}
+}
+
 // App extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.

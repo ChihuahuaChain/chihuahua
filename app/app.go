@@ -810,6 +810,7 @@ func (app *App) Name() string { return app.BaseApp.Name() }
 
 // PreBlocker application updates every pre block
 func (app *App) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	app.fixFeegrantQueue(ctx)
 	return app.mm.PreBlock(ctx)
 }
 

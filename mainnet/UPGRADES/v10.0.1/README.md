@@ -1,6 +1,6 @@
 # Chihuahua v10.0.1 Upgrade
 
-The upgrade is scheduled for block **_TBD_**, expected around **_TBD UTC_** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/_TBD_
+The upgrade is scheduled for block **25742780**, expected around **2026-10-14 12:00 UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/25742780
 
 v10.0.1 is a coordinated upgrade on top of v10.0.0. It adds protocol features and hardening across x/feeburn, x/liquidity and CosmWasm. It does not change the Cosmos SDK, CometBFT, ibc-go or wasmd versions shipped in v10.0.0.
 
@@ -60,8 +60,8 @@ Release binaries and sha256:
 
 | Platform | sha256 |
 |---|---|
-| linux/amd64 | `_TBD_` |
-| linux/arm64 | `_TBD_` |
+| linux/amd64 | `f6be02c6f5118cfa44ad5d85a9f461960990781001746f88be5cf3dad174da4f` |
+| linux/arm64 | `926cbda1610a21f6dc913976a0ffe338cedf5379d2ee1a40cabedea7b8f72540` |
 
 ## Upgrade with the Huahua Node Manager
 

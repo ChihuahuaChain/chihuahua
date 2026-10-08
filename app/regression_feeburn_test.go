@@ -180,6 +180,39 @@ func TestBurnAddressBurnsUhuahuaInEndBlock(t *testing.T) {
 	), app.FeeburnKeeper.GetTotalBurned(ctx))
 }
 
+// TestEnsureBurnModuleAccountReplacesSquatter pins the upgrade-handler path that
+// materializes the burn address as a module account. If someone sent funds to
+// the address before the upgrade (while it was an ordinary address), a plain
+// BaseAccount squats it; the handler must drop that record, turn the address
+// into a module account with the burner permission, keep the balance, and let
+// EndBlock burn it. Getting this wrong would either panic the upgrade
+// (GetModuleAccount on a non-module account) or strand the funds.
+func TestEnsureBurnModuleAccountReplacesSquatter(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName)
+
+	// a plain account squats the burn address, holding a balance (pre-upgrade send)
+	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccountWithAddress(ctx, burnAddr))
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 7_000)))
+	_, isModule := app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.False(t, isModule, "precondition: a non-module account squats the burn address")
+
+	app.ensureBurnModuleAccount(ctx)
+
+	// the address is now a module account with the burner permission, balance kept
+	acc := app.AccountKeeper.GetAccount(ctx, burnAddr)
+	macc, isModule := acc.(authtypes.ModuleAccountI)
+	require.True(t, isModule, "burn address must become a module account")
+	require.True(t, macc.HasPermission(authtypes.Burner), "burn address must have the burner permission")
+	require.Equal(t, int64(7_000), app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").Amount.Int64(), "balance must survive the account swap")
+
+	// and the next EndBlock burns the preserved balance
+	_, err := app.mm.EndBlock(ctx)
+	require.NoError(t, err)
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero(), "preserved balance must be burned")
+}
+
 // TestBurnAddressIsNotBlocked ensures the public burn address can receive funds,
 // so a community-pool spend (or anyone) can send uhuahua to it.
 func TestBurnAddressIsNotBlocked(t *testing.T) {

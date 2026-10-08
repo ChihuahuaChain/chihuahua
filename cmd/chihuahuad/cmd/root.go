@@ -213,8 +213,10 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 // local minimum-gas-prices is empty or below the protocol floor
 // (app.RecommendedMinGasPrices). The floor is enforced in consensus by
 // x/feeburn regardless of this local setting; a lower local value only makes
-// the mempool accept txs that are then rejected at block execution. The warning
-// pauses a few seconds so operators notice it, then startup continues.
+// the mempool accept txs that are then rejected at block execution. On an
+// interactive terminal it pauses a few seconds so an operator notices it;
+// under systemd, CI or a crash-loop (stderr not a TTY) it prints and continues,
+// so it never slows restarts.
 func warnIfMinGasPricesBelowFloor(cmd *cobra.Command) {
 	serverCtx := server.GetServerContextFromCmd(cmd)
 
@@ -243,8 +245,18 @@ func warnIfMinGasPricesBelowFloor(cmd *cobra.Command) {
 	fmt.Fprintf(out, "    rejected when the block executes, on every node. A lower local value only\n")
 	fmt.Fprintf(out, "    makes this node's mempool accept txs that will then fail. Set\n")
 	fmt.Fprintf(out, "    minimum-gas-prices to at least %s in app.toml (or --minimum-gas-prices).\n", app.RecommendedMinGasPrices)
-	fmt.Fprintf(out, "    Starting anyway in 5s...\n\n")
-	time.Sleep(5 * time.Second)
+
+	// Pause only on an interactive terminal: a human running the node by hand
+	// gets a moment to read it; a service manager or CI gets no added restart
+	// delay.
+	if f, ok := out.(*os.File); ok {
+		if fi, err := f.Stat(); err == nil && fi.Mode()&os.ModeCharDevice != 0 {
+			fmt.Fprintf(out, "    Starting anyway in 5s...\n\n")
+			time.Sleep(5 * time.Second)
+			return
+		}
+	}
+	fmt.Fprintf(out, "\n")
 }
 
 func queryCommand() *cobra.Command {

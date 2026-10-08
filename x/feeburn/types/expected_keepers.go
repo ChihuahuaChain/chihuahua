@@ -9,6 +9,10 @@ import (
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
 type AccountKeeper interface {
 	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+	// RemoveAccount and GetModuleAccount let EndBlock materialize the burn
+	// address as a module account before burning, see module.go.
+	RemoveAccount(ctx context.Context, acc sdk.AccountI)
+	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 	// Methods imported from account should be defined here
 }
 

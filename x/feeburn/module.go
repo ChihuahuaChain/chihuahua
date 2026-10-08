@@ -182,10 +182,33 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 		return []abci.ValidatorUpdate{}, nil
 	}
 
+	am.ensureBurnAccount(sdkCtx)
 	if err := am.bankKeeper.BurnCoins(sdkCtx, types.ModuleName, burn); err != nil {
 		am.keeper.Logger(sdkCtx).Error("burn address: failed to burn accumulated balance", "error", err)
 	} else {
 		am.keeper.AddBurned(sdkCtx, burn)
 	}
 	return []abci.ValidatorUpdate{}, nil
+}
+
+// ensureBurnAccount makes the burn address a module account before it is burned
+// from. BurnCoins resolves the module account with GetModuleAccount, which
+// PANICS ("account is not a module account") when a plain BaseAccount occupies
+// the address, which halts the chain. x/bank auto-creates exactly such a
+// BaseAccount on any inbound transfer, because the address is unblocked. The
+// v10.0.1 upgrade handler materializes the module account on mainnet
+// (see App.ensureBurnModuleAccount), but a chain that never ran that handler, a
+// fresh v10.0.1 genesis or an emergency binary-swap recovery, would otherwise
+// halt on the first burn. Self-healing here (only reached once a burnable
+// balance exists) covers those paths too. A dropped BaseAccount loses only its
+// account record; x/bank keeps the balance by address, so it is still burned.
+func (am AppModule) ensureBurnAccount(ctx sdk.Context) {
+	addr := authtypes.NewModuleAddress(types.ModuleName)
+	if acc := am.accountKeeper.GetAccount(ctx, addr); acc != nil {
+		if _, ok := acc.(sdk.ModuleAccountI); ok {
+			return // already a module account, the common case: nothing to do
+		}
+		am.accountKeeper.RemoveAccount(ctx, acc)
+	}
+	am.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
 }

@@ -213,6 +213,36 @@ func TestEnsureBurnModuleAccountReplacesSquatter(t *testing.T) {
 	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero(), "preserved balance must be burned")
 }
 
+// TestBurnAddressEndBlockSelfHealsSquatter reproduces the chain halt the burn
+// EndBlock would otherwise cause on a chain where the v10.0.1 upgrade handler
+// never ran (a fresh v10.0.1 genesis, or an emergency binary-swap recovery):
+// x/bank auto-creates a plain BaseAccount at the unblocked burn address on an
+// inbound transfer, and BurnCoins -> GetModuleAccount panics on it. EndBlock
+// must self-heal the account and burn, not panic. Unlike
+// TestEnsureBurnModuleAccountReplacesSquatter, this goes straight through
+// EndBlock with no prior materialization, which is the halting path.
+func TestBurnAddressEndBlockSelfHealsSquatter(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName)
+
+	// a plain BaseAccount squats the burn address with a balance; the module
+	// account was never materialized on this path
+	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccountWithAddress(ctx, burnAddr))
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 9_000)))
+	_, isModule := app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.False(t, isModule, "precondition: a non-module account squats the burn address")
+
+	require.NotPanics(t, func() {
+		_, err := app.mm.EndBlock(ctx)
+		require.NoError(t, err)
+	}, "EndBlock must not panic on a squatted burn address")
+
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero(), "the squatted balance must be burned")
+	_, isModule = app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.True(t, isModule, "burn address must have become a module account")
+}
+
 // TestBurnAddressIsNotBlocked ensures the public burn address can receive funds,
 // so a community-pool spend (or anyone) can send uhuahua to it.
 func TestBurnAddressIsNotBlocked(t *testing.T) {

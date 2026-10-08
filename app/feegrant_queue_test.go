@@ -2,11 +2,14 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	"cosmossdk.io/collections"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/store/v2/prefix"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
 	feeburntypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
@@ -54,4 +57,54 @@ func TestFixFeegrantQueue(t *testing.T) {
 	queue.Set(legacyKey, []byte{})
 	app.fixFeegrantQueue(ctx)
 	require.Equal(t, []byte{}, queue.Get(legacyKey), "the fix must be a no-op after the marker is set")
+}
+
+// TestFeegrantExpiryHaltAndFix is the end-to-end proof that the conversion
+// prevents the real chain halt: it drives the actual feegrant EndBlocker
+// (RemoveExpiredAllowances) over a queue entry written the SDK v0.50 way (empty
+// value). Before the conversion the EndBlocker fails to decode it and returns an
+// error (which the module manager turns into a FinalizeBlock failure, i.e. the
+// halt); after fixFeegrantQueue runs it decodes and prunes the allowance.
+func TestFeegrantExpiryHaltAndFix(t *testing.T) {
+	app := Setup(t)
+	now := time.Now().UTC()
+	ctx := app.BaseApp.NewContext(false).WithBlockHeight(10).WithBlockTime(now)
+
+	accs := simtestutil.CreateIncrementalAccounts(2)
+	granter, grantee := accs[0], accs[1]
+	// make both accounts exist on chain, as they would in production
+	initAccountWithCoins(app, ctx, granter, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000)))
+	initAccountWithCoins(app, ctx, grantee, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000)))
+	exp := now.Add(time.Minute)
+	require.NoError(t, app.FeeGrantKeeper.GrantAllowance(ctx, granter, grantee, &feegrant.BasicAllowance{Expiration: &exp}))
+
+	// Rewrite the expiry-queue entry the SDK v0.50 way: an empty value.
+	queue := prefix.NewStore(ctx.KVStore(app.GetKey(feegrant.StoreKey)), feegrant.FeeAllowanceQueueKeyPrefix.Bytes())
+	var keys [][]byte
+	it := queue.Iterator(nil, nil)
+	for ; it.Valid(); it.Next() {
+		keys = append(keys, append([]byte(nil), it.Key()...))
+	}
+	it.Close()
+	require.NotEmpty(t, keys, "granting with an expiration must enqueue a queue entry")
+	for _, k := range keys {
+		queue.Set(k, []byte{})
+	}
+
+	// Stand after the expiration so the entry is in the EndBlocker's range.
+	future := ctx.WithBlockTime(exp.Add(time.Minute))
+
+	// Without the conversion: the EndBlocker cannot decode the empty value and
+	// errors. On a live chain this is the consensus failure that halts it.
+	require.Error(t, app.FeeGrantKeeper.RemoveExpiredAllowances(future, 100),
+		"an empty v0.50 queue value must make the feegrant EndBlocker fail (the chain halt)")
+
+	// Apply the conversion (clear the marker first: Setup already ran a block,
+	// so PreBlocker set it), then the EndBlocker succeeds and prunes the grant.
+	future.KVStore(app.GetKey(feeburntypes.StoreKey)).Delete(feegrantQueueFixedKey)
+	app.fixFeegrantQueue(future)
+	require.NoError(t, app.FeeGrantKeeper.RemoveExpiredAllowances(future, 100),
+		"after conversion the feegrant EndBlocker must not fail")
+	_, err := app.FeeGrantKeeper.GetAllowance(future, granter, grantee)
+	require.Error(t, err, "the expired allowance must have been removed")
 }

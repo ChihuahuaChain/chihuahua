@@ -16,7 +16,6 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	feeburnmoduletypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
@@ -75,7 +74,10 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 	app.UpgradeKeeper.SetUpgradeHandler(PatchUpgradeName, func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		app.ensureBurnModuleAccount(sdkCtx)
+		// Materialize the public burn address as a module account now, so it
+		// exists with its burner permission from the first post-upgrade block.
+		// EndBlock self-heals the same way, so this is belt-and-suspenders.
+		feeburnmoduletypes.EnsureBurnModuleAccount(sdkCtx, app.AccountKeeper)
 
 		// Set the chain-wide minimum gas price floor enforced by x/feeburn in the
 		// ante handler. GetParams preserves the existing TxFeeBurnPercent (50% on
@@ -93,23 +95,6 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
-}
-
-// ensureBurnModuleAccount materializes the feeburn module account so the public
-// burn address exists with its burner permission from the first post-upgrade
-// block, even before it first receives funds. If a plain account already squats
-// the address (someone sent to it while it was an ordinary address pre-upgrade),
-// its record is dropped first: GetModuleAccount panics on a non-module account,
-// and x/bank keeps the balance by address, so the balance survives the account
-// record being replaced and is burned by the next EndBlock.
-func (app *App) ensureBurnModuleAccount(ctx sdk.Context) {
-	burnAddr := authtypes.NewModuleAddress(feeburnmoduletypes.ModuleName)
-	if acc := app.AccountKeeper.GetAccount(ctx, burnAddr); acc != nil {
-		if _, ok := acc.(authtypes.ModuleAccountI); !ok {
-			app.AccountKeeper.RemoveAccount(ctx, acc)
-		}
-	}
-	app.AccountKeeper.GetModuleAccount(ctx, feeburnmoduletypes.ModuleName)
 }
 
 // takeAmbiguousDenomTraces removes from the transfer store the denom traces

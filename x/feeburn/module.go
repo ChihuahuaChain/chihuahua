@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -162,6 +163,13 @@ func (am AppModule) BeginBlock(_ sdk.Context) {}
 // types.IsBurnable). IBC vouchers and every other denom are left untouched, so
 // burning never strands an asset escrowed on another chain.
 //
+// The address is public and unblocked, so non-burnable denoms sent to it by
+// mistake accumulate as permanent balances. To keep this EndBlock cheap on
+// every block regardless of that junk, it does NOT scan all balances: it reads
+// uhuahua directly, and iterates balances (ascending denom order) only across
+// the "factory/" range, stopping as soon as it is past it. Non-burnable denoms,
+// which sort after that range (ibc/..., u...), are never visited.
+//
 // The signature satisfies module.HasABCIEndBlock, the interface the SDK v0.54
 // module manager type-asserts for before it calls EndBlock. The earlier
 // EndBlock(sdk.Context) []abci.ValidatorUpdate matched no end-block interface,
@@ -173,42 +181,40 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 	addr := authtypes.NewModuleAddress(types.ModuleName)
 
 	burn := sdk.NewCoins()
-	for _, coin := range am.bankKeeper.GetAllBalances(sdkCtx, addr) {
-		if coin.IsPositive() && types.IsBurnable(coin.Denom) {
-			burn = burn.Add(coin)
-		}
+	if c := am.bankKeeper.GetBalance(sdkCtx, addr, types.BurnDenom); c.IsPositive() {
+		burn = burn.Add(c)
 	}
+	// Collect the token factory denoms held by the address. Balances iterate in
+	// ascending denom order; stop once we pass the "factory/" range so stuck
+	// non-burnable denoms (which sort after it) are never scanned.
+	am.bankKeeper.IterateAccountBalances(sdkCtx, addr, func(c sdk.Coin) bool {
+		switch {
+		case c.Denom < types.FactoryDenomPrefix:
+			return false // not yet at the factory range, keep scanning
+		case strings.HasPrefix(c.Denom, types.FactoryDenomPrefix):
+			if c.IsPositive() {
+				burn = burn.Add(c)
+			}
+			return false
+		default:
+			return true // past the factory range: no burnable denom can follow
+		}
+	})
 	if burn.IsZero() {
 		return []abci.ValidatorUpdate{}, nil
 	}
 
-	am.ensureBurnAccount(sdkCtx)
+	// Make the burn address a module account before burning: BurnCoins resolves
+	// it with GetModuleAccount, which panics on a plain BaseAccount (x/bank
+	// auto-creates one on any inbound transfer, the address being unblocked).
+	// The upgrade handler already does this on mainnet; self-healing here, only
+	// once there is something to burn, covers a chain that never ran the handler
+	// (a fresh v10.0.1 genesis or an emergency binary-swap recovery).
+	types.EnsureBurnModuleAccount(sdkCtx, am.accountKeeper)
 	if err := am.bankKeeper.BurnCoins(sdkCtx, types.ModuleName, burn); err != nil {
 		am.keeper.Logger(sdkCtx).Error("burn address: failed to burn accumulated balance", "error", err)
 	} else {
 		am.keeper.AddBurned(sdkCtx, burn)
 	}
 	return []abci.ValidatorUpdate{}, nil
-}
-
-// ensureBurnAccount makes the burn address a module account before it is burned
-// from. BurnCoins resolves the module account with GetModuleAccount, which
-// PANICS ("account is not a module account") when a plain BaseAccount occupies
-// the address, which halts the chain. x/bank auto-creates exactly such a
-// BaseAccount on any inbound transfer, because the address is unblocked. The
-// v10.0.1 upgrade handler materializes the module account on mainnet
-// (see App.ensureBurnModuleAccount), but a chain that never ran that handler, a
-// fresh v10.0.1 genesis or an emergency binary-swap recovery, would otherwise
-// halt on the first burn. Self-healing here (only reached once a burnable
-// balance exists) covers those paths too. A dropped BaseAccount loses only its
-// account record; x/bank keeps the balance by address, so it is still burned.
-func (am AppModule) ensureBurnAccount(ctx sdk.Context) {
-	addr := authtypes.NewModuleAddress(types.ModuleName)
-	if acc := am.accountKeeper.GetAccount(ctx, addr); acc != nil {
-		if _, ok := acc.(sdk.ModuleAccountI); ok {
-			return // already a module account, the common case: nothing to do
-		}
-		am.accountKeeper.RemoveAccount(ctx, acc)
-	}
-	am.accountKeeper.GetModuleAccount(ctx, types.ModuleName)
 }

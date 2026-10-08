@@ -198,7 +198,7 @@ func TestEnsureBurnModuleAccountReplacesSquatter(t *testing.T) {
 	_, isModule := app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
 	require.False(t, isModule, "precondition: a non-module account squats the burn address")
 
-	app.ensureBurnModuleAccount(ctx)
+	feeburntypes.EnsureBurnModuleAccount(ctx, app.AccountKeeper)
 
 	// the address is now a module account with the burner permission, balance kept
 	acc := app.AccountKeeper.GetAccount(ctx, burnAddr)

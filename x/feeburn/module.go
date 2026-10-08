@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -18,11 +19,13 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule       = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
@@ -151,7 +154,67 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block
 func (am AppModule) BeginBlock(_ sdk.Context) {}
 
-// EndBlock contains the logic that is automatically triggered at the end of each block
-func (am AppModule) EndBlock(_ sdk.Context) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
+// EndBlock burns whatever the burn address has accumulated during the block.
+//
+// The feeburn module account is the chain's public burn address. Native tokens
+// sent to it, by a community-pool spend or by anyone else, are permanently
+// removed from the supply here and added to the burned total published on
+// burn.chihuahua.wtf: uhuahua and any token factory denom (see
+// types.IsBurnable). IBC vouchers and every other denom are left untouched, so
+// burning never strands an asset escrowed on another chain.
+//
+// The address is public and unblocked, so non-burnable denoms sent to it by
+// mistake accumulate as permanent balances. To keep this EndBlock cheap on
+// every block regardless of that junk, it does NOT scan all balances: it reads
+// uhuahua directly, and iterates balances (ascending denom order) only across
+// the "factory/" range, stopping as soon as it is past it. Non-burnable denoms,
+// which sort after that range (ibc/..., u...), are never visited.
+//
+// The signature satisfies module.HasABCIEndBlock, the interface the SDK v0.54
+// module manager type-asserts for before it calls EndBlock. The earlier
+// EndBlock(sdk.Context) []abci.ValidatorUpdate matched no end-block interface,
+// so the manager silently skipped it and nothing was ever burned; the
+// _ module.HasABCIEndBlock assertion above now fails to compile if the
+// signature drifts again.
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	addr := authtypes.NewModuleAddress(types.ModuleName)
+
+	burn := sdk.NewCoins()
+	if c := am.bankKeeper.GetBalance(sdkCtx, addr, types.BurnDenom); c.IsPositive() {
+		burn = burn.Add(c)
+	}
+	// Collect the token factory denoms held by the address. Balances iterate in
+	// ascending denom order; stop once we pass the "factory/" range so stuck
+	// non-burnable denoms (which sort after it) are never scanned.
+	am.bankKeeper.IterateAccountBalances(sdkCtx, addr, func(c sdk.Coin) bool {
+		switch {
+		case c.Denom < types.FactoryDenomPrefix:
+			return false // not yet at the factory range, keep scanning
+		case strings.HasPrefix(c.Denom, types.FactoryDenomPrefix):
+			if c.IsPositive() {
+				burn = burn.Add(c)
+			}
+			return false
+		default:
+			return true // past the factory range: no burnable denom can follow
+		}
+	})
+	if burn.IsZero() {
+		return []abci.ValidatorUpdate{}, nil
+	}
+
+	// Make the burn address a module account before burning: BurnCoins resolves
+	// it with GetModuleAccount, which panics on a plain BaseAccount (x/bank
+	// auto-creates one on any inbound transfer, the address being unblocked).
+	// The upgrade handler already does this on mainnet; self-healing here, only
+	// once there is something to burn, covers a chain that never ran the handler
+	// (a fresh v10.0.1 genesis or an emergency binary-swap recovery).
+	types.EnsureBurnModuleAccount(sdkCtx, am.accountKeeper)
+	if err := am.bankKeeper.BurnCoins(sdkCtx, types.ModuleName, burn); err != nil {
+		am.keeper.Logger(sdkCtx).Error("burn address: failed to burn accumulated balance", "error", err)
+	} else {
+		am.keeper.AddBurned(sdkCtx, burn)
+	}
+	return []abci.ValidatorUpdate{}, nil
 }

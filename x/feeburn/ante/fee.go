@@ -28,10 +28,8 @@ type DeductFeeDecorator struct {
 }
 
 func NewDeductFeeDecorator(ak ante.AccountKeeper, bk BankKeeper, fk ante.FeegrantKeeper, tfc ante.TxFeeChecker, fbk feeburnkeeper.Keeper) DeductFeeDecorator {
-	if tfc == nil {
-		tfc = checkTxFeeWithValidatorMinGasPrices
-	}
-
+	// tfc may be nil: AnteHandle then falls back to the keeper-aware checkTxFee
+	// method, which enforces the on-chain min_gas_prices floor.
 	return DeductFeeDecorator{
 		accountKeeper:  ak,
 		bankKeeper:     bk,
@@ -56,14 +54,23 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		err      error
 	)
 
+	// Read the feeburn params once per tx: the ante path needs both the
+	// min_gas_prices floor (fee check) and the burn percent (fee deduction),
+	// and GetParams is a store read plus a proto unmarshal.
+	params := dfd.feeburnKeeper.GetParams(ctx)
+
 	fee := feeTx.GetFee()
 	if !simulate {
-		fee, priority, err = dfd.txFeeChecker(ctx, tx)
+		if dfd.txFeeChecker != nil {
+			fee, priority, err = dfd.txFeeChecker(ctx, tx)
+		} else {
+			fee, priority, err = dfd.checkTxFee(ctx, tx, params.MinGasPrices)
+		}
 		if err != nil {
 			return ctx, err
 		}
 	}
-	if err := dfd.checkDeductFee(ctx, tx, fee); err != nil {
+	if err := dfd.checkDeductFee(ctx, tx, fee, params.TxFeeBurnPercent); err != nil {
 		return ctx, err
 	}
 
@@ -72,7 +79,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	return next(newCtx, tx, simulate)
 }
 
-func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee sdk.Coins) error {
+func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee sdk.Coins, txFeeBurnPercent string) error {
 	feeTx, ok := sdkTx.(sdk.FeeTx)
 	if !ok {
 		return errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
@@ -108,7 +115,7 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 
 	// deduct the fees
 	if !fee.IsZero() {
-		feeBurnPercent, ok := math.NewIntFromString(dfd.feeburnKeeper.GetTxFeeBurnPercent(ctx))
+		feeBurnPercent, ok := math.NewIntFromString(txFeeBurnPercent)
 		if !ok {
 			return sdkerrors.ErrInvalidType
 		}

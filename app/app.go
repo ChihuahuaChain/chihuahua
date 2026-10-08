@@ -138,7 +138,18 @@ const (
 	Bech32Prefix = "chihuahua"
 	Name         = "chihuahua"
 	UpgradeName  = "v10.0.0"
-	NodeDir      = ".chihuahuad"
+	// PatchUpgradeName is the upgrade that follows v10.0.0 with the liquidity
+	// batch execution fixes and the public burn address (see x/feeburn EndBlock)
+	PatchUpgradeName = "v10.0.1"
+	NodeDir          = ".chihuahuad"
+
+	// RecommendedMinGasPrices is the chain-wide minimum gas price the protocol
+	// enforces in the ante handler (set on-chain by the v10.0.1 upgrade and
+	// tunable thereafter via governance). It is also the value the node start
+	// command warns operators about when their local minimum-gas-prices is
+	// lower. Keep the migration and the startup warning in sync through this
+	// constant.
+	RecommendedMinGasPrices = "500uhuahua"
 )
 
 var (
@@ -167,7 +178,10 @@ var (
 	// module account permissions
 	maccPerms = map[string][]string{
 		// the fee collector burns part of the fees, see x/feeburn
-		authtypes.FeeCollectorName:     {authtypes.Burner},
+		authtypes.FeeCollectorName: {authtypes.Burner},
+		// the feeburn module account is the chain's public burn address: any
+		// uhuahua it receives is burned in EndBlock, see x/feeburn
+		feeburnmoduletypes.ModuleName:  {authtypes.Burner},
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
@@ -196,6 +210,17 @@ var (
 	_ runtime.AppI            = (*App)(nil)
 	_ servertypes.Application = (*App)(nil)
 )
+
+// MaxWasmSize is the largest contract the chain accepts in a store-code message (wasmd's default is 800 KiB).
+// Every node must run the same value: it decides whether a store-code transaction is valid.
+const MaxWasmSize = 1600 * 1024
+
+func init() {
+	wasmtypes.MaxWasmSize = MaxWasmSize
+	if wasmtypes.MaxProposalWasmSize < MaxWasmSize {
+		wasmtypes.MaxProposalWasmSize = MaxWasmSize
+	}
+}
 
 // App extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
@@ -785,6 +810,7 @@ func (app *App) Name() string { return app.BaseApp.Name() }
 
 // PreBlocker application updates every pre block
 func (app *App) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	app.fixFeegrantQueue(ctx)
 	return app.mm.PreBlock(ctx)
 }
 
@@ -837,6 +863,9 @@ func BlockedAddresses() map[string]bool {
 	}
 	// allow the following addresses to receive funds
 	delete(modAccAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+	// the feeburn module account is the public burn address and must be able
+	// to receive funds from anyone (including community-pool spends)
+	delete(modAccAddrs, authtypes.NewModuleAddress(feeburnmoduletypes.ModuleName).String())
 	return modAccAddrs
 }
 

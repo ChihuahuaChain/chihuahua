@@ -6,6 +6,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func setupFeeburn(t *testing.T, burnPercent string) (*App, sdk.Context, sdk.AccA
 	t.Helper()
 	app := Setup(t)
 	ctx := app.BaseApp.NewContext(false)
-	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams(burnPercent)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams(burnPercent, nil)))
 
 	addr := simtestutil.CreateIncrementalAccounts(1)[0]
 	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(
@@ -108,11 +109,145 @@ func TestDeductFeeDecoratorBurnsTxFee(t *testing.T) {
 
 func TestFeeburnParamsValidation(t *testing.T) {
 	for _, v := range []string{"0", "1", "50", "100"} {
-		require.NoError(t, feeburntypes.NewParams(v).Validate(), v)
+		require.NoError(t, feeburntypes.NewParams(v, nil).Validate(), v)
 	}
 	for _, v := range []string{"-1", "101", "", "abc", "0.5"} {
-		require.Error(t, feeburntypes.NewParams(v).Validate(), v)
+		require.Error(t, feeburntypes.NewParams(v, nil).Validate(), v)
 	}
+}
+
+// TestBurnAddressBurnsUhuahuaInEndBlock pins the public burn address behaviour:
+// uhuahua and token factory denoms sent to the feeburn module account are
+// burned out of the supply in EndBlock and recorded in the burned total, while
+// IBC vouchers and any other denom are left alone.
+func TestBurnAddressBurnsUhuahuaInEndBlock(t *testing.T) {
+	const (
+		factoryDenom = "factory/chihuahua1kjey0s32mpsfq5sseazjshulxlc54fg7uspjac/cryptobank"
+		ibcDenom     = "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2"
+	)
+
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+
+	// the upgrade handler materializes the module account; mirror that here so
+	// the burn address is a module account before it receives funds
+	app.AccountKeeper.GetModuleAccount(ctx, feeburntypes.ModuleName)
+
+	burnAddr := app.AccountKeeper.GetModuleAddress(feeburntypes.ModuleName)
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+		sdk.NewInt64Coin(ibcDenom, 300),
+		sdk.NewInt64Coin("uother", 500),
+	))
+
+	huahuaSupplyBefore := app.BankKeeper.GetSupply(ctx, "uhuahua")
+	factorySupplyBefore := app.BankKeeper.GetSupply(ctx, factoryDenom)
+	ibcSupplyBefore := app.BankKeeper.GetSupply(ctx, ibcDenom)
+	require.True(t, app.FeeburnKeeper.GetTotalBurned(ctx).IsZero())
+
+	// Drive EndBlock through the module manager, exactly as a live block does.
+	// A direct module.EndBlock(ctx) call would pass even when feeburn is not
+	// wired as an end blocker: that is how the SDK v0.54 manager silently
+	// skipped it (its EndBlock signature matched no end-block interface) and
+	// nothing was ever burned on chain. Going through the manager pins the
+	// wiring too.
+	_, err := app.mm.EndBlock(ctx)
+	require.NoError(t, err)
+
+	// uhuahua and the factory denom at the burn address are gone; the IBC
+	// voucher and uother are untouched
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero())
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, factoryDenom).IsZero())
+	require.Equal(t, int64(300), app.BankKeeper.GetBalance(ctx, burnAddr, ibcDenom).Amount.Int64())
+	require.Equal(t, int64(500), app.BankKeeper.GetBalance(ctx, burnAddr, "uother").Amount.Int64())
+
+	// only the burnable denoms left the supply, and exactly those were recorded
+	require.Equal(t, huahuaSupplyBefore.Amount.SubRaw(1_000).Int64(), app.BankKeeper.GetSupply(ctx, "uhuahua").Amount.Int64())
+	require.Equal(t, factorySupplyBefore.Amount.SubRaw(700).Int64(), app.BankKeeper.GetSupply(ctx, factoryDenom).Amount.Int64())
+	require.Equal(t, ibcSupplyBefore.Amount.Int64(), app.BankKeeper.GetSupply(ctx, ibcDenom).Amount.Int64())
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+	), app.FeeburnKeeper.GetTotalBurned(ctx))
+
+	// a second EndBlock with no burnable balance left is a no-op
+	_, err = app.mm.EndBlock(ctx)
+	require.NoError(t, err)
+	require.Equal(t, sdk.NewCoins(
+		sdk.NewInt64Coin("uhuahua", 1_000),
+		sdk.NewInt64Coin(factoryDenom, 700),
+	), app.FeeburnKeeper.GetTotalBurned(ctx))
+}
+
+// TestEnsureBurnModuleAccountReplacesSquatter pins the upgrade-handler path that
+// materializes the burn address as a module account. If someone sent funds to
+// the address before the upgrade (while it was an ordinary address), a plain
+// BaseAccount squats it; the handler must drop that record, turn the address
+// into a module account with the burner permission, keep the balance, and let
+// EndBlock burn it. Getting this wrong would either panic the upgrade
+// (GetModuleAccount on a non-module account) or strand the funds.
+func TestEnsureBurnModuleAccountReplacesSquatter(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName)
+
+	// a plain account squats the burn address, holding a balance (pre-upgrade send)
+	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccountWithAddress(ctx, burnAddr))
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 7_000)))
+	_, isModule := app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.False(t, isModule, "precondition: a non-module account squats the burn address")
+
+	feeburntypes.EnsureBurnModuleAccount(ctx, app.AccountKeeper)
+
+	// the address is now a module account with the burner permission, balance kept
+	acc := app.AccountKeeper.GetAccount(ctx, burnAddr)
+	macc, isModule := acc.(authtypes.ModuleAccountI)
+	require.True(t, isModule, "burn address must become a module account")
+	require.True(t, macc.HasPermission(authtypes.Burner), "burn address must have the burner permission")
+	require.Equal(t, int64(7_000), app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").Amount.Int64(), "balance must survive the account swap")
+
+	// and the next EndBlock burns the preserved balance
+	_, err := app.mm.EndBlock(ctx)
+	require.NoError(t, err)
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero(), "preserved balance must be burned")
+}
+
+// TestBurnAddressEndBlockSelfHealsSquatter reproduces the chain halt the burn
+// EndBlock would otherwise cause on a chain where the v10.0.1 upgrade handler
+// never ran (a fresh v10.0.1 genesis, or an emergency binary-swap recovery):
+// x/bank auto-creates a plain BaseAccount at the unblocked burn address on an
+// inbound transfer, and BurnCoins -> GetModuleAccount panics on it. EndBlock
+// must self-heal the account and burn, not panic. Unlike
+// TestEnsureBurnModuleAccountReplacesSquatter, this goes straight through
+// EndBlock with no prior materialization, which is the halting path.
+func TestBurnAddressEndBlockSelfHealsSquatter(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName)
+
+	// a plain BaseAccount squats the burn address with a balance; the module
+	// account was never materialized on this path
+	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccountWithAddress(ctx, burnAddr))
+	initAccountWithCoins(app, ctx, burnAddr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 9_000)))
+	_, isModule := app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.False(t, isModule, "precondition: a non-module account squats the burn address")
+
+	require.NotPanics(t, func() {
+		_, err := app.mm.EndBlock(ctx)
+		require.NoError(t, err)
+	}, "EndBlock must not panic on a squatted burn address")
+
+	require.True(t, app.BankKeeper.GetBalance(ctx, burnAddr, "uhuahua").IsZero(), "the squatted balance must be burned")
+	_, isModule = app.AccountKeeper.GetAccount(ctx, burnAddr).(authtypes.ModuleAccountI)
+	require.True(t, isModule, "burn address must have become a module account")
+}
+
+// TestBurnAddressIsNotBlocked ensures the public burn address can receive funds,
+// so a community-pool spend (or anyone) can send uhuahua to it.
+func TestBurnAddressIsNotBlocked(t *testing.T) {
+	burnAddr := authtypes.NewModuleAddress(feeburntypes.ModuleName).String()
+	require.False(t, BlockedAddresses()[burnAddr], "burn address must be able to receive funds")
 }
 
 func supplyOf(app *App, ctx sdk.Context, denoms sdk.Coins) sdk.Coins {
@@ -196,6 +331,123 @@ func TestRecordingBurnedFeesUsesNoGas(t *testing.T) {
 	app.FeeburnKeeper.AddBurned(ctx, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 5)))
 	require.Zero(t, ctx.GasMeter().GasConsumed())
 	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 12)), app.FeeburnKeeper.GetTotalBurned(ctx))
+}
+
+// buildFeeTx builds a MsgSend tx with the given fee and gas limit.
+func buildFeeTx(t *testing.T, app *App, from sdk.AccAddress, fee sdk.Coins, gas uint64) sdk.Tx {
+	t.Helper()
+	txBuilder := app.TxConfig().NewTxBuilder()
+	require.NoError(t, txBuilder.SetMsgs(banktypes.NewMsgSend(from, from, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)))))
+	txBuilder.SetFeeAmount(fee)
+	txBuilder.SetGasLimit(gas)
+	return txBuilder.GetTx()
+}
+
+// TestDeductFeeDecoratorEnforcesMinGasPricesInDeliverTx pins the consensus
+// floor: in DeliverTx (not a CheckTx), a fee below the on-chain min_gas_prices
+// is rejected regardless of the node's local config.
+func TestDeductFeeDecoratorEnforcesMinGasPricesInDeliverTx(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false).WithBlockHeight(1) // DeliverTx, height > 0
+	require.False(t, ctx.IsCheckTx())
+
+	floor := sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", floor)))
+
+	addr := simtestutil.CreateIncrementalAccounts(1)[0]
+	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000_000)))
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	// required = ceil(500 * 200000) = 100_000_000 uhuahua
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 99_999_999)), 200_000), false, next)
+	require.ErrorIs(t, err, sdkerrors.ErrInsufficientFee)
+
+	_, err = dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 100_000_000)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestDeductFeeDecoratorMinGasPricesCheckTxUsesMax pins that in CheckTx the
+// effective floor is the per-denom max of the global param and the validator's
+// local minimum-gas-prices.
+func TestDeductFeeDecoratorMinGasPricesCheckTxUsesMax(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(true).WithBlockHeight(1). // CheckTx
+								WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))))
+	require.True(t, ctx.IsCheckTx())
+
+	// global floor (100) is lower than the local one (500): 500 must win.
+	floor := sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(100)))
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", floor)))
+
+	addr := simtestutil.CreateIncrementalAccounts(1)[0]
+	initAccountWithCoins(app, ctx, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1_000_000_000)))
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	// above the global floor (20_000_000) but below the local one (100_000_000): rejected.
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 20_000_001)), 200_000), false, next)
+	require.ErrorIs(t, err, sdkerrors.ErrInsufficientFee)
+
+	_, err = dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 100_000_000)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestDeductFeeDecoratorNoFloorWhenEmpty pins that an empty min_gas_prices means
+// no floor, so a tiny fee passes (current mainnet behaviour before the upgrade).
+func TestDeductFeeDecoratorNoFloorWhenEmpty(t *testing.T) {
+	app, ctx, addr := setupFeeburn(t, "50") // NewParams(..., nil) → empty floor
+	ctx = ctx.WithBlockHeight(1)
+
+	dfd := feeburnante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, nil, app.FeeburnKeeper)
+	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+
+	_, err := dfd.AnteHandle(ctx, buildFeeTx(t, app, addr, sdk.NewCoins(sdk.NewInt64Coin("uhuahua", 1)), 200_000), false, next)
+	require.NoError(t, err)
+}
+
+// TestFeeburnMinGasPricesValidation covers the new min_gas_prices param validation.
+func TestFeeburnMinGasPricesValidation(t *testing.T) {
+	valid := []sdk.DecCoins{
+		nil,
+		sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))),
+	}
+	for _, v := range valid {
+		require.NoError(t, feeburntypes.NewParams("50", v).Validate())
+	}
+
+	bad := []sdk.DecCoins{
+		{sdk.DecCoin{Denom: "uhuahua", Amount: sdkmath.LegacyNewDec(-1)}},                                            // negative amount
+		{sdk.DecCoin{Denom: "1bad", Amount: sdkmath.LegacyNewDec(1)}},                                                // invalid denom
+		{{Denom: "btc", Amount: sdkmath.LegacyNewDec(1)}, {Denom: "atom", Amount: sdkmath.LegacyNewDec(1)}},          // unsorted
+		sdk.NewDecCoins(sdk.NewDecCoin("uother", sdkmath.NewInt(1))),                                                 // non-native denom
+		sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500)), sdk.NewDecCoin("uother", sdkmath.NewInt(1))), // native + non-native
+	}
+	for _, v := range bad {
+		require.Error(t, feeburntypes.NewParams("50", v).Validate())
+	}
+}
+
+// TestFeeburnMinGasPricesMigration mirrors the v10.0.1 upgrade step: it sets the
+// floor while preserving the existing TxFeeBurnPercent.
+func TestFeeburnMinGasPricesMigration(t *testing.T) {
+	app := Setup(t)
+	ctx := app.BaseApp.NewContext(false)
+
+	// pre-upgrade params: only the burn percent, no floor
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, feeburntypes.NewParams("50", nil)))
+
+	minGasPrices, err := sdk.ParseDecCoins(RecommendedMinGasPrices)
+	require.NoError(t, err)
+	params := app.FeeburnKeeper.GetParams(ctx)
+	params.MinGasPrices = minGasPrices
+	require.NoError(t, app.FeeburnKeeper.SetParams(ctx, params))
+
+	got := app.FeeburnKeeper.GetParams(ctx)
+	require.Equal(t, "50", got.TxFeeBurnPercent, "burn percent must be preserved")
+	require.Equal(t, sdk.NewDecCoins(sdk.NewDecCoin("uhuahua", sdkmath.NewInt(500))), got.MinGasPrices)
 }
 
 func TestFeeburnGenesisKeepsTotalBurned(t *testing.T) {

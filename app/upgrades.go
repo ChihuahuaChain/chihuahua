@@ -17,6 +17,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+
+	feeburnmoduletypes "github.com/ChihuahuaChain/chihuahua/x/feeburn/types"
 )
 
 // removedModules are the modules dropped by the v10 upgrade, together with
@@ -68,6 +70,30 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 			return nil, err
 		}
 		return vm, nil
+	})
+
+	app.UpgradeKeeper.SetUpgradeHandler(PatchUpgradeName, func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		// Materialize the public burn address as a module account now, so it
+		// exists with its burner permission from the first post-upgrade block.
+		// EndBlock self-heals the same way, so this is belt-and-suspenders.
+		feeburnmoduletypes.EnsureBurnModuleAccount(sdkCtx, app.AccountKeeper)
+
+		// Set the chain-wide minimum gas price floor enforced by x/feeburn in the
+		// ante handler. GetParams preserves the existing TxFeeBurnPercent (50% on
+		// mainnet); only MinGasPrices is introduced here. Governance can tune it
+		// later via MsgUpdateParams.
+		minGasPrices, err := sdk.ParseDecCoins(RecommendedMinGasPrices)
+		if err != nil {
+			return nil, err
+		}
+		params := app.FeeburnKeeper.GetParams(sdkCtx)
+		params.MinGasPrices = minGasPrices
+		if err := app.FeeburnKeeper.SetParams(sdkCtx, params); err != nil {
+			return nil, err
+		}
+
+		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
 }
 

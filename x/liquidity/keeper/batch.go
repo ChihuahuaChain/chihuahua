@@ -86,9 +86,26 @@ func (k Keeper) ExecutePoolBatches(ctx sdk.Context) {
 	k.IterateAllPoolBatches(ctx, func(poolBatch types.PoolBatch) bool {
 
 		if !poolBatch.Executed && ctx.BlockHeight()%int64(params.UnitBatchHeight) == 0 {
-			executedMsgCount, err := k.SwapExecution(ctx, poolBatch)
+			var executedMsgCount uint64
+			err := inCache(ctx, func(ctx sdk.Context) (err error) {
+				executedMsgCount, err = k.SwapExecution(ctx, poolBatch)
+				return err
+			})
 			if err != nil {
-				panic(err)
+				logger.Error("swap execution failed, refunding the swaps of the batch",
+					"poolID", poolBatch.PoolId,
+					"batchIndex", poolBatch.Index,
+					"error", err)
+				err = inCache(ctx, func(ctx sdk.Context) (err error) {
+					executedMsgCount, err = k.RefundBatchSwaps(ctx, poolBatch)
+					return err
+				})
+				if err != nil {
+					logger.Error("swap refund failed",
+						"poolID", poolBatch.PoolId,
+						"batchIndex", poolBatch.Index,
+						"error", err)
+				}
 			}
 
 			k.IterateAllPoolBatchDepositMsgStates(ctx, poolBatch, func(batchMsg types.DepositMsgState) bool {
@@ -96,15 +113,21 @@ func (k Keeper) ExecutePoolBatches(ctx sdk.Context) {
 					return false
 				}
 				executedMsgCount++
-				if err := k.ExecuteDeposit(ctx, batchMsg, poolBatch); err != nil {
+				if err := inCache(ctx, func(ctx sdk.Context) error { return k.ExecuteDeposit(ctx, batchMsg, poolBatch) }); err != nil {
 					logger.Error("deposit failed",
 						"poolID", poolBatch.PoolId,
 						"batchIndex", poolBatch.Index,
 						"msgIndex", batchMsg.MsgIndex,
 						"depositor", batchMsg.Msg.GetDepositor(),
 						"error", err)
-					if err := k.RefundDeposit(ctx, batchMsg, poolBatch); err != nil {
-						panic(err)
+					batchMsg.Executed = true
+					k.SetPoolBatchDepositMsgState(ctx, batchMsg.Msg.PoolId, batchMsg)
+					if err := inCache(ctx, func(ctx sdk.Context) error { return k.RefundDeposit(ctx, batchMsg, poolBatch) }); err != nil {
+						logger.Error("deposit refund failed",
+							"poolID", poolBatch.PoolId,
+							"batchIndex", poolBatch.Index,
+							"msgIndex", batchMsg.MsgIndex,
+							"error", err)
 					}
 				}
 				return false
@@ -115,15 +138,21 @@ func (k Keeper) ExecutePoolBatches(ctx sdk.Context) {
 					return false
 				}
 				executedMsgCount++
-				if err := k.ExecuteWithdrawal(ctx, batchMsg, poolBatch); err != nil {
+				if err := inCache(ctx, func(ctx sdk.Context) error { return k.ExecuteWithdrawal(ctx, batchMsg, poolBatch) }); err != nil {
 					logger.Error("withdraw failed",
 						"poolID", poolBatch.PoolId,
 						"batchIndex", poolBatch.Index,
 						"msgIndex", batchMsg.MsgIndex,
 						"withdrawer", batchMsg.Msg.GetWithdrawer(),
 						"error", err)
-					if err := k.RefundWithdrawal(ctx, batchMsg, poolBatch); err != nil {
-						panic(err)
+					batchMsg.Executed = true
+					k.SetPoolBatchWithdrawMsgState(ctx, batchMsg.Msg.PoolId, batchMsg)
+					if err := inCache(ctx, func(ctx sdk.Context) error { return k.RefundWithdrawal(ctx, batchMsg, poolBatch) }); err != nil {
+						logger.Error("withdraw refund failed",
+							"poolID", poolBatch.PoolId,
+							"batchIndex", poolBatch.Index,
+							"msgIndex", batchMsg.MsgIndex,
+							"error", err)
 					}
 				}
 				return false
@@ -137,6 +166,17 @@ func (k Keeper) ExecutePoolBatches(ctx sdk.Context) {
 		}
 		return false
 	})
+}
+
+// inCache runs f on a cached context and keeps its changes only when f succeeds,
+// so that a failed batch execution leaves no partial transfers behind.
+func inCache(ctx sdk.Context, f func(ctx sdk.Context) error) error {
+	cacheCtx, write := ctx.CacheContext()
+	if err := f(cacheCtx); err != nil {
+		return err
+	}
+	write()
+	return nil
 }
 
 // HoldEscrow sends coins to the module account for an escrow.

@@ -18,7 +18,11 @@ import (
 // consensus floor. The validator-local component is mempool-only and is folded
 // in only during CheckTx; it is NEVER read in the DeliverTx path, so the
 // consensus decision depends only on on-chain params + tx data (deterministic).
-func (dfd DeductFeeDecorator) checkTxFee(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error) {
+//
+// minGasPrices is the global, governance-settable floor from feeburn params,
+// read once by AnteHandle and passed in so the ante hot path reads the params
+// a single time per tx.
+func (dfd DeductFeeDecorator) checkTxFee(ctx sdk.Context, tx sdk.Tx, minGasPrices sdk.DecCoins) (sdk.Coins, int64, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
 		return nil, 0, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
@@ -26,10 +30,6 @@ func (dfd DeductFeeDecorator) checkTxFee(ctx sdk.Context, tx sdk.Tx) (sdk.Coins,
 
 	feeCoins := feeTx.GetFee()
 	gas := feeTx.GetGas()
-
-	// Global, governance-settable floor read from feeburn params (deterministic
-	// across all nodes).
-	minGasPrices := dfd.feeburnKeeper.GetParams(ctx).MinGasPrices
 
 	// Fold in the validator-local floor for mempool admission only. Do NOT read
 	// ctx.MinGasPrices() outside IsCheckTx: it is node-local and would break

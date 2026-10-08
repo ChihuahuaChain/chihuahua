@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule       = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
@@ -160,23 +161,31 @@ func (am AppModule) BeginBlock(_ sdk.Context) {}
 // burn.chihuahua.wtf: uhuahua and any token factory denom (see
 // types.IsBurnable). IBC vouchers and every other denom are left untouched, so
 // burning never strands an asset escrowed on another chain.
-func (am AppModule) EndBlock(ctx sdk.Context) []abci.ValidatorUpdate {
+//
+// The signature satisfies module.HasABCIEndBlock, the interface the SDK v0.54
+// module manager type-asserts for before it calls EndBlock. The earlier
+// EndBlock(sdk.Context) []abci.ValidatorUpdate matched no end-block interface,
+// so the manager silently skipped it and nothing was ever burned; the
+// _ module.HasABCIEndBlock assertion above now fails to compile if the
+// signature drifts again.
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	addr := authtypes.NewModuleAddress(types.ModuleName)
 
 	burn := sdk.NewCoins()
-	for _, coin := range am.bankKeeper.GetAllBalances(ctx, addr) {
+	for _, coin := range am.bankKeeper.GetAllBalances(sdkCtx, addr) {
 		if coin.IsPositive() && types.IsBurnable(coin.Denom) {
 			burn = burn.Add(coin)
 		}
 	}
 	if burn.IsZero() {
-		return []abci.ValidatorUpdate{}
+		return []abci.ValidatorUpdate{}, nil
 	}
 
-	if err := am.bankKeeper.BurnCoins(ctx, types.ModuleName, burn); err != nil {
-		am.keeper.Logger(ctx).Error("burn address: failed to burn accumulated balance", "error", err)
+	if err := am.bankKeeper.BurnCoins(sdkCtx, types.ModuleName, burn); err != nil {
+		am.keeper.Logger(sdkCtx).Error("burn address: failed to burn accumulated balance", "error", err)
 	} else {
-		am.keeper.AddBurned(ctx, burn)
+		am.keeper.AddBurned(sdkCtx, burn)
 	}
-	return []abci.ValidatorUpdate{}
+	return []abci.ValidatorUpdate{}, nil
 }

@@ -146,8 +146,14 @@ func TestBurnAddressBurnsUhuahuaInEndBlock(t *testing.T) {
 	ibcSupplyBefore := app.BankKeeper.GetSupply(ctx, ibcDenom)
 	require.True(t, app.FeeburnKeeper.GetTotalBurned(ctx).IsZero())
 
-	module := feeburn.NewAppModule(app.AppCodec(), app.FeeburnKeeper, app.AccountKeeper, app.BankKeeper)
-	module.EndBlock(ctx)
+	// Drive EndBlock through the module manager, exactly as a live block does.
+	// A direct module.EndBlock(ctx) call would pass even when feeburn is not
+	// wired as an end blocker: that is how the SDK v0.54 manager silently
+	// skipped it (its EndBlock signature matched no end-block interface) and
+	// nothing was ever burned on chain. Going through the manager pins the
+	// wiring too.
+	_, err := app.mm.EndBlock(ctx)
+	require.NoError(t, err)
 
 	// uhuahua and the factory denom at the burn address are gone; the IBC
 	// voucher and uother are untouched
@@ -166,7 +172,8 @@ func TestBurnAddressBurnsUhuahuaInEndBlock(t *testing.T) {
 	), app.FeeburnKeeper.GetTotalBurned(ctx))
 
 	// a second EndBlock with no burnable balance left is a no-op
-	module.EndBlock(ctx)
+	_, err = app.mm.EndBlock(ctx)
+	require.NoError(t, err)
 	require.Equal(t, sdk.NewCoins(
 		sdk.NewInt64Coin("uhuahua", 1_000),
 		sdk.NewInt64Coin(factoryDenom, 700),

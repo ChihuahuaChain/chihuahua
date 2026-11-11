@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://github.com/ChihuahuaChain/chihuahua/releases/latest"><img src="https://img.shields.io/github/v/release/ChihuahuaChain/chihuahua?color=f5c518&label=release" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/chain-chihuahua--1-f5c518" alt="chihuahua-1">
-  <img src="https://img.shields.io/badge/go-1.23.9-555" alt="Go 1.23.9">
+  <img src="https://img.shields.io/badge/go-1.26.10-555" alt="Go 1.26.10">
 </p>
 
 Chihuahua is a proof-of-stake blockchain built with the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk), live since 2021. `chihuahuad` is its node. On top of the usual Cosmos modules (staking, governance, IBC) the chain has:
@@ -70,10 +70,10 @@ The rest of this section is the manual way.
 
 ### 1. Get `chihuahuad`
 
-**Release binary.** Every [release](https://github.com/ChihuahuaChain/chihuahua/releases) has static Linux binaries for amd64 and arm64, with their sha256 in `chihuahuad_sha256.txt`:
+**Release binary.** Every [release](https://github.com/ChihuahuaChain/chihuahua/releases) has static Linux binaries for amd64 and arm64, with their sha256 in `chihuahuad_sha256.txt`. Use the binary of the upgrade the chain is currently on (see [Chain upgrades](#chain-upgrades)): v10.0.1 until height 26,239,240, v10.1.0 from there on. Under cosmovisor the switch happens by itself.
 
 ```sh
-VERSION=v9.0.7
+VERSION=v10.0.1   # v10.1.0 from height 26,239,240
 ARCH=amd64   # or arm64
 curl -fLO https://github.com/ChihuahuaChain/chihuahua/releases/download/$VERSION/chihuahuad_linux_$ARCH
 curl -fsSL https://github.com/ChihuahuaChain/chihuahua/releases/download/$VERSION/chihuahuad_sha256.txt | grep "chihuahuad_linux_$ARCH" | sha256sum -c
@@ -81,14 +81,14 @@ install -m 755 chihuahuad_linux_$ARCH ~/go/bin/chihuahuad   # or any directory i
 chihuahuad version
 ```
 
-**From source.** You need Go 1.23.9 and a C toolchain (`make`, `gcc`):
+**From source.** You need the Go version the release is built with (Go 1.26.5 for v10.0.1, Go 1.26.10 for v10.1.0) and a C toolchain (`make`, `gcc`):
 
 ```sh
 git clone https://github.com/ChihuahuaChain/chihuahua.git
 cd chihuahua
-git checkout v9.0.7
+git checkout v10.0.1
 make install
-chihuahuad version   # v9.0.7
+chihuahuad version   # v10.0.1
 ```
 
 Build with the exact Go version: a different one can produce a different app hash.
@@ -205,6 +205,9 @@ Upgrades are voted on chain. Each software upgrade proposal names the upgrade, i
 
 | Upgrade | Binary | Height | Date (UTC) |
 |---|---|---|---|
+| [v10.1.0](mainnet/UPGRADES/v10.1.0) | v10.1.0 | 26,239,240 | 2026-11-17 ~14:00 (scheduled, [proposal 108](https://explorer.chihuahua.wtf/proposal/108)) |
+| [v10.0.1](mainnet/UPGRADES/v10.0.1) | v10.0.1 | 25,742,780 | 2026-10-14 ~12:00 |
+| [v10.0.0](mainnet/UPGRADES/v10.0.0) | v10.0.0 | 25,586,332 | 2026-10-03 ~14:07 |
 | — | v9.0.7 | no upgrade height: patch release (Cosmos SDK v0.50.15, CometBFT v0.38.23) | 2026-05-13 |
 | [v9.5.0](mainnet/UPGRADES/v9.5.0) | v9.5.0 | 25,571,500 | 2026-10-02 ~12:37 (estimated) |
 | [v9.0.6](mainnet/UPGRADES/v9.0.6) | v9.0.6 | 20,523,000 | 2025-10-29 13:40 |
@@ -246,7 +249,7 @@ To sync from genesis, run each binary up to its upgrade height, in order.
 ## Development
 
 ```sh
-make install          # build and install chihuahuad (needs Go 1.23.9)
+make install          # build and install chihuahuad (needs the Go version in the Makefile, GO_VERSION)
 go test ./...         # unit and integration tests
 make proto-gen        # regenerate the protobuf code (needs Docker)
 scripts/test_node.sh  # single-node local chain, with funded test keys

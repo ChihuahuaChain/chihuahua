@@ -141,7 +141,10 @@ const (
 	// PatchUpgradeName is the upgrade that follows v10.0.0 with the liquidity
 	// batch execution fixes and the public burn address (see x/feeburn EndBlock)
 	PatchUpgradeName = "v10.0.1"
-	NodeDir          = ".chihuahuad"
+	// NextUpgradeName is the coordinated governance upgrade that follows
+	// v10.0.1. It carries code-only fixes and makes no state migration.
+	NextUpgradeName = "v10.1.0"
+	NodeDir         = ".chihuahuad"
 
 	// RecommendedMinGasPrices is the chain-wide minimum gas price the protocol
 	// enforces in the ante handler (set on-chain by the v10.0.1 upgrade and

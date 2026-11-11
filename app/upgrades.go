@@ -95,6 +95,14 @@ func (app *App) RegisterUpgradeHandlers(cfg module.Configurator) {
 
 		return app.mm.RunMigrations(ctx, cfg, fromVM)
 	})
+
+	// v10.1.0 bundles code-only fixes that need no state migration.
+	// RunMigrations keeps the switch
+	// deterministic at the planned height; add module migrations here only if
+	// a later change bumps a module consensus version.
+	app.UpgradeKeeper.SetUpgradeHandler(NextUpgradeName, func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		return app.mm.RunMigrations(ctx, cfg, fromVM)
+	})
 }
 
 // takeAmbiguousDenomTraces removes from the transfer store the denom traces

@@ -1551,9 +1551,10 @@ func TestOverflowAndZeroCases(t *testing.T) {
 	err = simapp.LiquidityKeeper.ExecuteDeposit(ctx, msgs[2], poolBatch)
 	require.NoError(t, err)
 
-	// Check overflow case on withdraw
+	// A withdrawal from a pool with very large reserves executes
 	depositorPoolCoinBalance = simapp.BankKeeper.GetBalance(ctx, addrs[0], pools[0].PoolCoinDenom)
-	_, err = simapp.LiquidityKeeper.WithdrawWithinBatch(ctx, types.NewMsgWithdrawWithinBatch(addrs[0], pools[0].Id, depositorPoolCoinBalance.SubAmount(math.NewInt(1))))
+	withdrawCoin := sdk.NewCoin(depositorPoolCoinBalance.Denom, depositorPoolCoinBalance.Amount.QuoRaw(2))
+	_, err = simapp.LiquidityKeeper.WithdrawWithinBatch(ctx, types.NewMsgWithdrawWithinBatch(addrs[0], pools[0].Id, withdrawCoin))
 	require.NoError(t, err)
 
 	poolBatch, found = simapp.LiquidityKeeper.GetPoolBatch(ctx, depositMsg.PoolId)
@@ -1561,9 +1562,8 @@ func TestOverflowAndZeroCases(t *testing.T) {
 	withdrawMsgs := simapp.LiquidityKeeper.GetAllPoolBatchWithdrawMsgStates(ctx, poolBatch)
 	require.Equal(t, 1, len(withdrawMsgs))
 	err = simapp.LiquidityKeeper.ExecuteWithdrawal(ctx, withdrawMsgs[0], poolBatch)
-	require.ErrorIs(t, err, types.ErrOverflowAmount)
-	err = simapp.LiquidityKeeper.RefundWithdrawal(ctx, withdrawMsgs[0], poolBatch)
 	require.NoError(t, err)
+	require.Equal(t, depositorPoolCoinBalance.Sub(withdrawCoin), simapp.BankKeeper.GetBalance(ctx, addrs[0], pools[0].PoolCoinDenom))
 
 	// Check overflow, division by zero case on swap
 	swapUserBalanceBefore := simapp.BankKeeper.GetAllBalances(ctx, addrs[0])

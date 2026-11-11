@@ -2,6 +2,7 @@ package math
 
 import (
 	"fmt"
+	stdmath "math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -93,8 +94,15 @@ func TestDec(t *testing.T) {
 	require.True(t, minusOne.IsNegative())
 }
 
+// genBoundedFloat generates floats within the range accepted by
+// NewDecFromString: at most 12 decimal places and |f| <= 1e20.
+var genBoundedFloat *rapid.Generator[float64] = rapid.Custom(func(t *rapid.T) float64 {
+	f := rapid.Float64Range(-1e20, 1e20).Draw(t, "f")
+	return stdmath.Round(f*1e12) / 1e12
+})
+
 var genDec *rapid.Generator[Dec] = rapid.Custom(func(t *rapid.T) Dec {
-	f := rapid.Float64().Draw(t, "f")
+	f := genBoundedFloat.Draw(t, "f")
 	dec, err := NewDecFromString(fmt.Sprintf("%g", f))
 	require.NoError(t, err)
 	return dec
@@ -108,7 +116,7 @@ type floatAndDec struct {
 
 // Generate a Dec value along with the float used to create it
 var genFloatAndDec *rapid.Generator[floatAndDec] = rapid.Custom(func(t *rapid.T) floatAndDec {
-	f := rapid.Float64().Draw(t, "f")
+	f := genBoundedFloat.Draw(t, "f")
 	dec, err := NewDecFromString(fmt.Sprintf("%g", f))
 	require.NoError(t, err)
 	return floatAndDec{f, dec}

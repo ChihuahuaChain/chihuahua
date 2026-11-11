@@ -1054,8 +1054,11 @@ func (k Keeper) ValidatePool(ctx sdk.Context, pool *types.Pool) error {
 
 // ValidatePoolMetadata validates logic for liquidity pool metadata
 func (k Keeper) ValidatePoolMetadata(ctx sdk.Context, pool *types.Pool, metaData *types.PoolMetadata) error {
-	if err := metaData.ReserveCoins.Validate(); err != nil {
-		return err
+	// A depleted pool has zero reserves: validate coin by coin, which allows zero.
+	for _, coin := range metaData.ReserveCoins {
+		if err := coin.Validate(); err != nil {
+			return err
+		}
 	}
 	if !metaData.ReserveCoins.Equal(k.GetReserveCoins(ctx, *pool)) {
 		return types.ErrNumOfReserveCoin

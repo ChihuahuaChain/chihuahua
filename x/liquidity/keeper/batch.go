@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -169,14 +171,25 @@ func (k Keeper) ExecutePoolBatches(ctx sdk.Context) {
 }
 
 // inCache runs f on a cached context and keeps its changes only when f succeeds,
-// so that a failed batch execution leaves no partial transfers behind.
+// so that a failed batch execution leaves no partial transfers behind. A
+// runtime error raised by f is treated like a returned error, so the batch is
+// refunded and no partial state is written.
 func inCache(ctx sdk.Context, f func(ctx sdk.Context) error) error {
 	cacheCtx, write := ctx.CacheContext()
-	if err := f(cacheCtx); err != nil {
+	if err := recoverAsError(func() error { return f(cacheCtx) }); err != nil {
 		return err
 	}
 	write()
 	return nil
+}
+
+func recoverAsError(f func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return f()
 }
 
 // HoldEscrow sends coins to the module account for an escrow.

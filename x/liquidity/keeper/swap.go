@@ -147,6 +147,11 @@ func (k Keeper) SwapExecution(ctx sdk.Context, poolBatch types.PoolBatch) (uint6
 					sdk.NewAttribute(types.AttributeValueOrderExpired, strconv.FormatBool(expired)),
 					sdk.NewAttribute(types.AttributeValueInvalidSwapErr, errorMessage(invalidErr)),
 				))
+			// An order dropped here (expired, or no longer valid against the
+			// current reserves) still holds its escrow: return it.
+			if err := k.refundSwapEscrow(ctx, sms); err != nil {
+				return executedMsgCount, err
+			}
 		}
 	}
 	k.SetPoolBatchSwapMsgStatesByPointer(ctx, pool.Id, swapMsgStates)
@@ -231,4 +236,21 @@ func (k Keeper) SwapExecution(ctx sdk.Context, poolBatch types.PoolBatch) (uint6
 	}
 
 	return executedMsgCount, nil
+}
+
+// refundSwapEscrow returns the remaining offer coin and reserved fee of a swap
+// order to its requester and clears them on the order state.
+func (k Keeper) refundSwapEscrow(ctx sdk.Context, sms *types.SwapMsgState) error {
+	coins := sdk.NewCoins(sms.RemainingOfferCoin.Add(sms.ReservedOfferCoinFee))
+	if !coins.Empty() {
+		input := banktypes.NewInput(k.accountKeeper.GetModuleAddress(types.ModuleName), coins)
+		outputs := []banktypes.Output{banktypes.NewOutput(sms.Msg.GetSwapRequester(), coins)}
+		if err := k.bankKeeper.InputOutputCoins(ctx, input, outputs); err != nil {
+			return err
+		}
+	}
+	sms.RemainingOfferCoin = sdk.NewCoin(sms.RemainingOfferCoin.Denom, math.ZeroInt())
+	sms.ReservedOfferCoinFee = sdk.NewCoin(sms.ReservedOfferCoinFee.Denom, math.ZeroInt())
+	sms.Succeeded = false
+	return nil
 }

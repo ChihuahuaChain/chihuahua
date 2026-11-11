@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -428,16 +429,19 @@ func (k Keeper) ExecuteWithdrawal(ctx sdk.Context, msg types.WithdrawMsgState, b
 		withdrawCoins = reserveCoins
 	} else {
 		// Calculate withdraw amount of respective reserve coin considering fees and pool coin's totally supply
+		// The products below are computed on unbounded integers: the reserve
+		// balance can be raised by anyone, and the results never exceed it.
+		proportion := withdrawProportion.BigInt() // scaled by 10^18
+		precision := math.LegacyOneDec().BigInt()
+		supply := poolCoinTotalSupply.BigInt()
 		for _, reserveCoin := range reserveCoins {
-			if err := types.CheckOverflow(reserveCoin.Amount, msg.Msg.PoolCoin.Amount); err != nil {
-				return err
-			}
-			if err := types.CheckOverflow(reserveCoin.Amount.Mul(msg.Msg.PoolCoin.Amount).ToLegacyDec().TruncateInt(), poolCoinTotalSupply); err != nil {
-				return err
-			}
 			// WithdrawAmount = ReserveAmount * PoolCoinAmount * WithdrawFeeProportion / TotalSupply
-			withdrawAmtWithFee := reserveCoin.Amount.Mul(msg.Msg.PoolCoin.Amount).ToLegacyDec().TruncateInt().Quo(poolCoinTotalSupply)
-			withdrawAmt := reserveCoin.Amount.Mul(msg.Msg.PoolCoin.Amount).ToLegacyDec().MulTruncate(withdrawProportion).TruncateInt().Quo(poolCoinTotalSupply)
+			share := new(big.Int).Mul(reserveCoin.Amount.BigInt(), msg.Msg.PoolCoin.Amount.BigInt())
+			withdrawAmtWithFee := math.NewIntFromBigInt(new(big.Int).Quo(share, supply))
+			withdrawAmt := math.NewIntFromBigInt(new(big.Int).Quo(
+				new(big.Int).Mul(share, proportion),
+				new(big.Int).Mul(precision, supply),
+			))
 			withdrawCoins = append(withdrawCoins, sdk.NewCoin(reserveCoin.Denom, withdrawAmt))
 			withdrawFeeCoins = append(withdrawFeeCoins, sdk.NewCoin(reserveCoin.Denom, withdrawAmtWithFee.Sub(withdrawAmt)))
 		}

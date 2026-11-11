@@ -142,7 +142,7 @@ func (app *App) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []str
 		return false
 	})
 	if err1 != nil {
-		panic(err)
+		panic(err1)
 	}
 
 	// reinitialize all delegations
@@ -205,7 +205,7 @@ func (app *App) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []str
 	counter := int16(0)
 
 	for ; iter.Valid(); iter.Next() {
-		addr := sdk.ValAddress(iter.Key()[1:])
+		addr := sdk.ValAddress(stakingtypes.AddressFromValidatorsKey(iter.Key()))
 		validator, error := app.StakingKeeper.GetValidator(ctx, addr)
 		if error != nil {
 			panic("expected validator, not found")

@@ -568,6 +568,7 @@ func New(
 		wasmOpts...,
 	)
 	ics20WasmHooks.ContractKeeper = &app.wasmKeeper
+	hooksICS4Wrapper.Hooks = ics20WasmHooks
 
 	// Create the IBC stacks
 	wasmStack := wasm.NewIBCHandler(app.wasmKeeper, app.IBCKeeper.ChannelKeeper, app.TransferKeeper, app.IBCKeeper.ChannelKeeper)

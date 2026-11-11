@@ -49,15 +49,17 @@ func (k Keeper) setAdmin(ctx sdk.Context, denom string, admin string) error {
 }
 
 func (k Keeper) validAccountForBurnOrForceTransfer(ctx sdk.Context, addressFrom string) error {
-	accountI := k.accountKeeper.GetAccount(ctx, sdk.MustAccAddressFromBech32(addressFrom))
-	_, ok := accountI.(sdk.ModuleAccountI)
-	if ok {
+	fromAddr, err := sdk.AccAddressFromBech32(addressFrom)
+	if err != nil {
+		return err
+	}
+	if _, ok := k.accountKeeper.GetAccount(ctx, fromAddr).(sdk.ModuleAccountI); ok {
 		return types.ErrBurnOrForceTransferFromModuleAccount
 	}
-	params := k.GetParams(ctx)
-	builderWeightedAddresses := params.BuildersAddresses
-	for _, builder := range builderWeightedAddresses {
-		if builder.Address == addressFrom {
+	// Compare decoded addresses: bech32 accepts the same address in upper case.
+	for _, builder := range k.GetParams(ctx).BuildersAddresses {
+		builderAddr, err := sdk.AccAddressFromBech32(builder.Address)
+		if err == nil && builderAddr.Equals(fromAddr) {
 			return types.ErrBurnOrForceTransferFromBuilderAccount
 		}
 	}

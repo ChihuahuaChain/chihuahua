@@ -1,6 +1,6 @@
 # Chihuahua v10.1.0 Upgrade
 
-The upgrade is scheduled for block **26252540**, expected around **2026-11-18 12:00 UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/26252540
+The upgrade is scheduled for block **26239240**, expected around **2026-11-17 14:00 UTC** (block times vary, so it can come a little earlier or later). Countdown: https://explorer.chihuahua.wtf/block/26239240
 
 v10.1.0 is a coordinated upgrade on top of v10.0.1. It does not change the Cosmos SDK, CometBFT, ibc-go or wasmd versions, and the upgrade handler runs module migrations only: there is no state migration.
 

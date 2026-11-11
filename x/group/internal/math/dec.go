@@ -47,6 +47,13 @@ func (x Dec) IsPositive() bool {
 	return !x.dec.Negative && !x.dec.IsZero()
 }
 
+// maxDecDigits and maxDecExponent bound the decimals accepted from user input
+// (member weights, thresholds, percentages), matching decimal128.
+const (
+	maxDecDigits   = 34
+	maxDecExponent = 34
+)
+
 // NewDecFromString returns a new Dec from a string
 // It only support finite numbers, not NaN, +Inf, -Inf
 func NewDecFromString(s string) (Dec, error) {
@@ -57,6 +64,13 @@ func NewDecFromString(s string) (Dec, error) {
 
 	if d.Form != apd.Finite {
 		return Dec{}, errors.ErrInvalidDecString.Wrapf("expected a finite decimal, got %s", s)
+	}
+
+	// Bound the size of accepted decimals. Unbounded exponents make every
+	// later Add/Sub/Cmp carry all the digits between them, which is paid for
+	// once at parse time but repeated without gas in the EndBlocker tally.
+	if d.NumDigits() > maxDecDigits || d.Exponent > maxDecExponent || d.Exponent < -maxDecExponent {
+		return Dec{}, errors.ErrInvalidDecString.Wrapf("decimal out of supported range, got %s", s)
 	}
 
 	return Dec{*d}, nil

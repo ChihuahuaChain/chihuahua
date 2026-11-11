@@ -46,7 +46,6 @@ func (k Keeper) DirectSwapExecution(ctx sdk.Context, poolId uint64, offerCoin sd
 	} else {
 		expectedMinOutputAmount = inputAmount.Amount.Mul(orderPrice)
 	}
-	fmt.Printf("ExpectedMinAmount %v outputAmount %v", expectedMinOutputAmount, outputAmount)
 	if expectedMinOutputAmount.GT(outputAmount) {
 		return math.NewInt(0), types.ErrMaxSlippage
 	}

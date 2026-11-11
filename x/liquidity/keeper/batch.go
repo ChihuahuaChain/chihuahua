@@ -66,6 +66,10 @@ func (k Keeper) DeleteAndInitPoolBatches(ctx sdk.Context) {
 	})
 }
 
+// orderPriceReserveHeadroom is the factor applied to the reserves when
+// bounding an order price at submission.
+const orderPriceReserveHeadroom = 4
+
 // InitNextPoolBatch re-initializes the batch and increases the batch index.
 func (k Keeper) InitNextPoolBatch(ctx sdk.Context, poolBatch types.PoolBatch) error {
 	if !poolBatch.Executed {
@@ -299,6 +303,15 @@ func (k Keeper) SwapWithinBatch(ctx sdk.Context, msg *types.MsgSwapWithinBatch, 
 	}
 	if err := k.ValidateMsgSwapWithinBatch(ctx, *msg, pool); err != nil {
 		return nil, err
+	}
+	// The batch matching multiplies the order price by the pool reserves.
+	// Reject prices that would overflow there, with headroom for reserve
+	// changes before execution. This is checked at submission only: the
+	// EndBlock re-validation must not depend on reserves that move in between.
+	for _, rc := range k.GetReserveCoins(ctx, pool) {
+		if err := types.CheckOverflowWithDec(rc.Amount.ToLegacyDec().MulInt64(orderPriceReserveHeadroom), msg.OrderPrice); err != nil {
+			return nil, types.ErrBadOrderPrice
+		}
 	}
 	poolBatch, found := k.GetPoolBatch(ctx, msg.PoolId)
 	if !found {

@@ -255,17 +255,24 @@ func (h WasmHooks) SendPacketOverride(i ICS4Middleware, ctx sdk.Context, sourceP
 		return 0, err
 	}
 
-	// Make sure the callback contract is a string and a valid bech32 addr. If it isn't, ignore this packet
+	// Make sure the callback contract is a string and a valid bech32 addr. If it isn't, ignore the callback.
+	// The packet has been sent either way, so its real sequence is returned.
 	contract, ok := callbackRaw.(string)
 	if !ok {
-		return 0, nil
+		return seq, nil
 	}
-	_, err = sdk.AccAddressFromBech32(contract)
+	contractAddr, err := sdk.AccAddressFromBech32(contract)
 	if err != nil {
-		return 0, nil
+		return seq, nil
+	}
+	// Only the sender may register itself for the lifecycle callback, so an
+	// account cannot direct sudo calls at a contract it does not control.
+	senderAddr, err := sdk.AccAddressFromBech32(ics20data.Sender)
+	if err != nil || !senderAddr.Equals(contractAddr) {
+		return seq, nil
 	}
 
-	h.ibcHooksKeeper.StorePacketCallback(ctx, sourceChannel, seq, contract)
+	h.ibcHooksKeeper.StorePacketCallback(ctx, sourceChannel, seq, contractAddr.String())
 	return seq, nil
 }
 
@@ -341,8 +348,12 @@ func (h WasmHooks) OnTimeoutPacketOverride(im IBCMiddleware, ctx sdk.Context, ch
 	sudoMsg := []byte(fmt.Sprintf(
 		`{"ibc_lifecycle_complete": {"ibc_timeout": {"channel": "%s", "sequence": %d}}}`,
 		packet.SourceChannel, packet.Sequence))
-	_, err = h.ContractKeeper.Sudo(ctx, contractAddr, sudoMsg)
-	if err != nil {
+	// Run the callback in a cached context so a failing sudo leaves no partial state.
+	cacheCtx, write := ctx.CacheContext()
+	_, err = h.ContractKeeper.Sudo(cacheCtx, contractAddr, sudoMsg)
+	if err == nil {
+		write()
+	} else {
 		// error processing the callback. This could be because the contract doesn't implement the message type to
 		// process the callback. Retrying this will not help, so we can delete the callback from storage.
 		// Since the packet has timed out, we don't expect any other responses that may trigger the callback.

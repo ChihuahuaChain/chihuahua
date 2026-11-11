@@ -1,12 +1,14 @@
 package app
 
 import (
+	"math"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/stretchr/testify/require"
 
 	appparams "github.com/ChihuahuaChain/chihuahua/app/params"
@@ -206,6 +208,10 @@ func TestStakedropRejections(t *testing.T) {
 		{"start in the past", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(wlDenom, 100), h-1, h+10)},
 		{"start equals end", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(wlDenom, 100), h+5, h+5)},
 		{"insufficient funds", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(wlDenom, 10_000), h+1, h+10)},
+		// ValidateBasic rejects these, but x/group executes messages without it.
+		{"negative end", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(wlDenom, 100), h+1, math.MinInt64)},
+		{"negative end, native", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(appparams.BondDenom, 100), h+1, -1)},
+		{"negative start and end", tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(wlDenom, 100), math.MinInt64, -1)},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -293,4 +299,56 @@ func requireEventAttr(t *testing.T, ctx sdk.Context, eventType, key, want string
 		return
 	}
 	t.Fatalf("event %s not emitted", eventType)
+}
+
+// TestStakedropGenesisRoundTrip checks that active stakedrops and the key
+// sequence survive an export/import cycle, that payouts resume afterwards and
+// that a stakedrop created after the import does not overwrite an imported one.
+func TestStakedropGenesisRoundTrip(t *testing.T) {
+	f := setupTokenfactory(t)
+	denom := f.createDenom(t, f.whitelisted, "drop")
+	f.mint(t, f.whitelisted, sdk.NewInt64Coin(denom, 2_000))
+
+	h := f.ctx.BlockHeight()
+	for _, b := range [][2]int64{{h + 1, h + 11}, {h + 5, h + 15}} {
+		_, err := f.msgServer.CreateStakeDrop(f.ctx, tftypes.NewMsgCreateStakeDrop(f.whitelisted.String(), sdk.NewInt64Coin(denom, 1_000), b[0], b[1]))
+		require.NoError(t, err)
+	}
+	// pay out the first three blocks of the first stakedrop
+	for height := h + 1; height <= h+3; height++ {
+		require.Equal(t, sdkmath.NewInt(100), f.runBeginBlocker(t, height, denom))
+	}
+
+	exported := f.app.TokenFactoryKeeper.ExportGenesis(f.ctx)
+	require.NoError(t, exported.Validate())
+	require.Len(t, exported.ActiveStakedrops, 2)
+	require.Equal(t, uint64(2), exported.StakedropSequence)
+	escrow := f.app.BankKeeper.GetAllBalances(f.ctx, f.moduleAddr())
+
+	// import into a fresh chain; bank genesis would carry the escrow
+	g := setupTokenfactory(t)
+	g.app.TokenFactoryKeeper.InitGenesis(g.ctx, *exported)
+	require.NoError(t, g.app.BankKeeper.MintCoins(g.ctx, minttypes.ModuleName, escrow))
+	require.NoError(t, g.app.BankKeeper.SendCoinsFromModuleToModule(g.ctx, minttypes.ModuleName, tftypes.ModuleName, escrow))
+	require.Equal(t, 2, g.activeStakedrops(t))
+
+	// a new stakedrop with the same start block as the first imported one,
+	// which holds sequence 0
+	g.mint(t, g.whitelisted, sdk.NewInt64Coin(denom, 1_000))
+	_, err := g.msgServer.CreateStakeDrop(g.ctx, tftypes.NewMsgCreateStakeDrop(g.whitelisted.String(), sdk.NewInt64Coin(denom, 1_000), h+1, h+11))
+	require.NoError(t, err)
+	require.Equal(t, 3, g.activeStakedrops(t))
+
+	// payouts resume where they stopped, next to the new stakedrop
+	require.Equal(t, sdkmath.NewInt(200), g.runBeginBlocker(t, h+4, denom))
+	require.Equal(t, sdkmath.NewInt(300), g.runBeginBlocker(t, h+5, denom))
+
+	// run everything to completion: the imported escrow is fully paid out.
+	// Only the first three blocks of the new stakedrop (h+1..h+3), which this
+	// chain never ran, stay in the module.
+	for height := h + 6; height <= h+16; height++ {
+		g.runBeginBlocker(t, height, denom)
+	}
+	require.Equal(t, 0, g.activeStakedrops(t))
+	require.Equal(t, sdkmath.NewInt(300), g.balance(g.moduleAddr(), denom))
 }

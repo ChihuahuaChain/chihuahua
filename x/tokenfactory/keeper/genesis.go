@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types"
@@ -32,6 +33,20 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState types.GenesisState) {
 			panic(err)
 		}
 	}
+
+	nextSeq := genState.StakedropSequence
+	for _, genDrop := range genState.GetActiveStakedrops() {
+		key := collections.Join(uint64(genDrop.Stakedrop.StartBlock), genDrop.Sequence)
+		if err := k.ActiveStakedrop.Set(ctx, key, genDrop.Stakedrop); err != nil {
+			panic(err)
+		}
+		if genDrop.Sequence >= nextSeq {
+			nextSeq = genDrop.Sequence + 1
+		}
+	}
+	if err := k.StakedropSequence.Set(ctx, nextSeq); err != nil {
+		panic(err)
+	}
 }
 
 // ExportGenesis returns the tokenfactory module's exported genesis.
@@ -53,8 +68,27 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		})
 	}
 
+	genStakedrops := []types.GenesisStakedrop{}
+	err := k.ActiveStakedrop.Walk(ctx, nil, func(key collections.Pair[uint64, uint64], drop types.Stakedrop) (bool, error) {
+		genStakedrops = append(genStakedrops, types.GenesisStakedrop{
+			Sequence:  key.K2(),
+			Stakedrop: drop,
+		})
+		return false, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	nextSeq, err := k.StakedropSequence.Peek(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	return &types.GenesisState{
-		FactoryDenoms: genDenoms,
-		Params:        k.GetParams(ctx),
+		FactoryDenoms:     genDenoms,
+		Params:            k.GetParams(ctx),
+		ActiveStakedrops:  genStakedrops,
+		StakedropSequence: nextSeq,
 	}
 }

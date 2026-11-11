@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	stdmath "math"
+
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 	"github.com/ChihuahuaChain/chihuahua/app/params"
@@ -52,6 +54,13 @@ func (k Keeper) validateCreateStakedrop(ctx sdk.Context, creatorAddr string, amo
 	moduleParams := k.GetParams(ctx)
 	if !isWhitelistedAddress(creatorAddr, moduleParams) {
 		return types.ErrUnauthorized
+	}
+
+	// Both heights must fit in an int64: they are stored as int64 and compared
+	// against the block height. Callers that skip ValidateBasic (x/group, for
+	// instance) could otherwise pass negative values that wrap around here.
+	if startBlock > stdmath.MaxInt64 || endBlock > stdmath.MaxInt64 {
+		return types.ErrBadBlockParameters
 	}
 
 	// startBlock must be in the future: the BeginBlocker of the current height

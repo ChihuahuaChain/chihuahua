@@ -4,6 +4,7 @@ package osmosis.tokenfactory.v1beta1;
 import "gogoproto/gogo.proto";
 import "osmosis/tokenfactory/v1beta1/authorityMetadata.proto";
 import "osmosis/tokenfactory/v1beta1/params.proto";
+import "osmosis/tokenfactory/v1beta1/stakedrop.proto";
 
 option go_package = "github.com/ChihuahuaChain/chihuahua/x/tokenfactory/types";
 
@@ -14,6 +15,27 @@ message GenesisState {
 
   repeated GenesisDenom factory_denoms = 2 [
     (gogoproto.moretags) = "yaml:\"factory_denoms\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // active_stakedrops are the stakedrops that have not been paid out and
+  // removed yet, together with the escrow they still hold.
+  repeated GenesisStakedrop active_stakedrops = 3 [
+    (gogoproto.moretags) = "yaml:\"active_stakedrops\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // stakedrop_sequence is the next value of the stakedrop key sequence.
+  uint64 stakedrop_sequence = 4
+      [ (gogoproto.moretags) = "yaml:\"stakedrop_sequence\"" ];
+}
+
+// GenesisStakedrop is an active stakedrop and the sequence part of its store
+// key. The other part of the key is the stakedrop start block.
+message GenesisStakedrop {
+  uint64 sequence = 1 [ (gogoproto.moretags) = "yaml:\"sequence\"" ];
+  Stakedrop stakedrop = 2 [
+    (gogoproto.moretags) = "yaml:\"stakedrop\"",
     (gogoproto.nullable) = false
   ];
 }

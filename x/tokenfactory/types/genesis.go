@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,8 +16,9 @@ const DefaultIndex uint64 = 1
 // DefaultGenesis returns the default Capability genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		Params:        DefaultParams(),
-		FactoryDenoms: []GenesisDenom{},
+		Params:           DefaultParams(),
+		FactoryDenoms:    []GenesisDenom{},
+		ActiveStakedrops: []GenesisStakedrop{},
 	}
 }
 
@@ -45,6 +48,32 @@ func (gs GenesisState) Validate() error {
 			if err != nil {
 				return errorsmod.Wrapf(ErrInvalidAuthorityMetadata, "Invalid admin address (%s)", err)
 			}
+		}
+	}
+
+	seenStakedrops := map[string]bool{}
+	for _, genDrop := range gs.GetActiveStakedrops() {
+		drop := genDrop.Stakedrop
+		key := fmt.Sprintf("%d/%d", drop.StartBlock, genDrop.Sequence)
+		if seenStakedrops[key] {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "duplicate stakedrop: start block %d, sequence %d", drop.StartBlock, genDrop.Sequence)
+		}
+		seenStakedrops[key] = true
+
+		if drop.StartBlock <= 0 || drop.EndBlock <= drop.StartBlock {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "stakedrop %s: invalid blocks %d..%d", key, drop.StartBlock, drop.EndBlock)
+		}
+		if err := drop.Amount.Validate(); err != nil {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "stakedrop %s: %s", key, err)
+		}
+		if err := drop.AmountPerBlock.Validate(); err != nil {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "stakedrop %s: %s", key, err)
+		}
+		if drop.AmountPerBlock.Denom != drop.Amount.Denom {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "stakedrop %s: denom mismatch", key)
+		}
+		if genDrop.Sequence >= gs.StakedropSequence {
+			return errorsmod.Wrapf(ErrInvalidGenesis, "stakedrop %s: sequence must be below stakedrop_sequence %d", key, gs.StakedropSequence)
 		}
 	}
 

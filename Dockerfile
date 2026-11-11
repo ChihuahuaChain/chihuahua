@@ -1,6 +1,6 @@
 ARG IMG_TAG=latest
 ARG PLATFORM="linux/amd64"
-ARG GO_VERSION="1.26.5"
+ARG GO_VERSION="1.26.10"
 ARG RUNNER_IMAGE="gcr.io/distroless/static"
 
 FROM --platform=${PLATFORM} golang:${GO_VERSION}-alpine AS builder
